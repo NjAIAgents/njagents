@@ -1,0 +1,33 @@
+{
+  "source": "datadog",
+  "mode": "fixture",
+  "status": "ok",
+  "as_of": "2026-09-21T09:00:00Z",
+  "latency_ms": 0,
+  "notes": [],
+  "data": {
+    "baseline": {
+      "window_days": 7,
+      "method": "rolling_median",
+      "value": 12
+    },
+    "current": {
+      "value": 53,
+      "ratio_to_baseline": 4.4
+    },
+    "spike": {
+      "detected": true,
+      "first_seen": "2026-09-08T02:10:00Z"
+    },
+    "deploys_in_window": [
+      {
+        "version": "2026.09",
+        "at": "2026-09-05T22:00:00Z",
+        "service": "approvals-api"
+      }
+    ],
+    "sample_errors": [
+      "ApprovalPersistenceWarning: approval not committed, continuing"
+    ]
+  }
+}

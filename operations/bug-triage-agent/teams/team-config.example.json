@@ -1,0 +1,61 @@
+{
+  "//": "Copy this, fill it in, done. Do not copy the rubric or taxonomy: those are shared.",
+  "team": {
+    "name": "Your Team",
+    "id": "your-team",
+    "product_line": ""
+  },
+  "jira": {
+    "project_key": "ABC",
+    "cloud_id": "REPLACE_WITH_CLOUD_ID",
+    "priority_names": {
+      "P1": "Blocker",
+      "P2": "Critical",
+      "P3": "Major",
+      "P4": "Minor"
+    },
+    "at_risk_labels": [
+      "at-risk"
+    ],
+    "voc_destination": "none"
+  },
+  "sources": {
+    "jira": {
+      "mode": "live"
+    },
+    "releases": {
+      "mode": "live"
+    },
+    "datadog": {
+      "mode": "off"
+    },
+    "snowflake": {
+      "mode": "off"
+    },
+    "code": {
+      "mode": "off"
+    }
+  },
+  "release_correlation": {
+    "cadence_days": 30,
+    "lookback_days": 60,
+    "manifest_sources": [
+      "jira_fixversion"
+    ]
+  },
+  "regression": {
+    "baseline_days": 7,
+    "baseline_method": "rolling_median",
+    "spike_ratio": 3.0,
+    "deploy_window_hours": 720
+  },
+  "snowflake": {
+    "database": "",
+    "schema": "",
+    "queries": {}
+  },
+  "repos": [],
+  "routing": {},
+  "//zero-setup": "Leave every source except jira and releases as 'off'. Add a connector later by flipping its mode and adding its entry to mcp_tools.",
+  "mcp_tools": {}
+}

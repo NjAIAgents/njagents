@@ -1,0 +1,65 @@
+{
+  "//": "Second team, different product area and different Jira priority names. Same shared rubric. This file IS the consistency proof.",
+  "team": {
+    "name": "Demo (second team)",
+    "id": "demo-gc"
+  },
+  "jira": {
+    "project_key": "BUG",
+    "cloud_id": "demo",
+    "priority_names": {
+      "P1": "Highest",
+      "P2": "High",
+      "P3": "Medium",
+      "P4": "Low"
+    },
+    "at_risk_labels": [
+      "at-risk",
+      "renewal"
+    ],
+    "voc_destination": "PRODUCT-GC"
+  },
+  "sources": {
+    "jira": {
+      "mode": "fixture",
+      "fixture": "fixtures/jira"
+    },
+    "releases": {
+      "mode": "fixture",
+      "fixture": "fixtures/releases.json"
+    },
+    "datadog": {
+      "mode": "off"
+    },
+    "snowflake": {
+      "mode": "off"
+    },
+    "code": {
+      "mode": "off"
+    }
+  },
+  "release_correlation": {
+    "cadence_days": 30,
+    "lookback_days": 60,
+    "manifest_sources": [
+      "jira_fixversion"
+    ]
+  },
+  "regression": {
+    "baseline_days": 7,
+    "baseline_method": "rolling_median",
+    "spike_ratio": 3.0,
+    "deploy_window_hours": 720
+  },
+  "snowflake": {
+    "database": "",
+    "schema": "",
+    "queries": {}
+  },
+  "repos": [],
+  "routing": {
+    "approvals": "Second Team Backend",
+    "settlements": "Second Team Payments",
+    "reporting": "Second Team Data"
+  }
+}

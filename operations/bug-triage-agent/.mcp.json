@@ -1,0 +1,22 @@
+{
+  "//": "Declared servers. Each team authorizes with its OWN credentials. No secrets in this repo, ever.",
+  "//auth": "Atlassian and Datadog use OAuth or per-user API keys held by the MCP host. Snowflake uses a read-only service account configured in the connector, not here.",
+  "mcpServers": {
+    "atlassian": {
+      "type": "http",
+      "url": "https://mcp.atlassian.com/v1/mcp"
+    },
+    "datadog": {
+      "type": "http",
+      "url": "${DATADOG_MCP_URL}"
+    },
+    "snowflake": {
+      "type": "http",
+      "url": "${SNOWFLAKE_MCP_URL}"
+    },
+    "codesearch": {
+      "type": "http",
+      "url": "${CODESEARCH_MCP_URL}"
+    }
+  }
+}

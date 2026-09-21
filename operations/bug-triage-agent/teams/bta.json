@@ -1,0 +1,64 @@
+{
+  "//": "Zero-setup tier example: tracker and releases only. Every other source is off, and the absent sources lower confidence rather than raise priority. Fill in cloud_id, site and board_id for your own instance.",
+  "team": {
+    "name": "Zero-setup example",
+    "id": "bta"
+  },
+  "jira": {
+    "project_key": "BTA",
+    "cloud_id": "REPLACE_WITH_CLOUD_ID",
+    "site": "REPLACE_WITH_SITE.atlassian.net",
+    "board_id": 0,
+    "priority_names": {
+      "P1": "Highest",
+      "P2": "High",
+      "P3": "Medium",
+      "P4": "Low"
+    },
+    "at_risk_labels": [
+      "at-risk",
+      "renewal",
+      "escalation"
+    ],
+    "voc_destination": "none"
+  },
+  "sources": {
+    "jira": {
+      "mode": "live"
+    },
+    "releases": {
+      "mode": "live"
+    },
+    "datadog": {
+      "mode": "off"
+    },
+    "snowflake": {
+      "mode": "off"
+    },
+    "code": {
+      "mode": "off"
+    }
+  },
+  "release_correlation": {
+    "cadence_days": 30,
+    "lookback_days": 60,
+    "manifest_sources": [
+      "jira_fixversion"
+    ],
+    "//confluence": "Add 'confluence_release_notes' here and a confluence.space_key once the release-notes space is known."
+  },
+  "regression": {
+    "baseline_days": 7,
+    "baseline_method": "rolling_median",
+    "spike_ratio": 3.0,
+    "deploy_window_hours": 720
+  },
+  "snowflake": {
+    "database": "",
+    "schema": "",
+    "queries": {}
+  },
+  "repos": [],
+  "routing": {},
+  "mcp_tools": {}
+}

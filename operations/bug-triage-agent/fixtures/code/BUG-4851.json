@@ -1,0 +1,16 @@
+{
+  "source": "code",
+  "mode": "fixture",
+  "status": "ok",
+  "as_of": "2026-09-21T09:00:00Z",
+  "latency_ms": 0,
+  "notes": [],
+  "data": {
+    "candidate_paths": [
+      "core-api/src/main/java/settlement/ExportScheduler.java"
+    ],
+    "error_swallowing": [],
+    "stubs": [],
+    "recent_changes": []
+  }
+}

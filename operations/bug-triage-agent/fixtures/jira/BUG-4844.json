@@ -1,0 +1,45 @@
+{
+  "source": "jira",
+  "mode": "fixture",
+  "status": "ok",
+  "as_of": "2026-09-21T09:00:00Z",
+  "latency_ms": 0,
+  "notes": [],
+  "data": {
+    "ticket": {
+      "key": "BUG-4844",
+      "summary": "Held balance is not released on the final approval and the customer says this is wrong",
+      "description": "Contoso says the final approval should release the held balance automatically. It does not. They raise a separate release request. They call this a bug. Repro: complete the final approval, observe the held balance unchanged.",
+      "component": "approvals",
+      "priority": "Major",
+      "labels": [
+        "customer-reported"
+      ],
+      "reporter": "csm.contoso",
+      "created": "2026-09-16T08:05:00Z",
+      "fix_versions": []
+    },
+    "related": [
+      {
+        "key": "BUG-3120",
+        "summary": "Held balance release must be manual and separately approved",
+        "status": "Done",
+        "resolution": "Works as designed",
+        "resolved": "2025-11-03"
+      },
+      {
+        "key": "BUG-4402",
+        "summary": "Add optional auto-release of held balance on final approval",
+        "status": "Backlog",
+        "resolution": null,
+        "resolved": null
+      }
+    ],
+    "duplicates": [],
+    "component_history": {
+      "resolved_90d": 4,
+      "open": 2
+    },
+    "sprint_collision": true
+  }
+}

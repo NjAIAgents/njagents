@@ -1,0 +1,114 @@
+{
+  "//": "Reference config with all five sources live. Generic placeholders. Copy, rename, fill in.",
+  "team": {
+    "name": "Reference Team",
+    "id": "reference-full"
+  },
+  "jira": {
+    "project_key": "DEMO",
+    "cloud_id": "REPLACE_WITH_CLOUD_ID",
+    "site": "REPLACE_WITH_SITE.atlassian.net",
+    "board_id": 1,
+    "priority_names": {
+      "P1": "Blocker",
+      "P2": "Critical",
+      "P3": "Major",
+      "P4": "Minor"
+    },
+    "at_risk_labels": [
+      "at-risk",
+      "renewal",
+      "escalation",
+      "churn-risk"
+    ],
+    "voc_destination": "PRODUCT"
+  },
+  "sources": {
+    "jira": {
+      "mode": "live"
+    },
+    "releases": {
+      "mode": "live"
+    },
+    "datadog": {
+      "mode": "live"
+    },
+    "snowflake": {
+      "mode": "live"
+    },
+    "code": {
+      "mode": "live"
+    }
+  },
+  "release_correlation": {
+    "cadence_days": 30,
+    "lookback_days": 60,
+    "manifest_sources": [
+      "jira_fixversion",
+      "confluence_release_notes",
+      "github_tag"
+    ],
+    "confluence": {
+      "space_key": "ENG",
+      "page_label": "release-notes",
+      "title_pattern": "Release (?<version>\\d{4}\\.\\d{2})"
+    },
+    "github": {
+      "org": "REPLACE_WITH_ORG",
+      "repos": [
+        "approvals-api",
+        "core-api",
+        "documents-service"
+      ],
+      "tag_pattern": "v?(?<version>\\d{4}\\.\\d{2})"
+    }
+  },
+  "regression": {
+    "baseline_days": 7,
+    "baseline_method": "rolling_median",
+    "spike_ratio": 3.0,
+    "deploy_window_hours": 720
+  },
+  "snowflake": {
+    "database": "EXAMPLE_LAKE",
+    "schema": "CURATED",
+    "queries": {
+      "affected_accounts_core": "SELECT COUNT(DISTINCT account_id) AS affected, COUNT_IF(tier='ENTERPRISE') AS enterprise FROM EXAMPLE_LAKE.CURATED.LATEST_ACCOUNT_ACTIVITY WHERE product_line = 'CORE' AND updated_at >= DATEADD(day, -7, CURRENT_DATE())"
+    }
+  },
+  "mcp_tools": {
+    "datadog": {
+      "logs_search": "search_logs",
+      "metrics_query": "query_metrics",
+      "deploy_events": "search_events"
+    },
+    "snowflake": {
+      "query": "run_query"
+    },
+    "code": {
+      "search": "search_code"
+    }
+  },
+  "repos": [
+    {
+      "name": "approvals-api",
+      "stack": "TypeScript",
+      "search_when": "approval and review flows"
+    },
+    {
+      "name": "core-api",
+      "stack": "Java",
+      "search_when": "core transaction and settlement logic"
+    },
+    {
+      "name": "documents-service",
+      "stack": "TypeScript",
+      "search_when": "document and export paths"
+    }
+  ],
+  "routing": {
+    "approvals": "Approvals Team",
+    "settlements": "Payments Team",
+    "reporting": "Reporting Team"
+  }
+}

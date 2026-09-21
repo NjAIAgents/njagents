@@ -1,0 +1,39 @@
+{
+  "source": "jira",
+  "mode": "fixture",
+  "status": "ok",
+  "as_of": "2026-09-21T09:00:00Z",
+  "latency_ms": 0,
+  "notes": [],
+  "data": {
+    "ticket": {
+      "key": "BUG-4851",
+      "summary": "Nightly settlement export missing for Fabrikam since Friday",
+      "description": "Nightly settlement export file not delivered to SFTP since 18 Sep. Fabrikam cannot reconcile. No error in the UI. Repro: check the export bucket, no file for 18, 19, 20 Sep.",
+      "component": "settlements",
+      "priority": "Critical",
+      "labels": [
+        "at-risk",
+        "renewal"
+      ],
+      "reporter": "support.tier2",
+      "created": "2026-09-21T07:40:00Z",
+      "fix_versions": []
+    },
+    "related": [
+      {
+        "key": "BUG-4790",
+        "summary": "Export scheduler skipped a run after config reload",
+        "status": "Done",
+        "resolution": "Fixed",
+        "resolved": "2026-07-22"
+      }
+    ],
+    "duplicates": [],
+    "component_history": {
+      "resolved_90d": 1,
+      "open": 1
+    },
+    "sprint_collision": false
+  }
+}

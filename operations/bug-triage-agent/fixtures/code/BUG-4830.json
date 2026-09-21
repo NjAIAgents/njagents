@@ -1,0 +1,29 @@
+{
+  "source": "code",
+  "mode": "fixture",
+  "status": "ok",
+  "as_of": "2026-09-21T09:00:00Z",
+  "latency_ms": 0,
+  "notes": [],
+  "data": {
+    "candidate_paths": [
+      "approvals-api/src/approvals/ApprovalReviewService.ts"
+    ],
+    "error_swallowing": [
+      {
+        "path": "approvals-api/src/approvals/ApprovalReviewService.ts",
+        "line": 214,
+        "snippet": "} catch (e) { logger.warn('approval not committed', e); return { ok: true }; }"
+      }
+    ],
+    "stubs": [],
+    "recent_changes": [
+      {
+        "path": "approvals-api/src/approvals/ApprovalReviewService.ts",
+        "pr": "#4412",
+        "merged": "2026-09-02",
+        "release": "2026.09"
+      }
+    ]
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "source": "jira",
+  "mode": "fixture",
+  "status": "ok",
+  "as_of": "2026-09-21T09:00:00Z",
+  "latency_ms": 0,
+  "notes": [],
+  "data": {
+    "ticket": {
+      "key": "BUG-4858",
+      "summary": "Amount column misaligned in the reporting export header",
+      "description": "CSV export header row shifted one column right for the amount field. Values are correct, header labels are off by one. Repro: export any report, open in a spreadsheet.",
+      "component": "reporting",
+      "priority": "Major",
+      "labels": [],
+      "reporter": "internal.analyst",
+      "created": "2026-09-19T15:12:00Z",
+      "fix_versions": []
+    },
+    "related": [],
+    "duplicates": [
+      {
+        "key": "BUG-4849",
+        "summary": "Reporting CSV header offset after a column was added",
+        "similarity": "high",
+        "why": "Same failure mode: header row offset by one after the amount column was added in v2026.09."
+      }
+    ],
+    "component_history": {
+      "resolved_90d": 0,
+      "open": 1
+    },
+    "sprint_collision": false
+  }
+}

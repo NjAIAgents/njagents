@@ -1,0 +1,21 @@
+# OS and editor
+.DS_Store
+**/.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Packaged plugin archives
+*.zip
+
+# Runtime output, never committed
+operations/*/logs/*.jsonl
+
+# Filled-in local team configs may carry site hosts and instance ids
+operations/*/teams/local-*.json

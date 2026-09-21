@@ -1,0 +1,23 @@
+{
+  "source": "code",
+  "mode": "fixture",
+  "status": "ok",
+  "as_of": "2026-09-21T09:00:00Z",
+  "latency_ms": 0,
+  "notes": [],
+  "data": {
+    "candidate_paths": [
+      "approvals-api/src/reporting/csvExport.ts"
+    ],
+    "error_swallowing": [],
+    "stubs": [],
+    "recent_changes": [
+      {
+        "path": "approvals-api/src/reporting/csvExport.ts",
+        "pr": "#4398",
+        "merged": "2026-08-30",
+        "release": "2026.09"
+      }
+    ]
+  }
+}

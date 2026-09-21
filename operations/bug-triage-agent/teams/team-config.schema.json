@@ -1,0 +1,248 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Team config",
+  "description": "The ONLY per-team file. Rubric, taxonomy and output format are shared and must not be copied here.",
+  "type": "object",
+  "required": [
+    "team",
+    "jira",
+    "sources"
+  ],
+  "properties": {
+    "team": {
+      "type": "object",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "jira": {
+      "type": "object",
+      "required": [
+        "project_key",
+        "cloud_id"
+      ],
+      "properties": {
+        "project_key": {
+          "type": "string"
+        },
+        "cloud_id": {
+          "type": "string"
+        },
+        "priority_names": {
+          "type": "object",
+          "description": "Maps P1-P4 to this project's priority field values.",
+          "properties": {
+            "P1": {
+              "type": "string"
+            },
+            "P2": {
+              "type": "string"
+            },
+            "P3": {
+              "type": "string"
+            },
+            "P4": {
+              "type": "string"
+            }
+          }
+        },
+        "at_risk_labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "voc_destination": {
+          "type": "string",
+          "description": "Where voice-of-customer items are routed. Project key, board, or 'none'."
+        },
+        "site": {
+          "type": "string",
+          "description": "Atlassian site host, e.g. example.atlassian.net."
+        },
+        "board_id": {
+          "type": "integer"
+        }
+      }
+    },
+    "sources": {
+      "type": "object",
+      "description": "Per-source mode. 'live' calls MCP, 'fixture' reads a recorded response, 'off' skips.",
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "mode"
+        ],
+        "properties": {
+          "mode": {
+            "enum": [
+              "live",
+              "fixture",
+              "off"
+            ]
+          },
+          "fixture": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "release_correlation": {
+      "type": "object",
+      "properties": {
+        "cadence_days": {
+          "type": "integer",
+          "default": 30
+        },
+        "lookback_days": {
+          "type": "integer",
+          "default": 60
+        },
+        "manifest_sources": {
+          "type": "array",
+          "description": "Ordered list of release-manifest adapters. First that returns data wins per field; later ones enrich. Align with the org's ecosystem.",
+          "items": {
+            "enum": [
+              "jira_fixversion",
+              "confluence_release_notes",
+              "github_tag",
+              "github_pr",
+              "manual_file"
+            ]
+          },
+          "default": [
+            "jira_fixversion"
+          ]
+        },
+        "confluence": {
+          "type": "object",
+          "properties": {
+            "space_key": {
+              "type": "string"
+            },
+            "page_label": {
+              "type": "string",
+              "description": "Label identifying release-note pages, e.g. 'release-notes'."
+            },
+            "title_pattern": {
+              "type": "string",
+              "description": "Regex capturing the version from the page title, e.g. 'Release (?<version>\\\\d{4}\\\\.\\\\d{2})'."
+            }
+          }
+        },
+        "github": {
+          "type": "object",
+          "properties": {
+            "org": {
+              "type": "string"
+            },
+            "repos": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "tag_pattern": {
+              "type": "string"
+            }
+          }
+        },
+        "manual_file_path": {
+          "type": "string",
+          "description": "Required when manual_file is in manifest_sources. Path to a releases envelope, relative to the plugin root."
+        }
+      }
+    },
+    "regression": {
+      "type": "object",
+      "properties": {
+        "baseline_days": {
+          "type": "integer",
+          "default": 7
+        },
+        "baseline_method": {
+          "enum": [
+            "rolling_median",
+            "rolling_mean"
+          ],
+          "default": "rolling_median"
+        },
+        "spike_ratio": {
+          "type": "number",
+          "default": 3.0
+        },
+        "deploy_window_hours": {
+          "type": "integer",
+          "default": 720
+        }
+      }
+    },
+    "snowflake": {
+      "type": "object",
+      "description": "All product-specific SQL lives here, never in a shared skill.",
+      "properties": {
+        "database": {
+          "type": "string"
+        },
+        "schema": {
+          "type": "string"
+        },
+        "queries": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "repos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "stack": {
+            "type": "string"
+          },
+          "search_when": {
+            "type": "string"
+          },
+          "key_paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "description": "Component to owning team.",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "mcp_tools": {
+      "type": "object",
+      "description": "Per-source MCP tool-name suffixes. Required for any source in live mode whose adapter is not Atlassian. Lets a team point at its own Datadog / Snowflake / code-search server without editing a skill.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

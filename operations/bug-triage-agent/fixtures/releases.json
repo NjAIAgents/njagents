@@ -1,0 +1,60 @@
+{
+  "source": "releases",
+  "mode": "fixture",
+  "status": "ok",
+  "as_of": "2026-09-21T09:00:00Z",
+  "latency_ms": 0,
+  "notes": [],
+  "data": {
+    "lookback_days": 60,
+    "adapters_run": [
+      "jira_fixversion",
+      "confluence_release_notes",
+      "github_tag"
+    ],
+    "adapters_failed": [],
+    "releases": [
+      {
+        "version": "2026.09",
+        "released_on": "2026-09-05",
+        "components": [
+          "approvals",
+          "reporting"
+        ],
+        "issue_keys": [
+          "BUG-4700",
+          "BUG-4755",
+          "BUG-4788",
+          "BUG-4801"
+        ],
+        "files_touched": [
+          "approvals-api/src/approvals/ApprovalReviewService.ts",
+          "approvals-api/src/reporting/csvExport.ts"
+        ],
+        "notes_url": "https://confluence.example/ENG/Release+2026.09",
+        "sources": [
+          "jira_fixversion",
+          "confluence_release_notes",
+          "github_tag"
+        ]
+      },
+      {
+        "version": "2026.08",
+        "released_on": "2026-08-04",
+        "components": [
+          "documents",
+          "settlements"
+        ],
+        "issue_keys": [
+          "BUG-4610",
+          "BUG-4644"
+        ],
+        "files_touched": [],
+        "notes_url": null,
+        "sources": [
+          "jira_fixversion"
+        ]
+      }
+    ]
+  }
+}

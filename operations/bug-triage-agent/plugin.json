@@ -1,0 +1,18 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "bug-triage-agent",
+  "version": "0.1.0",
+  "description": "Triage bug tickets with judgment, not just severity. Classifies defect versus expected behaviour, duplicate, config issue or voice-of-customer before any priority is assigned, identifies which release touched the affected area, and surfaces a workaround the customer can use today.",
+  "author": {
+    "name": "Navjyot Nishant"
+  },
+  "keywords": [
+    "triage",
+    "bugs",
+    "jira",
+    "release-correlation",
+    "incident",
+    "operations"
+  ],
+  "license": "Apache-2.0"
+}

@@ -194,8 +194,61 @@ def check_fixture(path):
             "exactly, with no extra nesting.")
 
 
+def check_manifests():
+    """Cross-client packaging checks.
+
+    Three manifests must agree, or a client installs a plugin whose name or
+    version differs from its siblings. Also catches url placeholders, which no
+    client expands: a ${VAR} in a url field ships broken.
+    """
+    manifests = {
+        "plugin.json (Agent Plugins)": "plugin.json",
+        "Claude": ".claude-plugin/plugin.json",
+        "Cursor": ".cursor-plugin/plugin.json",
+    }
+    seen = {}
+    for label, rel in manifests.items():
+        fp = os.path.join(ROOT, rel)
+        if not os.path.exists(fp):
+            err(f"missing manifest: {rel}")
+            continue
+        d = json.load(open(fp))
+        seen[label] = (d.get("name"), d.get("version"))
+        for field in ("name", "version", "description"):
+            if not d.get(field):
+                err(f"{rel}: missing '{field}'")
+    if len(set(seen.values())) > 1:
+        err("manifests disagree on name/version: "
+            + "; ".join(f"{k}={v}" for k, v in seen.items()))
+    root_mf = os.path.join(ROOT, "plugin.json")
+    if os.path.exists(root_mf):
+        d = json.load(open(root_mf))
+        if "agent-plugins.org" not in str(d.get("$schema", "")):
+            err("plugin.json: missing the Agent Plugins $schema identifier")
+
+    for rel in ("mcp.json", ".mcp.json"):
+        fp = os.path.join(ROOT, rel)
+        if not os.path.exists(fp):
+            err(f"missing {rel}")
+            continue
+        d = json.load(open(fp))
+        for name, cfg in d.get("mcpServers", {}).items():
+            url = str(cfg.get("url", ""))
+            if "${" in url:
+                err(f"{rel}: server '{name}' uses a ${{VAR}} in url. No client expands "
+                    "environment variables there; use a literal placeholder.")
+            elif "REPLACE_WITH" in url:
+                unconf(f"{rel}: server '{name}' url is a placeholder, edit before enabling")
+    a = json.load(open(os.path.join(ROOT, "mcp.json")))
+    b = json.load(open(os.path.join(ROOT, ".mcp.json")))
+    if a != b:
+        err("mcp.json and .mcp.json differ. Keep them identical: Claude reads the "
+            "dotted one, portable clients read the other.")
+
+
 def main():
     args = sys.argv[1:]
+    check_manifests()
     print("Config:")
     targets = ([p for p in glob.glob(os.path.join(ROOT, "teams", "*.json"))
                 if "schema" not in p and "example" not in p]

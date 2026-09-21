@@ -1,10 +1,41 @@
 # njagents
 
-Claude plugins for engineering and delivery operations. Each plugin packages the
-skills, agents, commands and configuration needed to run a repeatable workflow in
-Claude Cowork.
+Agent plugins for engineering and delivery work. Each plugin packages the skills,
+agents, commands and configuration needed to run a repeatable workflow.
 
 Author: Navjyot Nishant
+
+## How this repository is organized
+
+Top-level directories name the **kind of work** a plugin serves, not the client, the
+vendor or the technology. Find a plugin by asking what job you are doing.
+
+| Directory | Work it serves | Plugins |
+| --- | --- | --- |
+| `development/` | Writing, reviewing and shipping code | none yet |
+| `operations/` | Triage, incidents, releases, running systems | `bug-triage-agent` |
+| `qa/` | Test strategy, coverage, defect analysis | none yet |
+| `business-analyst/` | Requirements, process mapping, stakeholder analysis | none yet |
+| `release/` | Release planning, notes, change management | none yet |
+
+A new category is added when a genuinely new kind of work appears, not for a new
+client or a new tool. A plugin named after a customer dates immediately; one named
+after the work outlives it.
+
+## Client compatibility
+
+Plugins here target the portable [Agent Plugins](https://agent-plugins.org) standard
+and carry client manifests alongside it, so one copy of the skills serves several
+agents.
+
+| Manifest | Client | Loads |
+| --- | --- | --- |
+| `plugin.json` at plugin root | Codex, ChatGPT, Copilot, VS Code, Kiro, others | Skills, MCP servers |
+| `.claude-plugin/plugin.json` | Claude Code, Cowork | Skills, agents, commands, MCP |
+| `.cursor-plugin/plugin.json` | Cursor | Skills, agents, commands, MCP, rules |
+
+Where a client cannot load a component, the degradation is recorded in that plugin's
+`STATUS.md`.
 
 ## Plugin index
 

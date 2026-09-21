@@ -29,6 +29,45 @@ right answer reached by the wrong reasoning.
 | Validated taxonomy | The shipped disposition taxonomy is a construction, not any organization's actual judgment. Replace it via interviews plus a changelog-derived benchmark. |
 | Live connection | No credentials have been used. Tool-name bindings for non-tracker sources are informed guesses. |
 
+## Client compatibility
+
+Three manifests ship, all agreeing on name and version. The skills are the portable
+core and exist in one copy.
+
+| Component | Claude | Cursor | Codex / ChatGPT |
+| --- | --- | --- | --- |
+| `skills/` (6) | yes | yes | yes |
+| `reference/`, `teams/`, `fixtures/` | yes | yes | yes |
+| MCP servers | yes | yes | yes |
+| `commands/` (4) | yes | yes | **no** |
+| `agents/` (4) | yes | yes | **no** |
+
+### Degradations on Codex and ChatGPT
+
+Both are consequences of Codex having no subagent concept. Neither is a correctness
+problem, but both should be understood before promising parity.
+
+**Enrichment runs sequentially.** Stage 3 dispatches four subagents in one batch on
+Claude and Cursor. Without them the orchestrator queries each source in turn, so wall
+time on the slowest path is roughly four times higher.
+
+**The read-only guarantee loses a layer.** The four agent files carry tool allowlists
+matching read-shaped verbs only, which is what makes "cannot write to the tracker or
+run DDL" enforced rather than merely stated. Codex has no equivalent, so there the
+guarantee rests on the read-only service account and the validator's SQL check alone.
+Defence in depth minus one layer.
+
+**Invocation differs.** `/triage BUG-4830` on Claude and Cursor; on Codex, invoke the
+plugin or skill by name. The commands are thin wrappers over the skills, so no
+capability is lost.
+
+### MCP server urls are placeholders, not variables
+
+An earlier version used `${DATADOG_MCP_URL}` style placeholders in `url` fields. No
+client expands environment variables there, so those entries would have shipped
+broken. They are now literal `REPLACE_WITH_` placeholders that the validator reports
+as unconfigured. Only the tracker entry is needed for the zero-setup tier.
+
 ## Rough completeness
 
 Demo: about 85 percent, the remainder being "run it and fix what breaks".

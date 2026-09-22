@@ -302,6 +302,17 @@ def check_frontmatter():
             err(f"{rel}: front matter has no description")
     print(f"  {len(files)} command and skill files have front matter that parses")
 
+    # Clients that load skills but not commands reach a feature only through a skill,
+    # so every command must be a wrapper over a skill that exists.
+    for f in sorted(glob.glob(os.path.join(ROOT, "commands", "*.md"))):
+        rel = os.path.relpath(f, ROOT)
+        refs = re.findall(r"skills/([\w-]+)/SKILL\.md", open(f, encoding="utf-8").read())
+        if not refs:
+            err(f"{rel}: does not load a skill, so clients without commands cannot reach it")
+        for r in refs:
+            if not os.path.exists(os.path.join(ROOT, "skills", r, "SKILL.md")):
+                err(f"{rel}: loads skills/{r}/SKILL.md, which does not exist")
+
 
 def main():
     args = sys.argv[1:]

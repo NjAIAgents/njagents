@@ -144,6 +144,9 @@ skills/
   triage-priority/            P1-P4, escalation caps, confidence
   triage-config/              builds a team config by conversation
   triage-queue/               open bugs, what still needs triage
+  triage-readiness/           behind /triage-doctor
+  triage-history/             behind /triage-log
+  triage-override/            behind /triage-review
 agents/                       parallel enrichment, one per source
 reference/                    SHARED: rubric, taxonomy, calibration, output templates
 teams/                        the two demo configs, schema, example

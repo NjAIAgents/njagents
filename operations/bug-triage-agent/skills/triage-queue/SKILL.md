@@ -1,9 +1,12 @@
 ---
 name: triage-queue
-description: List the open bugs in the team's connected tracker, show which the triage agent has already handled and what it decided, flag priority gaps and tickets that changed since their last triage, and suggest what to triage next. Use when the user asks for the bug queue, the backlog of untriaged bugs, what is pending, what needs triage, or what to look at next.
+description: "List the open bugs in the team's connected tracker, show which the triage agent has already handled and what it decided, flag priority gaps and tickets that changed since their last triage, and suggest what to triage next. Use when the user asks for the bug queue, the backlog of untriaged bugs, what is pending, what needs triage, or what to look at next. Also use it when the whole request is just the word queue, as in invoking the bug-triage-agent plugin with queue. Show the queue straight away for the resolved team; do not ask what the user wants to do with it."
 ---
 
 # Triage queue
+
+When invoked, run it. A request that is only the word "queue", with or without a
+team or project, means show the queue now. Do not reply with a menu of options.
 
 Answers "what should I triage next", where triage answers "what is this ticket".
 Read-only: it never triages, comments on, or changes a ticket. It suggests the next

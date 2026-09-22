@@ -1,0 +1,37 @@
+---
+name: triage-history
+description: "Show the bug triage agent's audit log: recent triage decisions, one ticket's triage history, and how often people agreed with the agent. Use when the user asks what was triaged, the triage log or history, what the agent decided for a ticket, or how accurate the triage agent has been. Also use it when the whole request is just log, history or accuracy. Show it straight away."
+---
+
+# Show triage history and accuracy
+
+The `/triage-log` command is a thin wrapper over this skill. Clients that load skills but
+not commands reach it by name.
+
+Read-only. Show the audit log for: the user's request
+
+Resolve `<plugin root>` and `<working folder>` as in `skills/bug-triage` Setup step 0.
+The log lives in the working folder, never in the plugin.
+
+Arguments may be plain words, because some hosts reject a command whose first argument
+is a flag: a ticket id becomes `--ticket`, a team id becomes `--team`, and the word
+`accuracy` means the same as `--accuracy`.
+
+Recent decisions, newest first:
+
+    python3 <plugin root>/scripts/triage_log.py \
+        --log <working folder>/triage-logs/triage-log.jsonl \
+        list [--ticket <KEY>] [--days N] [--team <id>] [--limit N]
+
+With `accuracy` or `--accuracy`, or when the user asks how accurate the agent has been, run
+instead:
+
+    python3 <plugin root>/scripts/triage_log.py \
+        --log <working folder>/triage-logs/triage-log.jsonl report --days <N, default 30>
+
+Print the output **verbatim, as markdown, not in a code block**: the table carries the
+same colour markers as the triage output. Do not summarise it or add rows. If the log
+does not exist yet, say so plainly: nothing has been triaged from this folder.
+
+To record a correction, use the `triage-override` skill (`/triage-review` where the
+client loads commands).

@@ -26,6 +26,7 @@ An honest account of what is built and what is not.
 | 0.6.0 | `/queue`, `/triage-log`, fix briefs graded strong, moderate or weak; team from the ticket's project key; `triage-config` stops on a skipped required answer; `+1 history` counts only fixed defects; hint when a connector is present but its source is off |
 | 0.6.1 | Quoted command front matter. An unquoted hint starting with `[` made three commands disappear |
 | 0.6.2 | Team or project as a plain word, because a leading `--flag` was rejected by the host; queue ages from Jira dates with colonless offsets |
+| 0.6.3 | Every command is a wrapper over a skill (new `triage-readiness`, `triage-history`, `triage-override`), so Codex and ChatGPT reach every feature; bare words like `queue` route without a clarifying question; plugin-root search knows Cursor and Codex install folders; per-client invocation table |
 
 ## Exercised, 2026-09-21
 
@@ -70,13 +71,14 @@ install because three had placeholder urls. Removed in 0.2.0.
 Three manifests ship, all agreeing on name and version. The skills are the portable
 core and exist in one copy.
 
-| Component | Claude | Cursor | Codex / ChatGPT |
+| Component | Claude (Cowork, Claude Code) | Cursor | Codex / ChatGPT |
 | --- | --- | --- | --- |
-| `skills/` (8) | yes | yes | yes |
+| `skills/` (11), one behind every command | yes | yes | yes |
 | `reference/`, `teams/`, `fixtures/` | yes | yes | yes |
 | MCP servers | yes | yes | yes |
 | `commands/` (7) | yes | yes | **no** |
 | `agents/` (4) | yes | yes | **no** |
+| **Installed and run** | **yes** | not yet | ChatGPT desktop: installed, loads; asked a clarifying question for a bare `queue` (0.6.3 routes it). Codex: not yet |
 
 ### What differs on Codex and ChatGPT
 
@@ -102,9 +104,14 @@ What actually constrains writes, on every client equally: the read-only service
 account, the validator's SQL check, and the rule that nothing reaches the tracker
 without per-ticket confirmation.
 
-**Invocation differs.** `/triage BUG-4830` on Claude and Cursor; on Codex, invoke the
-plugin or skill by name. The commands are thin wrappers over the skills, so no
-capability is lost.
+**Invocation differs.** `/triage BUG-4830` on Claude and Cursor; on Codex and ChatGPT,
+invoke the plugin and say what you want. Since 0.6.3 every command is a thin wrapper
+over a skill (`validate_config.py` enforces it), so no capability is lost where
+commands are not loaded. Before 0.6.3, the log, override and readiness check existed
+only as commands and could not be reached there.
+
+**Scripts need a shell.** The header, queue, trace, fix brief and log are rendered by
+Python scripts. A client that cannot run them stops at the first step.
 
 ### MCP server urls are placeholders, not variables
 

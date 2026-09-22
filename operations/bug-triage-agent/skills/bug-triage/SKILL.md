@@ -1,12 +1,28 @@
 ---
 name: bug-triage
-description: Triage a bug ticket end to end. Disposition first, then release correlation, workaround discovery and priority scoring, with an audit log entry. Use when the user asks to triage a ticket, prioritize bugs, analyse a tracker bug, or asks what priority a bug should be. Triggers include "triage ABC-1234", "priorizá estos bugs", "qué prioridad tiene", "is this a bug or expected behavior", "which release broke this".
+description: "Triage a bug ticket end to end. Disposition first, then release correlation, workaround discovery and priority scoring, with an audit log entry. Use when the user asks to triage a ticket, prioritize bugs, analyse a tracker bug, or asks what priority a bug should be. Triggers include \"triage ABC-1234\", \"priorizá estos bugs\", \"qué prioridad tiene\", \"is this a bug or expected behavior\", \"which release broke this\". A bare ticket key is a request to triage it. A bare word routes to its skill without asking - queue to triage-queue, log to triage-history, doctor to triage-readiness, config to triage-config, review to triage-override."
 ---
 
 # Bug triage
 
 Orchestrator. Loads the shared rubric, resolves the team config, runs the stages in
 order.
+
+## Commands and skills
+
+Every command is a thin wrapper over a skill, so a client that loads skills but not
+commands loses nothing. Where this plugin tells the user to run a command, name the
+skill instead on such a client.
+
+| Command | Skill |
+| --- | --- |
+| `/triage` | `bug-triage` |
+| `/queue` | `triage-queue` |
+| `/triage-config` | `triage-config` |
+| `/triage-doctor` | `triage-readiness` |
+| `/triage-log` | `triage-history` |
+| `/triage-review` | `triage-override` |
+| `/release-impact` | `release-correlation` |
 
 ## Setup
 
@@ -18,17 +34,19 @@ order.
    files are missing until it has run:
 
    ```bash
-   for c in "${CLAUDE_PLUGIN_ROOT:-}" "<this skill's base directory>/../.."; do
+   for c in "${CLAUDE_PLUGIN_ROOT:-}" "${PLUGIN_ROOT:-}" "<this skill's base directory>/../.."; do
      [ -n "$c" ] && [ -f "$c/scripts/run_header.py" ] && { cd "$c" && pwd; exit 0; }
    done
    for d in /sessions "$HOME" /var/folders /tmp; do
      [ -d "$d" ] && find "$d" -maxdepth 9 -path '*/scripts/run_header.py' 2>/dev/null
    done | xargs grep -l 'Print the run header for a triage' 2>/dev/null \
-        | grep -E '/(\.remote-plugins|claude-hostloop-plugins|\.claude/plugins)/' \
+        | grep -E '/(\.remote-plugins|claude-hostloop-plugins|\.claude/plugins|\.cursor/plugins|\.codex/plugins|\.agents/plugins)/' \
         | head -1 | sed 's#/scripts/run_header.py$##'
    ```
 
-   It prefers the installed plugin. If it prints nothing but a search without the
+   The first line covers every client that tells the skill where it was loaded from.
+   The search is the fallback, and knows the install folders of Cowork, Claude Code,
+   Cursor and Codex. It prefers the installed plugin. If it prints nothing but a search without the
    final `grep -E` finds a copy in a source checkout, say so and ask before using it:
    a checkout may hold unreleased code.
 

@@ -1,7 +1,7 @@
 {
   "team": "demo",
   "triaged_at": "2026-09-22 10:14 UTC",
-  "agent_version": "0.6.2",
+  "agent_version": "0.6.3",
   "ticket": "BUG-4851",
   "summary": "Nightly settlement export missing for Fabrikam since Friday",
   "sources": {

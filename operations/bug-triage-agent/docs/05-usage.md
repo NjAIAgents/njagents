@@ -5,7 +5,29 @@
 | Client | How |
 | --- | --- |
 | Claude, Cursor | `/triage BUG-4830` (fixture demo) or `/triage DEMO-7` (live demo) |
-| Codex, ChatGPT | Invoke the plugin or skill by name, then give it the ticket |
+| Codex, ChatGPT | Invoke the plugin, then say what you want in a sentence |
+
+### Per client
+
+| Want | Cowork, Claude Code | Cursor | Codex, ChatGPT desktop |
+| --- | --- | --- | --- |
+| Triage | `/bug-triage-agent:triage BUG-4830` | `/triage BUG-4830` | `@bug-triage-agent triage BUG-4830` |
+| Bug queue | `/bug-triage-agent:queue demo-live` | `/queue demo-live` | `@bug-triage-agent show the bug queue for demo-live` |
+| Set up a team | `/bug-triage-agent:triage-config payments` | `/triage-config payments` | `@bug-triage-agent set up triage for team payments` |
+| Readiness check | `/bug-triage-agent:triage-doctor payments` | `/triage-doctor payments` | `@bug-triage-agent check the triage setup for payments` |
+| Log and accuracy | `/bug-triage-agent:triage-log accuracy` | `/triage-log accuracy` | `@bug-triage-agent show the triage log` |
+| Record an override | `/bug-triage-agent:triage-review DEMO-8 voice_of_customer "reason"` | `/triage-review …` | `@bug-triage-agent record an override for DEMO-8: voice_of_customer, because …` |
+
+Where commands are not loaded (Codex, ChatGPT), every command has a skill behind it
+(`bug-triage`, `triage-queue`, `triage-config`, `triage-readiness`, `triage-history`,
+`triage-override`, `release-correlation`), so nothing is lost. Say what you want in a
+sentence rather than a single word: "show the bug queue for demo-live" is routed
+reliably, a bare "queue" may get a clarifying question back.
+
+The plugin runs Python scripts for the header, queue, trace, fix brief and log, so the
+client needs a shell. Cowork and Claude Code have one. Cursor, Codex and ChatGPT are not
+yet tested; if a client cannot run scripts, the run stops at its first step rather
+than improvising the output.
 
 The commands are thin wrappers over the skills, so nothing is lost where they are not
 loaded.

@@ -20,6 +20,12 @@ order.
 3. Read `reference/disposition-taxonomy.md` and `reference/priority-rubric.md`.
 4. Note which sources are `live`, `fixture`, `off`. This drives the provenance line and
    which classification questions can be answered.
+5. Read [`reference/run-visibility.md`](../../reference/run-visibility.md) and print the
+   run header it defines, before Stage 1. Then emit one stage line per stage as each
+   completes. A reader who learns which sources were missing only at the end cannot
+   act on it.
+6. Where the host offers task tools, create the five stage tasks and resolve each as it
+   completes. Where it does not, skip this and carry on: the stage lines are the record.
 
 ## Stage 0: information gate
 
@@ -44,7 +50,8 @@ Run `skills/triage-disposition` against the Stage 1 envelopes.
 If the result is anything other than `defect`, emit the disposition output with the
 release context already gathered, route per the taxonomy, log, and stop. No priority
 is assigned and Stage 3 never runs, so a non-defect costs two source calls rather than
-five.
+five. Print `Stage 3  skipped, non-defect` rather than omitting the stage, so the
+reader sees the gate fire instead of wondering where a stage went.
 
 This ordering is the point of the whole tool. Scoring a non-defect is worse than not
 triaging it.
@@ -64,9 +71,16 @@ Each subagent returns exactly the envelope defined in `skills/data-sources/SKILL
 and nothing else. Do not reshape it.
 
 Each must use read operations only: no writes to the tracker, no non-template SQL, no
-repository modification. On Claude and Cursor this is enforced by the tool allowlists
-in `agents/`. Elsewhere it is enforced by the read-only service account and the
-validator's SQL check, and must be honoured as an instruction.
+repository modification. **This is an instruction, not an enforced boundary.** A live
+test showed that per-agent tool allowlists granted no MCP tools at all rather than a
+read-only subset, so the agents now declare `tools: ["*"]` and the allowlist guarantees
+that earlier versions of this file claimed never existed. What does enforce it is
+outside the prompt: a read-only service account on each source, the validator's SQL
+check, and per-ticket confirmation before any tracker comment is posted.
+
+Name each subagent in the stage-line block as it returns, per
+[`reference/run-visibility.md`](../../reference/run-visibility.md). Never print a line
+for a source that was `off`: no agent was spawned for it.
 
 Run `skills/release-correlation` and `skills/workaround-finder` across everything
 gathered in Stages 1 and 3.
@@ -96,6 +110,11 @@ Three surfaces, all defined in [`reference/output-templates.md`](../../reference
    not the plugin, which may be installed somewhere temporary. Say where you wrote it.
 3. **Tracker comment.** Generated as plain text. Never posted without explicit
    per-ticket confirmation in the conversation.
+4. **Run trace.** Per `output.run_trace` in the team config, defined in
+   [`reference/run-visibility.md`](../../reference/run-visibility.md). Default `file`,
+   because a trace carries customer names and account counts and publishing it is a
+   disclosure decision. Where `artifact` is set but the client cannot publish, write
+   the file instead and say so. Never fail a triage over a presentation surface.
 
 Then append the audit record:
 

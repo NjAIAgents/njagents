@@ -89,6 +89,8 @@
   },
   "output": {
     "reports_dir": "triage-reports",
-    "write_report": "always"
+    "write_report": "always",
+    "run_trace": "artifact",
+    "//run_trace": "Safe to publish here because every ticket in DEMO is synthetic. A team whose tracker holds real customer tickets should leave this at the 'file' default."
   }
 }

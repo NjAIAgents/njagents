@@ -264,6 +264,15 @@
             "never"
           ],
           "default": "always"
+        },
+        "run_trace": {
+          "enum": [
+            "never",
+            "file",
+            "artifact"
+          ],
+          "default": "file",
+          "description": "Where the run trace goes. 'file' writes <TICKET>-trace.html next to the report. 'artifact' publishes a hosted page, where the client can. Default is 'file' because a trace carries customer names and account counts, so publishing is opt-in per team rather than automatic."
         }
       }
     }

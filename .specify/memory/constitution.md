@@ -51,9 +51,17 @@ A tool that punishes partial adoption does not get adopted.
 ### IV. Nothing is written without explicit confirmation
 
 Agents in this repository read. Any write to an external system — a comment, a field,
-a ticket, a message — requires per-action confirmation from the person. Read-only
-guarantees are enforced by tool allowlists and query validation where the host
-supports them, and stated plainly where it does not.
+a ticket, a message — requires per-action confirmation from the person.
+
+**State the enforcement accurately.** A tool allowlist is not automatically a control:
+in this repository a pattern allowlist was found to grant nothing at all, and a filter
+on a `get`/`search`/`list` name prefix is not semantic, since tools named `get_*`
+mutate on some servers. Where a constraint is an instruction to the model, say
+"instruction". Reserve "enforced" for a barrier that would stop a model that ignored
+its instructions: a read-only credential, a validated query, a confirmation step.
+
+Claiming enforcement you do not have is worse than having none, because it stops
+anyone looking for the real control.
 
 ### V. Claims require evidence, and execution is the only evidence
 

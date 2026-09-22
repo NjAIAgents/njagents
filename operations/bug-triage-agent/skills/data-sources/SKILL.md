@@ -52,7 +52,10 @@ If **any** source is in fixture mode, the final output must carry a banner:
 
 ## Live adapters
 
-MCP tool names are prefixed differently per host. Match on the **suffix** shown here.
+`tool_bindings` records tool **suffixes**. The full identifier carries a server prefix
+generated per session, so a bare suffix is not callable: discover the full identifier
+with `ToolSearch` before the first call, and record in `notes` which server served it.
+Where two servers expose the same tool set, either is fine.
 
 ### tracker
 
@@ -66,6 +69,9 @@ What to retrieve, expressed as intent rather than one tracker's query language:
 ticket             the issue itself
 related            issues in the project matching the summary's distinctive nouns,
                    excluding this one, most recently updated first   (limit 10)
+                   When more than the limit match, rank by how many distinctive nouns
+                   overlap, and prefer a summary match over a description-only match.
+                   State the ranking you applied in `notes`; it is a judgement call.
                    Include resolution_notes: the resolution text or closing
                    comment. Without it workaround discovery has nothing to read,
                    and will correctly but uselessly report none found.
@@ -73,6 +79,14 @@ duplicates         issues in the same component, created within 180 days, whose
                    summary is close to this one                      (limit 5)
 component_history  count of issues in the component resolved in the last 90 days
 open_in_component  count currently unresolved in the component
+
+                   If the ticket has **no component set**, these counts cannot be
+                   component-scoped. Compute them project-wide, set status to
+                   `partial`, and say so in `notes`. Do not present a project-wide
+                   count as a component count: the recurring-component escalation
+                   would fire on project volume rather than on a hot area. A live run
+                   on a project with no components configured produced 6 resolved and
+                   30 open, which would have escalated every ticket in the project.
 sprint_collision   whether the component has work in an open sprint  -> bool
 ```
 

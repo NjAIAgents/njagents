@@ -76,12 +76,15 @@ carries skills and MCP servers only; Codex custom agents are configured locally 
 than shipped inside a plugin. The behaviour those files describe is in the skill, so
 nothing is lost functionally.
 
-**The read-only guarantee loses a layer.** This is the real difference. Each agent
-file carries a tool allowlist matching read-shaped verbs only, which is what makes
-"cannot write to the tracker or run DDL" enforced rather than merely stated. Without
-those files loaded, the guarantee on Codex rests on the read-only service account and
-the validator's SQL check alone. Defence in depth minus one layer. A Codex user who
-wants the third layer defines equivalent custom agents locally.
+**The read-only guarantee was never enforced by the agent files.** Earlier versions
+of this document claimed the tool allowlists in `agents/` enforced it on Claude and
+Cursor. A live test on 2026-09-21 disproved that: the pattern allowlists granted no
+MCP tools at all, and a name-prefix filter would not have been a semantic control
+anyway. The agents now declare `tools: ["*"]` and read-only is an **instruction**.
+
+What actually constrains writes, on every client equally: the read-only service
+account, the validator's SQL check, and the rule that nothing reaches the tracker
+without per-ticket confirmation.
 
 **Invocation differs.** `/triage BUG-4830` on Claude and Cursor; on Codex, invoke the
 plugin or skill by name. The commands are thin wrappers over the skills, so no

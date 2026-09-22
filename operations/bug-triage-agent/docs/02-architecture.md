@@ -74,11 +74,14 @@ Stage 3 delegates one subagent per source and waits for all of them. The delegat
 stated in the orchestrator skill rather than relying on any single client's bundled
 agent files, so it holds across Claude, Cursor and Codex.
 
-The files in `agents/` carry tool allowlists matching read-shaped verbs only. That is
-what makes "cannot write to the tracker or run DDL" enforced rather than merely stated.
-Claude and Cursor load them; Codex does not, so there the guarantee rests on the
-read-only service account and the validator's SQL check. See
-[`STATUS.md`](../STATUS.md) for the full comparison.
+The files in `agents/` declare `tools: ["*"]`. An earlier version used pattern
+allowlists and this document claimed they enforced read-only. **They did not.** A live
+test showed the patterns granted no MCP tools at all, and even working, a
+`get`/`search`/`list` name filter is not semantic: `get_auth_token` mutates.
+
+Read-only is an instruction to the agent. The enforcement lives elsewhere and applies
+on every client equally: a read-only service account, the validator's SQL check, and
+per-ticket confirmation before anything is written.
 
 ## Component map
 

@@ -28,7 +28,7 @@ until then had been on fixtures, where `Read` sufficed, so it looked like it wor
 
 The allowlist would not have been a real control even had it resolved. Filtering on a
 `get`/`search`/`list` name prefix is not semantic: on other servers `get_auth_token`
-and `get_file_upload_url` mutate, and Atlassian's write tools are excluded only by the
+and `get_file_upload_url` mutate, and a tracker's write tools are excluded only by the
 coincidence that they happen to be named `create*`, `edit*` and `transition*`.
 
 **So read-only here is an instruction, not a barrier.** The barriers that do exist are

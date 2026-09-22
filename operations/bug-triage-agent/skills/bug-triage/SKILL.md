@@ -10,9 +10,17 @@ order.
 
 ## Setup
 
-1. Resolve the team config: the `--team` argument matched against `team.id` in each
-   file under `teams/`, else `CLAUDE_TRIAGE_TEAM`. If neither is given, list the
-   available team ids and ask. Never pick one silently when several exist.
+1. **Header first, before reading anything else.** Take the team from `--team`, else
+   `CLAUDE_TRIAGE_TEAM`, then run:
+
+       python3 scripts/run_header.py --team <id> <TICKET> [<TICKET>...]
+
+   Print its output **verbatim** as your first message text, in a code block. Do not
+   paraphrase, shorten or summarise it: the host collapses command output, so a reader
+   sees the header only if you repeat it. Exit code 2 means no such team: show the
+   available ids it lists and ask. Never pick one silently. Exit code 3 means a ticket
+   has no fixture in fixture mode: say which, and triage only the rest.
+   If no team was given at all, list the ids under `teams/` and ask.
 2. Load `skills/data-sources/SKILL.md`. Do not call any MCP tool before this.
    For every source in `live` mode other than the tracker, read its tool-name suffixes
    from `tool_bindings` in the team config. A live source with no `tool_bindings` entry is a
@@ -20,12 +28,27 @@ order.
 3. Read `reference/disposition-taxonomy.md` and `reference/priority-rubric.md`.
 4. Note which sources are `live`, `fixture`, `off`. This drives the provenance line and
    which classification questions can be answered.
-5. Read [`reference/run-visibility.md`](../../reference/run-visibility.md) and print the
-   run header it defines, before Stage 1. Then emit one stage line per stage as each
-   completes. A reader who learns which sources were missing only at the end cannot
-   act on it.
+5. Read [`reference/run-visibility.md`](../../reference/run-visibility.md) for the stage
+   line format. The header is already printed; from here, emit one stage line per
+   stage as each completes.
 6. Where the host offers task tools, create the five stage tasks and resolve each as it
    completes. Where it does not, skip this and carry on: the stage lines are the record.
+
+## Narrating the run
+
+The host draws every command as a bare row with no explanation, and long thinking
+gaps show only a timer. A reader watching that learns nothing. So:
+
+- **Read reference and fixture files with the file-read tool, not a shell command.**
+  A file read shows the file name; `cat` in a shell shows only "Bash".
+- **Where the shell tool accepts a description, give every command one** in plain
+  words: "Validating team config", not the command itself.
+- **Write the stage line as message text between tool calls**, the moment the stage
+  completes. Text between calls is what the reader sees; tool output is collapsed.
+- **In batch mode, open each ticket with a marker** such as `Ticket 2 of 4 · BUG-4844`
+  before its Stage 1, so the reader knows which ticket the next lines belong to.
+- Never narrate intent ("now I will read the rubric"). Narrate results. A line that
+  says what is about to happen tells the reader nothing they can act on.
 
 ## Stage 0: information gate
 

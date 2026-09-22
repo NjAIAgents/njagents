@@ -15,6 +15,12 @@ the end degrade to nothing without changing the triage.
 Printed once, after the team config resolves and before Stage 1 runs. Never after: a
 header that arrives with the answer has told the reader nothing they could act on.
 
+Produced by `scripts/run_header.py`, not composed by the model. A first live run showed
+a model-written header collapsing to "All five sources are fixtures", which dropped
+the count and the principle line, and arrived after four opaque file reads. Code
+cannot abbreviate it. The orchestrator repeats the output verbatim as message text,
+because hosts collapse command output.
+
 ```
 Bug triage · DEMO-7 · team demo-live
 

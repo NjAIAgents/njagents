@@ -36,7 +36,7 @@
     },
     "warehouse": {
       "mode": "off",
-      "//": "Databricks not provisioned yet. Blast radius will be reported as unknown."
+      "//": "Warehouse not provisioned yet, Neon planned. Blast radius will be reported as unknown."
     },
     "code": {
       "mode": "off",

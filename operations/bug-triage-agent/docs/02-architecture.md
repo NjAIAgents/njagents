@@ -141,7 +141,7 @@ per-ticket confirmation before anything is written.
 | `teams/` | Shipped demo configs, schema and example. A team's own config lives in its repo under `triage-teams/`, found first | read by the skills |
 | `fixtures/` | Recorded envelopes, and worked result files under `results/` | demo mode, tests |
 | `scripts/` | `run_header.py` header, `render_trace.py` trace, `triage_log.py` audit, `validate_config.py` build gate | runtime, CI, packaging |
-| `logs/` | Audit log destination | runtime |
+| `logs/` | Unused at runtime. The audit log lives in the working folder, `triage-logs/`, because an installed plugin is read-only | none |
 
 The header and the trace are rendered by code, not written by the model. Both were
 first model-written, and a real run showed the header abbreviated and the traces not

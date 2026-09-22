@@ -12,6 +12,10 @@ The schema is [`teams/team-config.schema.json`](../../teams/team-config.schema.j
 Every key written must exist there. Do not invent keys, and do not copy rubric,
 taxonomy or output rules into the file: those are shared on purpose.
 
+Paths below marked `<plugin root>` and `<working folder>` are resolved exactly as in
+`skills/bug-triage` Setup step 0. Resolve them first; never conclude the plugin's
+scripts are missing because a relative path failed.
+
 ## Rules for the whole conversation
 
 - **One topic per question.** Ask, wait, then move on. Where the host offers a
@@ -38,7 +42,7 @@ taxonomy or output rules into the file: those are shared on purpose.
 Take the team id from the argument, else ask for it: lowercase, letters, digits and
 hyphens. Then run:
 
-    python3 scripts/run_header.py --team <id> --where
+    python3 <plugin root>/scripts/run_header.py --workdir <working folder> --team <id> --where
 
 - **Found in the working folder or config dir:** this is an update. Load it, show a
   short summary of what it sets, and ask which sections to change. Only walk those.
@@ -147,10 +151,10 @@ Ask which team owns each component or area label found in step 2. Write
 2. Ask for confirmation before writing. This writes into the user's folder, so it gets
    the same yes-first treatment as anything else the agent writes.
 3. Write it to the path chosen in step 0.
-4. Run `python3 scripts/validate_config.py <path>`. On an error, explain it in plain
+4. Run `python3 <plugin root>/scripts/validate_config.py <path>`. On an error, explain it in plain
    words, fix the answer that caused it, and re-run until it passes. Do not hand back
    a file that fails validation.
-5. Run `python3 scripts/run_header.py --team <id> --where` to confirm the triage agent
+5. Run `python3 <plugin root>/scripts/run_header.py --workdir <working folder> --team <id> --where` to confirm the triage agent
    now resolves this file and not another one of the same id.
 
 Finish by suggesting the next two commands:

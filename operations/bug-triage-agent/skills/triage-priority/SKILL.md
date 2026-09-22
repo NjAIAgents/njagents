@@ -5,7 +5,7 @@ description: Assign P1 to P4 with escalation caps and a stated confidence basis,
 
 # Priority
 
-Read `reference/priority-rubric.md`. That file holds the criteria, the ten questions,
+Read `<plugin root>/reference/priority-rubric.md`. That file holds the criteria, the ten questions,
 the escalation table, the class rule, the cap, and the confidence table. It is shared
 and must not be edited per team.
 

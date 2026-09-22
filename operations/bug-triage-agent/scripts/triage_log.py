@@ -19,7 +19,19 @@ import sys
 from collections import Counter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-LOG = os.path.join(ROOT, "logs", "triage-log.jsonl")
+# The log lives with the user, never inside the plugin: an installed plugin is
+# read-only, and even where it is writable an update replaces it and the history
+# (the only measurement this system has) would be lost. Resolved in main().
+LOG = None
+
+
+def resolve_log(explicit=None):
+    if explicit:
+        return os.path.abspath(os.path.expanduser(explicit))
+    env = os.environ.get("CLAUDE_TRIAGE_LOG")
+    if env:
+        return os.path.abspath(os.path.expanduser(env))
+    return os.path.join(os.getcwd(), "triage-logs", "triage-log.jsonl")
 DISPOSITIONS = ["defect", "expected_behavior", "config_or_data", "duplicate",
                 "voice_of_customer", "insufficient_information"]
 LEVELS = ["P1", "P2", "P3", "P4"]
@@ -78,10 +90,15 @@ def cmd_append(a):
         print("refusing: a non-defect must not carry a priority. That is the gate this "
               "tool exists to enforce.", file=sys.stderr)
         return 1
-    os.makedirs(os.path.dirname(LOG), exist_ok=True)
-    with open(LOG, "a") as f:
-        f.write(json.dumps(rec) + "\n")
-    print(f"logged {rec['ticket']} {rec['disposition']} {rec['priority'] or '-'}")
+    try:
+        os.makedirs(os.path.dirname(LOG), exist_ok=True)
+        with open(LOG, "a") as f:
+            f.write(json.dumps(rec) + "\n")
+    except OSError as e:
+        print(f"cannot write the audit log at {LOG}: {e.strerror}. Pass --log or set "
+              "CLAUDE_TRIAGE_LOG to a writable path in your own folder.", file=sys.stderr)
+        return 2
+    print(f"logged {rec['ticket']} {rec['disposition']} {rec['priority'] or '-'} -> {LOG}")
     return 0
 
 
@@ -168,6 +185,8 @@ def cmd_report(a):
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--log", help="log file; default $CLAUDE_TRIAGE_LOG, else "
+                                  "./triage-logs/triage-log.jsonl in the working folder")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     a = sub.add_parser("append")
@@ -195,6 +214,8 @@ def main():
     r.set_defaults(fn=cmd_report)
 
     args = ap.parse_args()
+    global LOG
+    LOG = resolve_log(args.log)
     sys.exit(args.fn(args))
 
 

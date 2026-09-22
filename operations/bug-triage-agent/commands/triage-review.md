@@ -3,10 +3,21 @@ description: Record a human override of a triage recommendation, for calibration
 argument-hint: <TICKET-ID> <correct-disposition-or-priority> [reason]
 ---
 
-Update the matching line in `logs/triage-log.jsonl` for: $ARGUMENTS
+Resolve `<plugin root>` and `<working folder>` as in `skills/bug-triage` Setup step 0,
+then record the override for: $ARGUMENTS
 
-Set `human_override` and `override_reason`. Do not alter the original recommendation
-fields: the gap between recommended and final is the measurement.
+    python3 <plugin root>/scripts/triage_log.py \
+        --log <working folder>/triage-logs/triage-log.jsonl \
+        override --ticket <KEY> [--disposition <d>] [--priority <P>] --reason "<why>"
 
-Then report the running accuracy over the last 30 days: disposition accuracy and
-priority accuracy within one level, counted separately.
+Use the script; never edit the log file by hand. It sets the override fields and leaves
+the original recommendation untouched: the gap between recommended and final is the
+measurement.
+
+Then report the running accuracy:
+
+    python3 <plugin root>/scripts/triage_log.py \
+        --log <working folder>/triage-logs/triage-log.jsonl report --days 30
+
+It reports disposition agreement per class and priority agreement within one level,
+separately. Unreviewed runs measure volume, not correctness.

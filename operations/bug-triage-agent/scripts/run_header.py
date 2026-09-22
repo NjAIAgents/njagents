@@ -32,22 +32,44 @@ PRINCIPLE = ("Absent sources lower confidence and drop escalations. "
              "They never raise severity.")
 
 
-def search_dirs(config_dir=None):
-    """Ordered (label, directory) pairs. Earlier wins."""
+def plugin_version():
+    for rel in (".claude-plugin/plugin.json", "plugin.json"):
+        try:
+            with open(os.path.join(ROOT, rel), encoding="utf-8") as f:
+                return json.load(f).get("version", "?")
+        except (OSError, json.JSONDecodeError):
+            continue
+    return "?"
+
+
+def search_dirs(config_dir=None, workdir=None):
+    """Ordered (label, directory) pairs. Earlier wins.
+
+    A sandboxed shell often starts somewhere other than the user's folder (Cowork
+    mounts it one or two levels below the shell's home), so besides <workdir>/
+    triage-teams we also look one and two levels below it, in sorted order.
+    """
     explicit = (config_dir or os.environ.get("CLAUDE_TRIAGE_CONFIG_DIR")
                 or os.environ.get("CLAUDE_PLUGIN_OPTION_CONFIG_DIR"))
+    wd = os.path.abspath(os.path.expanduser(workdir or os.getcwd()))
     dirs = []
     if explicit:
         dirs.append(("config dir", os.path.abspath(os.path.expanduser(explicit))))
-    dirs.append(("working folder", os.path.join(os.getcwd(), "triage-teams")))
-    dirs.append(("plugin", os.path.join(ROOT, "teams")))
+    dirs.append(("working folder", os.path.join(wd, "triage-teams")))
+    plugin_teams = os.path.realpath(os.path.join(ROOT, "teams"))
+    for pattern in ("*/triage-teams", "*/*/triage-teams"):
+        for d in sorted(glob.glob(os.path.join(wd, pattern))):
+            if os.path.realpath(d).startswith(os.path.realpath(ROOT)):
+                continue
+            dirs.append(("working folder", d))
+    dirs.append(("plugin", plugin_teams))
     return dirs
 
 
-def load_teams(config_dir=None):
+def load_teams(config_dir=None, workdir=None):
     """team id -> (config, path, origin label). First directory to define an id wins."""
     teams = {}
-    for label, d in search_dirs(config_dir):
+    for label, d in search_dirs(config_dir, workdir):
         for path in sorted(glob.glob(os.path.join(d, "*.json"))):
             if os.path.basename(path) in SKIP:
                 continue
@@ -102,16 +124,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--team", required=True)
     ap.add_argument("--config-dir")
+    ap.add_argument("--workdir", help="the user's folder; default the current directory")
     ap.add_argument("--where", action="store_true",
                     help="print only the resolved config path")
     ap.add_argument("tickets", nargs="*")
     a = ap.parse_args()
 
-    teams = load_teams(a.config_dir)
+    teams = load_teams(a.config_dir, a.workdir)
     hit = teams.get(a.team)
     if hit is None:
         print(f"No config for team '{a.team}'.")
-        print("Looked in: " + " → ".join(d for _, d in search_dirs(a.config_dir)))
+        print("Looked in: " + " → ".join(d for _, d in search_dirs(a.config_dir, a.workdir)))
         if teams:
             print("Available: " + ", ".join(f"{t} ({teams[t][2]})" for t in sorted(teams)))
         print(f"Create one with: /bug-triage-agent:triage-config {a.team}")
@@ -134,8 +157,8 @@ def main():
     for s in SOURCES:
         lines.append(f"  {s:<11} {modes[s]:<9} {reason(cfg, s)}")
     lines += ["", f"  {available} of {len(SOURCES)} sources available. {PRINCIPLE}"]
-    shown = os.path.relpath(cfg_path) if origin == "working folder" else cfg_path
-    lines += [f"  Config: {shown} ({origin})"]
+    lines += [f"  Config: {cfg_path} ({origin})",
+              f"  Agent:  {plugin_version()} · {ROOT}"]
 
     if len(a.tickets) > 1:
         lines += ["", "  Tickets: " + ", ".join(a.tickets)]

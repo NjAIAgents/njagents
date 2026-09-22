@@ -36,7 +36,8 @@ Rules:
 
 ## Mode resolution
 
-Read `teams/<team>.json`. For each source:
+Read the team config the run header resolved (it prints the path; it may be in the
+working folder's `triage-teams/` rather than the plugin's `teams/`). For each source:
 
 1. `mode: "live"` -> call the adapter below. On failure, return `status: "error"`, do
    not fall back to fixtures. Silent fallback in production is how people end up
@@ -193,7 +194,7 @@ Prior-day baselines produce false regressions across weekends.
 
 ### warehouse
 
-Read-only. Query templates live in `teams/<team>.json` under `warehouse.queries`, so
+Read-only. Query templates live in the team config under `warehouse.queries`, so
 no product-specific SQL sits in this shared skill. The tool suffix comes from
 `tool_bindings.warehouse.query`.
 
@@ -242,7 +243,9 @@ Rounding up is now tied to evidence in the ticket, not to the absence of a conne
 
 ## Audit log
 
-After every run append one JSON line to `logs/triage-log.jsonl`:
+After every run append one JSON line to the audit log in the working folder,
+`triage-logs/triage-log.jsonl`, through `scripts/triage_log.py` (never inside the
+plugin, which is read-only once installed):
 
 ```json
 {"ts":"","ticket":"","team":"","modes":{"tracker":"live","metrics":"off"},

@@ -10,18 +10,49 @@ order.
 
 ## Setup
 
+0. **Find the plugin and the user's folder.** Every `scripts/…`, `reference/…`,
+   `skills/…` and `teams/…` path in this plugin is relative to the plugin root, not to
+   the shell's current directory. The base directory this skill was loaded from is
+   often a host path the shell cannot see (a sandboxed shell mounts the plugin
+   elsewhere), so resolve the root once with this, and never conclude the plugin's
+   files are missing until it has run:
+
+   ```bash
+   for c in "${CLAUDE_PLUGIN_ROOT:-}" "<this skill's base directory>/../.."; do
+     [ -n "$c" ] && [ -f "$c/scripts/run_header.py" ] && { cd "$c" && pwd; exit 0; }
+   done
+   for d in /sessions "$HOME" /var/folders /tmp; do
+     [ -d "$d" ] && find "$d" -maxdepth 9 -path '*/scripts/run_header.py' 2>/dev/null
+   done | xargs grep -l 'Print the run header for a triage' 2>/dev/null \
+        | grep -E '/(\.remote-plugins|claude-hostloop-plugins|\.claude/plugins)/' \
+        | head -1 | sed 's#/scripts/run_header.py$##'
+   ```
+
+   It prefers the installed plugin. If it prints nothing but a search without the
+   final `grep -E` finds a copy in a source checkout, say so and ask before using it:
+   a checkout may hold unreleased code.
+
+   The **working folder** is the folder the user is working in: the one they opened or
+   connected, not the shell's start directory. Reports, traces, the audit log and the
+   team's own `triage-teams/` all live there. If you cannot tell, ask.
+
+   Shell state may not persist between commands, so write both resolved paths out
+   literally in every later command rather than relying on a variable.
+
 1. **Header first, before reading anything else.** Take the team from `--team`, else
    `CLAUDE_TRIAGE_TEAM`, then run:
 
-       python3 scripts/run_header.py --team <id> <TICKET> [<TICKET>...]
+       python3 <plugin root>/scripts/run_header.py --workdir <working folder> \
+           --team <id> <TICKET> [<TICKET>...]
 
    Print its output **verbatim** as your first message text, in a code block. Do not
    paraphrase, shorten or summarise it: the host collapses command output, so a reader
    sees the header only if you repeat it.
 
    The script looks for the team in the config dir, then `triage-teams/` in the
-   working folder, then the configs shipped in the plugin, and the header names which
-   file it loaded.
+   working folder (and one or two levels below it), then the configs shipped in the
+   plugin. The header names the config file it loaded and the agent version and root
+   it ran from, so a stale install or a wrong copy is visible on the first line.
 
    **Exit code 2 means no config for that team.** Show what it printed, then offer two
    choices: run `skills/triage-config` to create one now, or use one of the listed ids.
@@ -155,16 +186,17 @@ Three surfaces, all defined in [`reference/output-templates.md`](../../reference
 
 1. **Chat summary.** Always. Lead with the answer, one line of arithmetic, a pointer
    to the report. Ten seconds to read.
-2. **Report file.** Written to `output.reports_dir` as `<TICKET>.md` when
-   `output.write_report` allows. The path is relative to the **working directory**,
-   not the plugin, which may be installed somewhere temporary. Say where you wrote it.
+2. **Report file.** Written to `<working folder>/<output.reports_dir>/<TICKET>.md`
+   when `output.write_report` allows. Never inside the plugin, which is read-only once
+   installed. Say where you wrote it.
 3. **Tracker comment.** Generated as plain text. Never posted without explicit
    per-ticket confirmation in the conversation.
 4. **Run trace.** Unless `output.run_trace` is `never`, write the structured result to
-   `<reports_dir>/<TICKET>.result.json` in the shape defined in
+   `<working folder>/<reports_dir>/<TICKET>.result.json` in the shape defined in
    [`reference/run-visibility.md`](../../reference/run-visibility.md), then run:
 
-       python3 scripts/render_trace.py --out <reports_dir> <reports_dir>/<TICKET>.result.json
+       python3 <plugin root>/scripts/render_trace.py --out <working folder>/<reports_dir> \
+           <working folder>/<reports_dir>/<TICKET>.result.json
 
    **Never hand-write the trace HTML.** The script renders it identically every run and
    refuses a non-defect that carries a priority. If it refuses, the result file is
@@ -176,7 +208,9 @@ Three surfaces, all defined in [`reference/output-templates.md`](../../reference
 
 Then append the audit record:
 
-    python3 scripts/triage_log.py append --ticket <KEY> --team <team> \
+    python3 <plugin root>/scripts/triage_log.py \
+        --log <working folder>/triage-logs/triage-log.jsonl \
+        append --ticket <KEY> --team <team> \
         --disposition <d> [--priority <P>] --confidence <c> --modes <src=mode,...> \
         [--escalations ...] [--unanswered ...] [--source-errors ...] [--flags ...]
 

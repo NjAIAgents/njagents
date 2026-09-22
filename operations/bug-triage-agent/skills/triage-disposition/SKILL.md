@@ -5,7 +5,7 @@ description: Decide whether a ticket is a defect, expected behavior, a config or
 
 # Disposition
 
-Read `reference/disposition-taxonomy.md` for the definitions and output shape. This
+Read `<plugin root>/reference/disposition-taxonomy.md` for the definitions and output shape. This
 file is the procedure.
 
 ## Procedure

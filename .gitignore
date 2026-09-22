@@ -23,3 +23,6 @@ operations/*/teams/local-*.json
 # Triage reports are output
 triage-reports/
 operations/*/triage-reports/
+
+# Audit log written to the working folder at runtime
+triage-logs/

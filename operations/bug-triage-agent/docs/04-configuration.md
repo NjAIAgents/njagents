@@ -27,8 +27,12 @@ The plugin looks for a team in this order, first match on `team.id` wins:
 | Order | Location | Use it for |
 | --- | --- | --- |
 | 1 | `$CLAUDE_TRIAGE_CONFIG_DIR` | A shared config folder outside any one repo |
-| 2 | `triage-teams/` in the working folder | **The default.** Committed to the team's own repository and reviewed like code |
+| 2 | `triage-teams/` in the working folder, or one or two levels below it | **The default.** Committed to the team's own repository and reviewed like code. The deeper look covers sandboxed shells that start above the user's folder |
 | 3 | `teams/` inside the plugin | Shipped demos and examples only |
+
+Reports go to `<working folder>/triage-reports/` and the audit log to
+`<working folder>/triage-logs/triage-log.jsonl` (or `$CLAUDE_TRIAGE_LOG`). Nothing the
+agent writes goes inside the plugin.
 
 Do not put a team's config in the plugin's `teams/`. An installed plugin is read-only
 and is replaced on every update, so a file there is lost at the next release. The run

@@ -93,10 +93,10 @@ def check_config(path):
         err(f"{name}: code is live but repos is empty")
 
     tools = cfg.get("tool_bindings", {})
-    for s_ in ("metrics", "warehouse", "code"):
+    for s_ in ("tracker", "metrics", "warehouse", "code"):
         if srcs.get(s_, {}).get("mode") == "live" and not tools.get(s_):
             err(f"{name}: {s_} is live but tool_bindings.{s_} is missing. "
-                "Tool names are configuration; the adapter cannot be bound without them.")
+                "Tool names are configuration; the adapter cannot be bound without them. This plugin binds to tools already in the session rather than declaring its own server.")
 
     adapters = rc.get("manifest_sources", ["tracker_fixversion"])
     if not adapters:
@@ -243,27 +243,12 @@ def check_manifests():
             err("plugin.json: missing the Agent Plugins $schema identifier")
 
     for rel in ("mcp.json", ".mcp.json"):
-        fp = os.path.join(ROOT, rel)
-        if not os.path.exists(fp):
-            err(f"missing {rel}")
-            continue
-        d = json.load(open(fp))
-        for name, cfg in d.get("mcpServers", {}).items():
-            url = str(cfg.get("url", ""))
-            if "${" in url:
-                err(f"{rel}: server '{name}' uses a ${{VAR}} in url. No client expands "
-                    "environment variables there; use a literal placeholder.")
-            elif "REPLACE_WITH" in url:
-                # Only a problem for a source something actually runs live. A config
-                # on fixtures must still be able to certify.
-                if name in _live_sources():
-                    unconf(f"{rel}: server '{name}' url is a placeholder but the source "
-                           "is live, edit before enabling")
-    a = json.load(open(os.path.join(ROOT, "mcp.json")))
-    b = json.load(open(os.path.join(ROOT, ".mcp.json")))
-    if a != b:
-        err("mcp.json and .mcp.json differ. Keep them identical: Claude reads the "
-            "dotted one, portable clients read the other.")
+        if os.path.exists(os.path.join(ROOT, rel)):
+            err(f"{rel} exists. This plugin declares no MCP servers of its own: "
+                "declaring one makes the host ask for a connection owned by the "
+                "plugin, duplicating a connector the user already has. Bind to "
+                "existing tools through tool_bindings instead. See "
+                "reference/mcp-servers.example.json.")
 
 
 def main():

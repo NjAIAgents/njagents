@@ -10,8 +10,8 @@
     {
       "name": "bug-triage-agent",
       "source": "./operations/bug-triage-agent",
-      "description": "Triage bug tickets with judgment, not just severity. Classifies defect versus expected behaviour, duplicate, config issue or voice-of-customer before any priority is assigned, identifies which release touched the affected area, and surfaces a workaround the customer can use today.",
-      "version": "0.1.0",
+      "description": "Triage bug tickets with judgment, not just severity. Classifies defect versus expected behaviour, duplicate, config issue or voice-of-customer before any priority is assigned, identifies which release touched the affected area, and surfaces a workaround the customer can use today. Binds to the connectors you already have.",
+      "version": "0.2.0",
       "author": {
         "name": "Navjyot Nishant"
       }

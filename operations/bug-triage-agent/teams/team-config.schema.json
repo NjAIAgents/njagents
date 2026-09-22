@@ -240,7 +240,7 @@
     },
     "tool_bindings": {
       "type": "object",
-      "description": "Per-source MCP tool-name suffixes. Required for any source in live mode. Tool names differ between deployments, so they are configuration, not constants. The tracker is configurable like every other source.",
+      "description": "Per-source MCP tool-name suffixes. Required for every source in live mode, the tracker included. This plugin declares no MCP servers of its own: it binds to whatever tools are already in the session, from an account connector, another plugin, or a local server. Tool names differ between deployments, which is why they are configuration.",
       "additionalProperties": {
         "type": "object",
         "additionalProperties": {

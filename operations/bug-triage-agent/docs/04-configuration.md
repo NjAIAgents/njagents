@@ -81,10 +81,13 @@ query containing a write verb or not beginning with `SELECT` or `WITH`.
 
 ### `tool_bindings` / `tool_bindings`
 
-Tool-name suffixes per non-tracker source. Tool names differ between MCP deployments,
-so they are configuration rather than constants. A live non-tracker source without a
-binding fails validation: the adapter cannot be bound and guessing tool names is worse
-than stopping.
+Tool-name suffixes per source, **including the tracker**. The plugin declares no MCP
+servers, so this is the only thing connecting it to a real system. A live source
+without a binding fails validation: the adapter cannot be bound, and guessing tool
+names is worse than stopping.
+
+The tools can come from anywhere already in the session. The plugin does not care
+which provider supplied them.
 
 ### `repos`, `routing`
 

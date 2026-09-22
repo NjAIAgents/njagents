@@ -41,21 +41,37 @@ loads `skills/` and MCP servers; `agents/` and `commands/` are not loaded there.
 reasoned from each client's manifest and discovery rules, not observed. Expect the
 first install to surface something.
 
-## MCP servers
+## Connecting sources
 
-`mcp.json` declares **only the tracker**. The other three live in
-`mcp.json.optional`; copy an entry across when you enable that source.
+**This plugin declares no MCP servers of its own.** It binds to tools already present
+in your session, wherever they come from: an account-level connector, another plugin,
+or a local server.
 
-This matters: an earlier version declared all four, so every install opened with three
-failed connections. Teaching people to ignore connection errors is worse than making
-them add a line.
+That means there is nothing to "connect" inside the plugin. You connect your providers
+the way you normally would, then tell the plugin what their tools are called:
 
-They are placeholders rather than variables on purpose: **no client expands
-environment variables in a `url` field**, so a `${METRICS_MCP_URL}` there ships broken.
-The validator now rejects that pattern.
+```json
+"tool_bindings": {
+  "tracker":   { "get_issue": "getJiraIssue", "search_issues": "searchJiraIssuesUsingJql" },
+  "metrics":   { "logs_search": "search_logs", "metrics_query": "query_metrics" },
+  "warehouse": { "query": "run_query" },
+  "code":      { "search": "search_code" }
+}
+```
 
-Credentials never live in this repository. Each team authorizes with its own, held by
-the MCP host.
+`/triage-doctor` checks whether those tool names actually resolve in your session and
+names what is missing.
+
+An earlier version declared four servers in an `mcp.json`. That was wrong: it made the
+host ask you to create connections **owned by the plugin**, duplicating connectors you
+already had, and it listed meaningless names like "warehouse" with a generic icon in
+your connector list. Three of them could never connect at all, so every install opened
+with failed connections.
+
+`reference/mcp-servers.example.json` keeps those entries as a template if you genuinely
+need a dedicated endpoint. Copy it into your own MCP configuration, not the plugin.
+
+Credentials never live in this repository. Each team authorizes with its own.
 
 ## The zero-setup tier
 

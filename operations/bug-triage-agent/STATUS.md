@@ -26,8 +26,7 @@ text so workaround discovery could never succeed; the expectations file assumed 
 level that the base-precedence rule contradicted; the correlation confidence table had
 no row for area overlap with stale timing; the P1 stoppage criterion was ambiguous
 enough that two readings of BUG-4851 were defensible; nothing wrote the audit log; and
-`mcp.json` declared three unconfigured servers so every install opened with failed
-connections.
+`mcp.json` declared servers the plugin did not need.
 
 Still true: this is instructions the model follows at runtime, not deterministic code.
 Five runs is five runs.
@@ -39,6 +38,16 @@ Five runs is five runs.
 | Event trigger | The agent runs when a person types a command. The requirement is that it acts when a ticket is submitted. Needs real code. |
 | Validated taxonomy | The shipped disposition taxonomy is a construction, not any organization's actual judgment. Replace it via interviews plus a changelog-derived benchmark. |
 | Live connection | No credentials have been used. Tool-name bindings for non-tracker sources are informed guesses. |
+
+## Connections
+
+The plugin declares **no MCP servers**. It binds to tools already in the session via
+`tool_bindings`, whatever provided them.
+
+The first install proved why. Declaring servers named `metrics`, `warehouse` and `code`
+made the host ask for connections **owned by the plugin**, duplicating connectors the
+user already had, listing meaningless names in their connector list, and failing on
+install because three had placeholder urls. Removed in 0.2.0.
 
 ## Client compatibility
 

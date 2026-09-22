@@ -1,0 +1,24 @@
+{
+  "//": "REFERENCE ONLY. This plugin declares no MCP servers of its own.",
+  "//why": "Declaring a server makes the host ask the user to create a connection owned by this plugin, duplicating a connector they very likely already have, and showing meaningless names like 'warehouse' in their connector list. Instead, connect your providers however you normally do and point tool_bindings at the tool names they expose.",
+  "//use": "If you genuinely need a dedicated endpoint, copy an entry into your own MCP configuration, not into the plugin.",
+  "mcpServers": {
+    "tracker": {
+      "type": "http",
+      "url": "https://REPLACE_WITH_TRACKER_MCP_HOST/mcp"
+    },
+    "metrics": {
+      "type": "http",
+      "url": "https://REPLACE_WITH_METRICS_MCP_HOST/mcp"
+    },
+    "warehouse": {
+      "type": "http",
+      "url": "https://REPLACE_WITH_WAREHOUSE_MCP_HOST/mcp"
+    },
+    "code": {
+      "type": "http",
+      "url": "https://REPLACE_WITH_CODE_MCP_HOST/mcp"
+    }
+  },
+  "//hosts": "Every url is a placeholder, including the tracker's. Most hosted trackers publish an MCP endpoint; use theirs. The plugin assumes no particular vendor."
+}

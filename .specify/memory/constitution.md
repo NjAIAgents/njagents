@@ -77,8 +77,14 @@ carry client manifests alongside it:
 | `.cursor-plugin/plugin.json` | Cursor | Skills, agents, commands, MCP, rules, hooks |
 
 The manifests must agree on name, version and description. Skills are the portable
-core and exist in one copy. Where a client cannot load a component, the degradation is
-documented in that plugin's `STATUS.md` rather than discovered by a user.
+core and exist in one copy.
+
+Behaviour is expressed in skills, not in client-specific component files. Where two
+clients offer the same capability by different mechanisms, the skill states the intent
+and each client honours it its own way. Bundled component files are an optimisation on
+the clients that read them, never the only place a behaviour is defined. Where a
+client genuinely cannot do something, the degradation is documented in that plugin's
+`STATUS.md` rather than discovered by a user.
 
 Spec Kit artifacts live at the repository root and never inside a plugin directory. A
 plugin archive containing `.specify/` or `.claude/skills/` is a packaging defect.

@@ -51,10 +51,22 @@ triaging it.
 
 ## Stage 3: deep enrichment (defects only, in parallel)
 
-Dispatch `enrich-datadog`, `enrich-snowflake` and `enrich-code` in a single batch, for
-whichever are in `live` or `fixture` mode. Skip sources that are `off`.
+**Delegate these to parallel subagents and wait for all of them before continuing.**
+One per source, for whichever of `metrics`, `warehouse` and `code` are in `live` or
+`fixture` mode. Skip sources that are `off`.
 
-Each returns the envelope defined in `skills/data-sources/SKILL.md`. Do not reshape it.
+State the delegation explicitly rather than relying on any one client's bundled-agent
+files: Claude and Cursor load the definitions in `agents/`, and Codex delegates when a
+skill instruction asks it to. Where a client cannot delegate at all, query the sources
+in turn and note the added latency; correctness does not depend on the parallelism.
+
+Each subagent returns exactly the envelope defined in `skills/data-sources/SKILL.md`,
+and nothing else. Do not reshape it.
+
+Each must use read operations only: no writes to the tracker, no non-template SQL, no
+repository modification. On Claude and Cursor this is enforced by the tool allowlists
+in `agents/`. Elsewhere it is enforced by the read-only service account and the
+validator's SQL check, and must be honoured as an instruction.
 
 Run `skills/release-correlation` and `skills/workaround-finder` across everything
 gathered in Stages 1 and 3.

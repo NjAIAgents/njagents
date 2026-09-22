@@ -42,20 +42,26 @@ core and exist in one copy.
 | `commands/` (4) | yes | yes | **no** |
 | `agents/` (4) | yes | yes | **no** |
 
-### Degradations on Codex and ChatGPT
+### What differs on Codex and ChatGPT
 
-Both are consequences of Codex having no subagent concept. Neither is a correctness
-problem, but both should be understood before promising parity.
+**Parallel enrichment still works.** Codex and ChatGPT Work run subagent workflows,
+spawning agents in parallel and collecting results, enabled by default in current
+local Codex releases. Their documentation states Codex delegates when project or
+**skill** instructions request it, which is exactly how the orchestrator asks for
+stage 3. Stage 3 is written as an explicit delegation instruction rather than relying
+on any one client's bundled-agent mechanism, so it holds on all three.
 
-**Enrichment runs sequentially.** Stage 3 dispatches four subagents in one batch on
-Claude and Cursor. Without them the orchestrator queries each source in turn, so wall
-time on the slowest path is roughly four times higher.
+**What is not loaded is the four agent definition files.** The Codex plugin format
+carries skills and MCP servers only; Codex custom agents are configured locally rather
+than shipped inside a plugin. The behaviour those files describe is in the skill, so
+nothing is lost functionally.
 
-**The read-only guarantee loses a layer.** The four agent files carry tool allowlists
-matching read-shaped verbs only, which is what makes "cannot write to the tracker or
-run DDL" enforced rather than merely stated. Codex has no equivalent, so there the
-guarantee rests on the read-only service account and the validator's SQL check alone.
-Defence in depth minus one layer.
+**The read-only guarantee loses a layer.** This is the real difference. Each agent
+file carries a tool allowlist matching read-shaped verbs only, which is what makes
+"cannot write to the tracker or run DDL" enforced rather than merely stated. Without
+those files loaded, the guarantee on Codex rests on the read-only service account and
+the validator's SQL check alone. Defence in depth minus one layer. A Codex user who
+wants the third layer defines equivalent custom agents locally.
 
 **Invocation differs.** `/triage BUG-4830` on Claude and Cursor; on Codex, invoke the
 plugin or skill by name. The commands are thin wrappers over the skills, so no

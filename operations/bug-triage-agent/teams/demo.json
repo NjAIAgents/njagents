@@ -2,7 +2,9 @@
   "//": "Demo config. Identical rubric to every other team. Only the source modes differ.",
   "team": {
     "name": "Demo (all sources)",
-    "id": "demo"
+    "id": "demo",
+    "default": true,
+    "//default": "The shipped default team: used only when nothing else decides (no --team, no ticket project match, no member match, no local config). A local config in triage-teams/ always wins over it."
   },
   "tracker": {
     "project_key": "BUG",

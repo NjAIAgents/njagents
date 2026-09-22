@@ -1,7 +1,7 @@
 {
   "team": "demo",
   "triaged_at": "2026-09-22 10:14 UTC",
-  "agent_version": "0.5.3",
+  "agent_version": "0.6.0",
   "ticket": "BUG-4830",
   "summary": "Approval step fails silently for Northwind Co when submitted via API",
   "sources": {
@@ -86,5 +86,49 @@
     "text": "Re-submit the approval through the UI rather than the API.",
     "who": "support, and customers can be told",
     "source": "BUG-4701 resolution notes"
-  }
+  },
+  "repo": {
+    "name": "approvals-api",
+    "base_branch": "main"
+  },
+  "repro": {
+    "steps": [
+      "Authenticate as a user with the reviewer role",
+      "POST /requests/{id}/approve for a request in Pending Review",
+      "Read the request back"
+    ],
+    "expected": "The approval is stored and the request leaves Pending Review, or the call returns an error",
+    "actual": "The call returns 200 with no error and the request stays in Pending Review"
+  },
+  "locations": [
+    {
+      "path": "approvals-api/src/approvals/ApprovalReviewService.ts",
+      "line": 89,
+      "signal": "error_swallowing",
+      "evidence": "catch logs 'approval not committed' and returns { ok: true }",
+      "source": "code"
+    },
+    {
+      "path": "approvals-api/src/approvals/ApprovalReviewService.ts",
+      "signal": "release_touched",
+      "evidence": "changed in 2026.09 by PR #4412, three days before the first error",
+      "source": "releases"
+    }
+  ],
+  "hypothesis": {
+    "statement": "A failed commit is caught at ApprovalReviewService.ts:89 and turned into a success response, so the API reports a write that never happened.",
+    "confirm_by": "A test that forces store.approvals.commit to throw gets 200 and an unchanged request",
+    "refute_by": "With the commit forced to fail, the endpoint already returns an error"
+  },
+  "introduced_by": {
+    "release": "2026.09",
+    "pr": "#4412"
+  },
+  "prior_fixes": [
+    {
+      "key": "BUG-4701",
+      "summary": "Approval not persisted on retry",
+      "note": "Fixed in 2026.08 as a lost write on retry. Same symptom, so check whether #4412 undid it."
+    }
+  ]
 }

@@ -14,7 +14,7 @@ An honest account of what is built and what is not.
 ## Exercised, 2026-09-21
 
 Five runs against fixtures: BUG-4830, BUG-4844, BUG-4851, BUG-4858 under `demo`, and
-BUG-4830 again under `demo-gc`. `fixtures/expected-outcomes.md` is now **recorded from
+BUG-4830 again under `demo-gc` (a second team config, removed in 0.6.0). `fixtures/expected-outcomes.md` is now **recorded from
 those runs**, not predicted.
 
 What held: the disposition gate (two non-defects received no priority), the

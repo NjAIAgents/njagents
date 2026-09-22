@@ -36,11 +36,29 @@ scripts are missing because a relative path failed.
   any connected system while configuring.
 - **Default to less.** An unknown answer becomes `off` or the schema default, not a
   plausible value. An `off` source lowers confidence honestly; a wrong one corrupts it.
+- **Required answers are never defaulted. If the user skips one, stop.** Required:
+  the team id, the tracker instance, the project key, the P1-P4 priority mapping, and
+  where to write the file. For these, never offer "no preference", "you decide" or
+  "skip" as an option. If the user gives one anyway, or declines, stop: say which
+  answer is missing and why it cannot be guessed, write nothing, and tell them how to
+  resume (`/bug-triage-agent:triage-config <team-id>`). Only optional answers
+  (members, default flag, at-risk labels, routing, and whether a team has metrics,
+  warehouse or code) may be skipped, and a skipped optional answer becomes `off` or is
+  left out, never a guessed value.
+- **Never derive an identity from unrelated signals.** Do not pick a team id, project
+  or instance because something was "most recently updated", because it appears in a
+  different tool (a chat workspace, another tracker, a design tool), or because it is
+  the only one you happened to see. You may *suggest* a value discovered for the
+  question being asked, such as the project the user just chose, but the user must
+  confirm it.
 
 ## Step 0: where the file goes, and whether it exists
 
 Take the team id from the argument, else ask for it: lowercase, letters, digits and
-hyphens. Then run:
+hyphens. It is a name the user chooses, not something to infer, so ask it as an open
+question. If they want a suggestion, offer the lowercase project key *after* step 2
+picks the project, and wait for them to confirm. If they decline to name one, stop as
+the rules above say. Then run:
 
     python3 <plugin root>/scripts/run_header.py --workdir <working folder> --team <id> --where
 
@@ -63,6 +81,18 @@ Never offer the plugin's own `teams/` directory.
 
 `team.id` (fixed from step 0) and `team.name`, a readable label.
 
+Then two optional questions, both about choosing this team when nobody names it:
+
+- **Members.** Who triages for this team? Offer to list exact addresses, a whole
+  domain as `*@example.com`, or skip. Written to `team.members`. Only used when there
+  is no ticket to read a project key from, such as the queue. Offer the signed-in
+  user's own address as the first entry only if the host already shows it; never ask
+  for an address just to fill this in.
+- **Default.** Should this be the default team in this folder? Written as
+  `team.default: true`. Only one config per folder should say so.
+
+A ticket's project key always decides first. These only matter without one.
+
 ## Step 2: tracker (required)
 
 The tracker is the one source that cannot be `off`. Without it there is no triage, so
@@ -81,8 +111,10 @@ if no tracker connector is available, stop here and say which kind to connect.
 5. Read the project's priority values and propose the `P1`…`P4` mapping, highest
    first. Ask the user to confirm; teams sometimes skip or reserve a level.
 6. Ask whether the project uses components. If it does not, ask what the team uses
-   instead (commonly a label prefix) and note it in a `//` comment on `tracker`, so
-   history and duplicate searches stay area-scoped rather than project-wide.
+   instead. When it is a label prefix, offer the prefix seen on recent issues (e.g.
+   `component-`) and write it as `tracker.component_label_prefix`, so history and
+   duplicate searches stay area-scoped rather than project-wide, and the queue can
+   show each bug's area.
 7. `tracker.at_risk_labels`: offer the labels actually present on recent issues and
    ask which mark an at-risk or renewal account. These trigger the P2 floor, so an
    over-broad label inflates priorities.

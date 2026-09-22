@@ -134,13 +134,13 @@ per-ticket confirmation before anything is written.
 
 | Directory | Holds | Loaded by |
 | --- | --- | --- |
-| `skills/` | Orchestrator, five component skills, and triage-config setup | all three clients |
+| `skills/` | Orchestrator, five component skills, triage-config setup, and the queue | all three clients |
 | `reference/` | Taxonomy, rubric, output templates, run visibility, calibration guide | read by the skills |
 | `agents/` | One enrichment subagent per source, `tools: ["*"]` | Claude, Cursor |
-| `commands/` | Thin wrappers: triage, triage-config, release-impact, doctor, review | Claude, Cursor |
+| `commands/` | Thin wrappers: triage, queue, triage-log, triage-config, release-impact, doctor, review | Claude, Cursor |
 | `teams/` | Shipped demo configs, schema and example. A team's own config lives in its repo under `triage-teams/`, found first | read by the skills |
 | `fixtures/` | Recorded envelopes, and worked result files under `results/` | demo mode, tests |
-| `scripts/` | `run_header.py` header, `render_trace.py` trace, `triage_log.py` audit, `validate_config.py` build gate | runtime, CI, packaging |
+| `scripts/` | `run_header.py` header, `render_trace.py` trace, `render_queue.py` queue, `triage_log.py` audit, `validate_config.py` build gate | runtime, CI, packaging |
 | `logs/` | Unused at runtime. The audit log lives in the working folder, `triage-logs/`, because an installed plugin is read-only | none |
 
 The header and the trace are rendered by code, not written by the model. Both were

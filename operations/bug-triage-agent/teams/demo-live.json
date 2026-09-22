@@ -1,5 +1,5 @@
 {
-  "//": "Live demo config. Same rubric as every other team; only source modes differ from teams/demo.json. Tracker is a real Jira project seeded with synthetic tickets. Metrics and warehouse are off until Grafana Cloud and Databricks are provisioned, and the report will say so rather than inventing numbers.",
+  "//": "The live demo. Tracker is the synthetic Jira project DEMO; DEMO-* tickets resolve to this team by project key. Metrics, warehouse and code are off until provisioned, and the report says so rather than inventing numbers.",
   "team": {
     "name": "Demo (live tracker)",
     "id": "demo-live"
@@ -21,6 +21,7 @@
       "escalation"
     ],
     "voc_destination": "DEMO",
+    "component_label_prefix": "component-",
     "//component_model": "This team-managed project has no components configured. Components are carried as labels of the form component-<name>. Treat a component-* label as the component when scoping history and duplicate search, so the counts stay area-scoped rather than project-wide."
   },
   "sources": {

@@ -39,30 +39,60 @@ order.
    Shell state may not persist between commands, so write both resolved paths out
    literally in every later command rather than relying on a variable.
 
-1. **Header first, before reading anything else.** Take the team from `--team`, else
-   `CLAUDE_TRIAGE_TEAM`, then run:
+1. **Header first, before reading anything else.** `--team` is optional. Run:
 
-       python3 <plugin root>/scripts/run_header.py --workdir <working folder> \
-           --team <id> <TICKET> [<TICKET>...]
+       python3 <plugin root>/scripts/run_header.py --format md --workdir <working folder> \
+           [--team <id>] [--user-email <signed-in user's email>] <TICKET> [<TICKET>...]
 
-   Print its output **verbatim** as your first message text, in a code block. Do not
-   paraphrase, shorten or summarise it: the host collapses command output, so a reader
-   sees the header only if you repeat it.
+   Pass `--team` only if the user gave one. Pass `--user-email` only if the host already
+   tells you who is signed in; never ask the user for it just for this, and never write
+   it into a report, trace or log. The script chooses the team in this order and the
+   header says which rule decided: `--team`; `CLAUDE_TRIAGE_TEAM`; **the tickets'
+   project key**, matched against `tracker.project_key`; the email against
+   `team.members`; a default or lone config in the working folder; the plugin's `demo` default. If none decides, it stops.
+   Configs still holding placeholder values are never chosen implicitly.
+
+   Print its output **verbatim as markdown, not inside a code block**, as your first
+   message text. A code block renders in monospace with no colour, which strips the
+   source markers the header exists to show. Do not paraphrase, shorten or summarise
+   it: the host collapses command output, so a reader sees the header only if you
+   repeat it. (Use `--format text` only where the output is a terminal, not a chat.)
+
+   **The header is the first thing the reader sees.** Before it, only the two commands
+   that produce it: the locator in step 0 and this one. No narration ("delegating
+   to…"), no subagent, no other tool call, no published page. A header that arrives
+   after the work has started has told the reader nothing they could act on.
 
    The script looks for the team in the config dir, then `triage-teams/` in the
    working folder (and one or two levels below it), then the configs shipped in the
    plugin. The header names the config file it loaded and the agent version and root
    it ran from, so a stale install or a wrong copy is visible on the first line.
 
-   **Exit code 2 means no config for that team.** Show what it printed, then offer two
-   choices: run `skills/triage-config` to create one now, or use one of the listed ids.
+   **Exit code 2 means it could not choose a team safely**: no config for the project,
+   tickets from two projects, or two equally good candidates. Show what it printed,
+   then offer two choices: run `skills/triage-config` to create one now, or name one of
+   the listed ids with `--team`.
    Never pick one silently, and never improvise a config inline: an untested config
    produces an untested triage. If the user creates one, resume this triage with the
    same tickets without asking for them again.
 
    Exit code 3 means a ticket has no fixture in fixture mode: say which, and triage
-   only the rest. If no team was given at all, run the script with any id to get the
-   available list, and ask.
+   only the rest.
+
+   **Connected but off.** Right after printing the header, for each source the header
+   shows as `off`, look in the session for tools that could serve it: for metrics, log
+   or metric query tools; for warehouse, SQL query tools; for code, code or repository
+   search tools. If any exist, add **one line** under the header naming the connector
+   and the source, for example:
+
+   > **Available but off:** a metrics connector is connected in this session, but
+   > metrics is off for team `demo-live`. To use it: `/bug-triage-agent:triage-config demo-live`.
+
+   This is a suggestion only. **Never use a connector the team config does not bind**,
+   not even for this run: the config is the team's decision about what its triage
+   reads, and results must not change with whoever happens to be signed in. Do not
+   guess tool names for it either; binding happens in `triage-config`, which proves
+   each one. Skip the check when nothing is `off`, and never delay the header for it.
 2. Load `skills/data-sources/SKILL.md`. Do not call any MCP tool before this.
    For every source in `live` mode other than the tracker, read its tool-name suffixes
    from `tool_bindings` in the team config. A live source with no `tool_bindings` entry is a
@@ -73,8 +103,13 @@ order.
 5. Read [`reference/run-visibility.md`](../../reference/run-visibility.md) for the stage
    line format. The header is already printed; from here, emit one stage line per
    stage as each completes.
-6. Where the host offers task tools, create the five stage tasks and resolve each as it
-   completes. Where it does not, skip this and carry on: the stage lines are the record.
+6. **Live progress.** Where the host offers task tools, create the stage tasks right
+   after the header, exactly as `reference/run-visibility.md` lists them, then drive
+   them as the run moves: mark a stage in progress *before* starting it, and when it
+   finishes rewrite its title to carry the result (`Stage 4 · priority → 🟠 P2 ·
+   ●●○ medium`) and mark it complete. This is the one surface that updates in place,
+   so the reader sees where the run is without scrolling. Where the host has no task
+   tools, skip this: the stage lines are the record in every client.
 
 ## Narrating the run
 
@@ -86,7 +121,9 @@ gaps show only a timer. A reader watching that learns nothing. So:
 - **Where the shell tool accepts a description, give every command one** in plain
   words: "Validating team config", not the command itself.
 - **Write the stage line as message text between tool calls**, the moment the stage
-  completes. Text between calls is what the reader sees; tool output is collapsed.
+  completes, in the markdown format from `reference/run-visibility.md`, with its
+  colour markers and never in a code block. Text between calls is what the reader
+  sees; tool output is collapsed.
 - **In batch mode, open each ticket with a marker** such as `Ticket 2 of 4 · BUG-4844`
   before its Stage 1, so the reader knows which ticket the next lines belong to.
 - Never narrate intent ("now I will read the rubric"). Narrate results. A line that
@@ -182,7 +219,7 @@ switched off.
 
 ## Stage 5: output and log
 
-Three surfaces, all defined in [`reference/output-templates.md`](../../reference/output-templates.md):
+These surfaces, all defined in [`reference/output-templates.md`](../../reference/output-templates.md):
 
 1. **Chat summary.** Always. Lead with the answer, one line of arithmetic, a pointer
    to the report. Ten seconds to read.
@@ -205,6 +242,23 @@ Three surfaces, all defined in [`reference/output-templates.md`](../../reference
    because a trace carries customer names and account counts and publishing it is a
    disclosure decision. Never fail a triage over a presentation surface. In batch mode,
    render all tickets in one call.
+
+5. **Fix brief (defects only).** Add the fix fields to the result file (`repo`,
+   `repro`, `locations`, `hypothesis`, `introduced_by`, `prior_fixes`, shapes in
+   [`reference/run-visibility.md`](../../reference/run-visibility.md)), then run:
+
+       python3 <plugin root>/scripts/render_fix_brief.py --out <working folder>/<reports_dir> \
+           <working folder>/<reports_dir>/<TICKET>.result.json
+
+   It writes `<TICKET>.fix-brief.md`, a hand-off a coding agent can act on, and refuses
+   a non-defect. Fill `locations` only with what the run actually found, each with its
+   `signal` and `source`: a file seen in a release record but not in code search is
+   `release_touched`, never `error_swallowing`. The evidence verdict is computed from
+   these, so an inflated location becomes an inflated verdict. `repo.base_branch` comes
+   from `repos[].default_branch` in the team config, else `main`.
+
+   Never open a branch, write code or raise a pull request from this skill. The brief
+   is the hand-off; fixing is another agent's job.
 
 Then append the audit record:
 

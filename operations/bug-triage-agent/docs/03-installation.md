@@ -105,7 +105,7 @@ python3 scripts/validate_config.py teams/<your-team>.json   # named form, fails 
 Then try the demo, which needs no connectors at all:
 
 ```
-/triage BUG-4830 --team demo
+/triage BUG-4830
 ```
 
 Compare against [`fixtures/expected-outcomes.md`](../fixtures/expected-outcomes.md).

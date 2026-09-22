@@ -4,7 +4,7 @@
 The gap between what the agent recommended and what a human finally decided is the
 only measurement this system has. Everything else is opinion.
 
-    triage_log.py append --ticket BUG-1 --team demo --disposition defect \
+    triage_log.py append --ticket BUG-1 --team demo-live --disposition defect \
         --priority P2 --confidence high --modes tracker=fixture,metrics=off \
         --escalations release:confirmed_regression --unanswered Q4
     triage_log.py override --ticket BUG-1 --disposition voice_of_customer \
@@ -123,6 +123,54 @@ def cmd_override(a):
     return 1
 
 
+MARK = {"P1": "🔴", "P2": "🟠", "P3": "🟡", "P4": "🔵"}
+MODE = {"live": "🟢", "fixture": "🟡", "off": "⚫"}
+METER = {"high": "●●●", "medium": "●●○", "low": "●○○"}
+
+
+def cmd_list(a):
+    """Recent recommendations as a markdown table, newest first. Read-only."""
+    rows = read()
+    if a.days:
+        cutoff = (datetime.datetime.now(datetime.timezone.utc)
+                  - datetime.timedelta(days=a.days)).isoformat()
+        rows = [r for r in rows if r.get("ts", "") >= cutoff]
+    if a.ticket:
+        rows = [r for r in rows if r.get("ticket") == a.ticket]
+    if a.team:
+        rows = [r for r in rows if r.get("team") == a.team]
+    rows = sorted(rows, key=lambda r: r.get("ts", ""), reverse=True)[: a.limit]
+
+    print(f"**Triage log** · `{LOG}`")
+    print()
+    if not rows:
+        print("No matching records." + ("" if os.path.exists(LOG) else " The log does not exist yet: "
+              "nothing has been triaged from this folder."))
+        return 0
+    print("| When (UTC) | Ticket | Team | Result | Confidence | Sources | Escalations | Reviewed |")
+    print("| --- | --- | --- | --- | --- | --- | --- | --- |")
+    for r in rows:
+        d, p = r.get("disposition"), r.get("priority")
+        result = f"**{MARK.get(p, '')} {p}**" if d == "defect" and p else f"⚪ `{d}`"
+        src = " ".join(f"{MODE.get(m, '')}{s}" for s, m in (r.get("modes") or {}).items()) or "—"
+        errs = r.get("source_errors") or []
+        if errs:
+            src += " · 🔴 " + ", ".join(errs)
+        esc = ", ".join(f"`{e}`" for e in r.get("escalations") or []) or "—"
+        if r.get("human_override"):
+            op, od = r.get("override_priority"), r.get("override_disposition")
+            same = od == d and op == p
+            rev = "✓ agreed" if same else f"→ {od}{' ' + op if op else ''}"
+        else:
+            rev = "—"
+        conf = r.get("confidence") or ""
+        print(f"| {r.get('ts', '')[:16].replace('T', ' ')} | {r.get('ticket')} | {r.get('team')} "
+              f"| {result} | {METER.get(conf, '')} {conf} | {src} | {esc} | {rev} |")
+    print()
+    print(f"{len(rows)} shown. Accuracy over time: `triage_log.py report --days 30`.")
+    return 0
+
+
 def cmd_report(a):
     cutoff = (datetime.datetime.now(datetime.timezone.utc)
               - datetime.timedelta(days=a.days)).isoformat()
@@ -208,6 +256,13 @@ def main():
     o.add_argument("--priority", choices=LEVELS)
     o.add_argument("--reason", required=True)
     o.set_defaults(fn=cmd_override)
+
+    ls = sub.add_parser("list")
+    ls.add_argument("--days", type=int, default=0, help="only the last N days; 0 for all")
+    ls.add_argument("--ticket")
+    ls.add_argument("--team")
+    ls.add_argument("--limit", type=int, default=20)
+    ls.set_defaults(fn=cmd_list)
 
     r = sub.add_parser("report")
     r.add_argument("--days", type=int, default=30)

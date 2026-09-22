@@ -56,6 +56,12 @@ def check_config(path):
         if missing:
             err(f"{name}: tracker.priority_names missing {missing}")
 
+    for m in cfg.get("team", {}).get("members", []) or []:
+        if not re.fullmatch(r"(\*@|[^@\s*]+@)[^@\s]+\.[^@\s]+", str(m)):
+            err(f"{name}: team.members entry '{m}' is not an address or '*@domain'")
+    if "default" in cfg.get("team", {}) and not isinstance(cfg["team"]["default"], bool):
+        err(f"{name}: team.default must be true or false")
+
     srcs = cfg.get("sources", {})
     for s in SOURCES:
         if s not in srcs:
@@ -260,7 +266,9 @@ def main():
     args = sys.argv[1:]
     print("Config:")
     targets = ([p for p in glob.glob(os.path.join(ROOT, "teams", "*.json"))
-                if "schema" not in p and "example" not in p]
+                # The example is validated too: it once failed validation for weeks
+                # because nothing checked it. Its placeholders report as UNCONFIGURED.
+                if "schema" not in p]
                if (not args or args[0] == "--all") else
                # A relative path means the user's folder first: team configs now live
                # in triage-teams/ in their repo. Fall back to the plugin for shipped ones.
@@ -295,6 +303,19 @@ def main():
             if not problems and not render_result(r).startswith('<meta charset="utf-8">'):
                 err(f"{os.path.relpath(f, ROOT)}: rendered trace does not open with "
                     "a utf-8 charset declaration")
+            # Every worked defect must also produce a fix brief with a verdict, so the
+            # hand-off to a fixer cannot break silently.
+            if not problems and r.get("disposition") == "defect":
+                from render_fix_brief import render as render_brief, assess
+                try:
+                    brief = render_brief(r)
+                    lvl = assess(r)["level"]
+                    if f"evidence: {lvl}" not in brief:
+                        err(f"{os.path.relpath(f, ROOT)}: fix brief front matter lacks the evidence verdict")
+                    if lvl != "strong" and "[!CAUTION]" not in brief:
+                        err(f"{os.path.relpath(f, ROOT)}: {lvl} evidence but the fix brief carries no caution")
+                except Exception as e:  # noqa: BLE001
+                    err(f"{os.path.relpath(f, ROOT)}: fix brief failed to render: {e}")
         print(f"  {len(rs)} result files checked against the trace contract")
 
     explicit = bool(args) and args[0] != "--all"

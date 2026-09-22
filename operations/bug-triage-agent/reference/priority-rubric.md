@@ -60,7 +60,7 @@ unanswered rather than guessing.
 5. Is there a practical workaround? (workaround-finder)
 6. What is the workflow impact: blocks, degrades, or cosmetic?
 7. Is there error swallowing or a stub at the bug site? (`code`)
-8. Is this a recurring component? (`tracker`, 3 or more resolved in 90 days)
+8. Is this a recurring component? (`tracker`, 3 or more **fixed defects** in 90 days)
 9. Is there active sprint work in the same component? (`tracker`)
 10. Is any affected account enterprise tier? (`warehouse`)
 
@@ -74,12 +74,22 @@ never reach P1 by escalation alone. P1 requires meeting a P1 criterion directly.
 | Confirmed regression | release | metrics + releases |
 | Error swallowing at bug site | code | code |
 | Stub or suppressed type error at bug site | code | code |
-| Recurring component, 3 or more in 90 days | history | tracker |
+| Recurring component, 3 or more fixed defects in 90 days | history | tracker |
 | Roadmap collision, active sprint work | history | tracker |
 | No practical workaround | impact | workaround-finder |
 | Enterprise tier account affected | blast | warehouse |
 | At-risk client | blast | tracker labels matching `tracker.at_risk_labels`, or stated in the ticket |
 | Automated approval workflow involved | impact | ticket |
+
+**What counts as recurring.** Only tickets in the component that were **resolved as
+fixed defects** in the last 90 days. A ticket closed as works as designed, duplicate,
+won't do, cannot reproduce, a configuration or data issue, or a feature request is not
+evidence that the component keeps breaking, and does not count. Where the tracker's
+resolution field does not say which it was (many close everything as "Done"), read the
+closing comment; if it is still unclear, leave that ticket out and say so. Counting
+every resolved ticket double-counts the disposition gate's own non-defects as signs of
+trouble: a live run escalated DEMO-7 from P3 to P2 on three "resolved" tickets, one of
+which was closed as works as designed, leaving two real fixes and no escalation.
 
 **One escalation per class.** Two code signals at the same site count once. This stops
 a single observation being counted three ways, which is how the original design turned

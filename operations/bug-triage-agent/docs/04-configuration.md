@@ -20,15 +20,94 @@ credentials: access comes from the connectors you have authorised in the app.
 A triage run that finds no config for its team offers this command instead of
 stopping.
 
+## Which team a run uses
+
+`--team` is optional. The run header states which rule chose the team:
+
+| Order | Rule | Notes |
+| --- | --- | --- |
+| 1 | `--team <id>` | Always wins |
+| 2 | `$CLAUDE_TRIAGE_TEAM` | |
+| 3 | **The tickets' project key** matched against `tracker.project_key` | The normal case. `DEMO-7` picks the team whose project is `DEMO`. Tickets from two projects in one run are refused |
+| 4 | The signed-in user's email against `team.members` | Only without a ticket, e.g. the queue. An exact address beats a `*@domain` entry. Matched locally, never stored |
+| 5 | `team.default: true` in your folder, else the only config in your folder | Your folder always outranks the plugin |
+| 6 | The plugin's `demo` config, marked `team.default` | Only when nothing above decides, so a first run works with no setup |
+
+If none of these decides, the run stops and asks.
+
+Configs still holding placeholder values are never picked implicitly.
+
+### Connectors you have but the team does not use
+
+A triage only reads the sources the team config binds. If a matching connector is
+connected in your session but that source is `off` (say a metrics connector while
+metrics is off), the run prints one **Available but off** line under the header and
+`triage-doctor` lists it, both pointing at `/bug-triage-agent:triage-config <team>`.
+Nothing is enabled automatically: which systems a team's triage reads is the team's
+decision, and the same ticket should triage the same way whoever runs it. When two
+candidates tie at the same rule, the run stops and asks rather than guessing.
+
+A project shared by two teams, split by component, is a tie at rule 3 today. Pass
+`--team` for those until component-level matching exists.
+
 ## Where the file lives
 
 The plugin looks for a team in this order, first match on `team.id` wins:
 
 | Order | Location | Use it for |
 | --- | --- | --- |
-| 1 | `$CLAUDE_TRIAGE_CONFIG_DIR` | A shared config folder outside any one repo |
+| 1 | `$CLAUDE_TRIAGE_CONFIG_DIR` | A shared config folder outside any one repo. **Claude Code only**; Cowork's shell does not see it |
 | 2 | `triage-teams/` in the working folder, or one or two levels below it | **The default.** Committed to the team's own repository and reviewed like code. The deeper look covers sandboxed shells that start above the user's folder |
-| 3 | `teams/` inside the plugin | Shipped demos and examples only |
+| 3 | `teams/` inside the plugin | The two demo configs and the example only |
+
+### Setting it up per client
+
+**Cowork.** Put the file at `triage-teams/<team>.json` inside a folder you connect to the
+session. It is found at the top of that folder or one or two levels below it, so both
+of these work when you connect `~/workspace`:
+
+```
+~/workspace/triage-teams/whodunit.json             top level
+~/workspace/whodunit/triage-teams/whodunit.json    inside the repo, one level down
+```
+
+The second is usually best: the file lives in the team's repo, is reviewed and shared
+through git, and you can still connect the parent workspace and triage for several
+teams from one place.
+
+`CLAUDE_TRIAGE_CONFIG_DIR` does **not** work in Cowork. The triage scripts run in an
+isolated shell that does not inherit your Mac's environment, and it cannot see a folder
+you have not connected, so a variable pointing at `~/triage-configs` would neither be
+read nor lead anywhere visible.
+
+Three things to watch:
+
+- Connect the same folder every time. A different folder means the config is not found.
+- A file loose in a workspace root is not in git: only you have it, and nobody reviews
+  changes to it.
+- Never rely on a session's `outputs` folder. It belongs to that session, not to a
+  folder you will reconnect.
+
+**Claude Code (terminal).** Either the same `triage-teams/` folder in the repo you run
+from, or a dedicated folder named by `CLAUDE_TRIAGE_CONFIG_DIR`, set in your shell
+profile:
+
+```bash
+echo 'export CLAUDE_TRIAGE_CONFIG_DIR="$HOME/triage-configs"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+or only for Claude, in `~/.claude/settings.json`:
+
+```json
+{ "env": { "CLAUDE_TRIAGE_CONFIG_DIR": "/Users/<you>/triage-configs" } }
+```
+
+Files in that folder sit directly in it, `~/triage-configs/whodunit.json`, with **no**
+`triage-teams/` subfolder.
+
+**Either way, check it.** `/bug-triage-agent:triage-doctor --team <team>` and every run
+header print the config file that was loaded and which rule chose the team.
 
 Reports go to `<working folder>/triage-reports/` and the audit log to
 `<working folder>/triage-logs/triage-log.jsonl` (or `$CLAUDE_TRIAGE_LOG`). Nothing the
@@ -56,10 +135,10 @@ argument resolves against `team.id`.
 | --- | --- |
 | `team-config.example.json` | Copy-and-fill starting point |
 | `team-config.schema.json` | The contract, not a config |
-| `demo.json` | All five sources on fixtures. Needs no connectors |
-| `demo-gc.json` | Second team, fewer sources, different priority names. The consistency proof |
-| `bta.json` | Zero-setup tier example, tracker and releases only |
-| `reference-full.json` | All five sources live, generic placeholders |
+| `demo.json` | All five sources on recorded fixtures. Needs no connectors. The plugin's default team, and `BUG-*` tickets resolve to it by project key |
+| `demo-live.json` | The live demo: the synthetic `DEMO` Jira project, metrics bound once seeded. `DEMO-*` tickets resolve to it by project key |
+
+A team's own config never goes here. It lives in the team's repo under `triage-teams/`.
 
 ## Key reference
 
@@ -150,7 +229,7 @@ adapters. **No skill file changes.** Run `/triage-doctor`.
 
 ```bash
 python3 scripts/validate_config.py --all          # exit 0, placeholders reported as UNCONFIGURED
-python3 scripts/validate_config.py teams/bta.json # exit 1 on any placeholder
+python3 scripts/validate_config.py teams/team-config.example.json  # exit 1: placeholders unset
 ```
 
 The suite stays green so it can gate CI; a named config refuses to certify on an

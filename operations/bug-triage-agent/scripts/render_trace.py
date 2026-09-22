@@ -30,6 +30,7 @@ STATUS_MARK = {"ok": "🟢", "partial": "🟡", "unavailable": "⚫", "error": "
                "skipped": "⚫"}
 PRIO_MARK = {"P1": "🔴", "P2": "🟠", "P3": "🟡", "P4": "🔵"}
 METER = {"high": "●●●", "medium": "●●○", "low": "●○○"}
+EVIDENCE_MARK = {"strong": "🟢", "moderate": "🟡", "weak": "🔴"}
 
 
 def esc(v):
@@ -185,6 +186,9 @@ th,td{text-align:left;padding:8px 12px 8px 0;border-bottom:1px solid var(--rule)
 vertical-align:top}
 th{font:500 11px ui-monospace,Menlo,monospace;letter-spacing:.05em;
 text-transform:uppercase;color:var(--muted)}
+.caution{border:1px solid var(--signal);background:var(--signal-soft);border-radius:6px;
+padding:10px 14px;margin:12px 0}
+.caution ul{margin:6px 0 0;padding-left:20px}
 .tip{border-left:3px solid var(--accent);background:var(--accent-soft);
 padding:10px 14px;border-radius:0 6px 6px 0}
 .muted{color:var(--muted)}
@@ -278,9 +282,18 @@ def render(r):
                  f'{esc(r["priority"])}{mapped}</dd></div>')
     o.append(f'<div><dt>Confidence</dt><dd>{METER[r["confidence"]]} '
              f'{esc(r["confidence"])}</dd></div>')
+    ev = None
+    if defect:
+        from render_fix_brief import assess  # local import: that module imports this one
+        ev = assess(r)
+        o.append(f'<div><dt>Evidence</dt><dd>{EVIDENCE_MARK[ev["level"]]} {esc(ev["level"])}</dd></div>')
     if r.get("route"):
         o.append(f'<div><dt>Route to</dt><dd>{esc(r["route"])}</dd></div>')
     o.append("</dl>")
+    if ev and ev["caution"]:
+        o.append('<div class="caution"><strong>Weak evidence.</strong> '
+                 + esc(ev["caution"].replace("**", "")) + "<ul>"
+                 + "".join(f"<li>{esc(m)}</li>" for m in ev["missing"]) + "</ul></div>")
 
     cur = r.get("current_priority")
     if defect and cur and r.get("tracker_priority") and cur != r["tracker_priority"]:

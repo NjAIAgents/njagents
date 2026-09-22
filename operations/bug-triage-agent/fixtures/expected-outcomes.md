@@ -4,7 +4,8 @@
 version of this file was a prediction, and five runs found nine divergences from it.
 When you change a rule, re-run these and rewrite this file from what happened.
 
-Every run below is `--team demo` unless stated.
+Every run below is `--team demo` unless stated. `BUG-*` tickets now resolve to `demo`
+by project key, so `--team` can be left off.
 
 ## `/triage BUG-4830 --team demo`
 
@@ -65,7 +66,10 @@ P1 stoppage test, and the correlation row for area overlap with stale timing.
 | Priority | none assigned |
 | Release | from Stage 1: 2026.09 touched `csvExport.ts` |
 
-## `/triage BUG-4830 --team demo-gc`
+## Retired: `/triage BUG-4830 --team demo-gc`
+
+Recorded 2026-09-21; the `demo-gc` config was removed in 0.6.0 to keep the shipped
+configs to `demo` and `demo-live`. Kept here because what it proved still holds.
 
 The consistency test. Same ticket, same shared rubric, second team with metrics,
 warehouse and code `off`.
@@ -89,7 +93,8 @@ message: **more connectors buy certainty, not severity.**
 ```
 python3 scripts/validate_config.py --all           -> exit 0, placeholders as UNCONFIGURED
 python3 scripts/validate_config.py teams/demo.json -> exit 0
-python3 scripts/validate_config.py teams/bta.json  -> exit 1, placeholder instance_id
+python3 scripts/validate_config.py teams/demo-live.json -> exit 0
+python3 scripts/validate_config.py teams/team-config.example.json -> exit 1, placeholders unset
 ```
 
 ## Not covered

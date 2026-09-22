@@ -4,19 +4,24 @@
 
 | Client | How |
 | --- | --- |
-| Claude, Cursor | `/triage BUG-4830 --team demo` |
+| Claude, Cursor | `/triage BUG-4830` (fixture demo) or `/triage DEMO-7` (live demo) |
 | Codex, ChatGPT | Invoke the plugin or skill by name, then give it the ticket |
 
 The commands are thin wrappers over the skills, so nothing is lost where they are not
 loaded.
 
 ```
-/triage BUG-4830 --team demo                      one ticket
-/triage BUG-4830 BUG-4844 BUG-4851 --team demo    batch, returns a ranked table
-/release-impact BUG-4830 --team demo              correlation only
+/triage BUG-4830                                  fixture demo, needs no connectors
+/triage DEMO-7                                    one ticket; team found from the project key
+/triage DEMO-7 DEMO-8 DEMO-9                      batch, returns a ranked table
+/release-impact DEMO-7                            correlation only
+/queue --team demo-live                           open bugs, what still needs triage
 /triage-config payments                           create or update a team config
-/triage-doctor --team demo                        readiness check
-/triage-review BUG-4844 voice_of_customer "..."   record a human override
+/triage-doctor --team demo-live                   readiness check
+/triage-review DEMO-8 voice_of_customer "..."     record a human override
+/triage-log                                       recent decisions, newest first
+/triage-log DEMO-7                                one ticket's history
+/triage-log --accuracy                            how often people agreed, per class
 ```
 
 ## Three outputs, not one

@@ -1,7 +1,7 @@
 {
   "team": "demo",
   "triaged_at": "2026-09-22 10:14 UTC",
-  "agent_version": "0.5.3",
+  "agent_version": "0.6.0",
   "ticket": "BUG-4851",
   "summary": "Nightly settlement export missing for Fabrikam since Friday",
   "sources": {
@@ -85,5 +85,42 @@
     "text": "An engineer restarts the export scheduler and backfills the missed runs.",
     "who": "engineer only",
     "source": "BUG-4790 resolution notes"
-  }
+  },
+  "repo": {
+    "name": "core-api",
+    "base_branch": "main"
+  },
+  "repro": {
+    "steps": [
+      "Check the settlement export bucket for 18, 19 and 20 Sep"
+    ],
+    "expected": "One settlement export file per night",
+    "actual": "No file for three nights and no error in the UI"
+  },
+  "locations": [
+    {
+      "path": "core-api/src/main/java/settlement/ExportScheduler.java",
+      "signal": "candidate",
+      "evidence": "candidate path for the export scheduler; code search found no fault signal and no recent change",
+      "source": "code"
+    },
+    {
+      "area": "settlements",
+      "signal": "area_only",
+      "evidence": "2026.08 touched settlements, 45 days before the first miss, component only",
+      "source": "releases"
+    }
+  ],
+  "hypothesis": {
+    "statement": "The scheduler is skipping runs after a configuration reload, as it did in BUG-4790.",
+    "confirm_by": "Scheduler logs show a reload before the first missed run and no run attempt afterwards",
+    "refute_by": "The scheduler attempted each run and failed later, in the export or upload step"
+  },
+  "prior_fixes": [
+    {
+      "key": "BUG-4790",
+      "summary": "Export scheduler skipped a run after config reload",
+      "note": "Fixed 2026-07-22. The fix may not cover this path."
+    }
+  ]
 }

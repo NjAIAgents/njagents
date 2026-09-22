@@ -9,7 +9,8 @@ cycle, workaround discovery, and a shared rubric that teams configure rather tha
   data, duplicate, or voice-of-customer *before* any priority is assigned. Scoring a
   non-defect is worse than not triaging it.
 - **One rubric, many configs.** `skills/` and `reference/` are shared and versioned.
-  Each team owns exactly one file in `teams/`. Forked rubrics were the reason the
+  Each team owns exactly one config file, kept in its own repo under `triage-teams/`.
+  Forked rubrics were the reason the
   previous design could not deliver one quality bar.
 - **Fixtures are recordings of the live contract.** Demo and production run the same
   code path. Switching over is a change to `sources.*.mode`, nothing else.
@@ -37,6 +38,11 @@ each rule is defined**, so you never have to guess which file wins.
 Add the marketplace, install the plugin, authorize the connectors your team uses.
 Credentials live in the MCP host, never in this repo.
 
+**Where it runs:** Cowork and Claude Code, where the whole plugin is available to the
+session. Not in a regular Chat: there a plugin syncs only its skill folders, so the
+scripts, rubric and team configs are absent and the triage stops at its first step
+rather than improvise.
+
 ## Configure
 
 ```
@@ -49,9 +55,9 @@ an installed plugin is read-only and is replaced on every update. Commit the fil
 your team shares it. See [`docs/04-configuration.md`](docs/04-configuration.md) for the
 lookup order and every key.
 
-`teams/bta.json` and `teams/reference-full.json` ship with placeholder values and
-will not certify until those are filled in. `--all` reports them as `UNCONFIGURED` and still
-exits zero, so the suite can gate CI; naming a config exits non-zero.
+`teams/team-config.example.json` ships with placeholder values and will not certify
+until those are filled in. `--all` reports them as `UNCONFIGURED` and still exits zero,
+so the suite can gate CI; naming a config exits non-zero.
 
 ### Zero-setup tier
 
@@ -75,8 +81,9 @@ Then fill `tracker.instance_id`, `tool_bindings` for each non-tracker source,
 `/triage-doctor`. No skill file changes.
 
 Tool names differ between MCP deployments, which is why they are configuration.
-The subagent allowlists match read-shaped verb patterns rather than exact names, so
-they do not need editing either.
+Read-only is enforced outside the prompt: a read-only account on each source, the
+validator's SQL check, and per-ticket confirmation before any tracker write. The
+subagents themselves run with all tools; an earlier allowlist enforced nothing.
 
 ## Release manifest adapters
 
@@ -95,24 +102,31 @@ the one tracker already requires.
 ## Use
 
 ```
-# live, zero-setup tier (tracker + releases only)
-/triage ABC-12 --team <your-team>
-/triage-doctor --team <your-team>
+# live: the team is found from the ticket's project key
+/triage ABC-12
+/triage-doctor
 
-# demo, fixture data
-/triage BUG-4830 --team demo
-/triage BUG-4830 BUG-4844 BUG-4851 --team demo
-/release-impact BUG-4830 --team demo
-/triage-doctor --team demo
-/triage-review BUG-4844 voice_of_customer "held balance release is by design"
+# what still needs triage
+/queue
+
+# the fixture demo: recorded data, needs no connectors
+/triage BUG-4830
+/triage BUG-4830 BUG-4844 BUG-4851
+
+# the live demo: synthetic Jira project DEMO
+/queue --team demo-live
+/triage DEMO-7
+/triage DEMO-7 DEMO-8 DEMO-9
+/release-impact DEMO-7
+/triage-doctor --team demo-live
+/triage-review DEMO-8 voice_of_customer "held balance release is by design"
 ```
 
 ## Layout
 
 ```
-.claude-plugin/plugin.json
-.mcp.json                     connector declarations, no secrets
-commands/                     triage, triage-config, release-impact, triage-doctor, triage-review
+.claude-plugin/plugin.json    also plugin.json and .cursor-plugin/plugin.json, kept in step
+commands/                     triage, queue, triage-log, triage-config, release-impact, triage-doctor, triage-review
 skills/
   bug-triage/                 orchestrator
   data-sources/               source contract, adapters, degradation rules
@@ -120,12 +134,18 @@ skills/
   release-correlation/        which release touched this area
   workaround-finder/          what unblocks the customer today
   triage-priority/            P1-P4, escalation caps, confidence
+  triage-config/              builds a team config by conversation
+  triage-queue/               open bugs, what still needs triage
 agents/                       parallel enrichment, one per source
 reference/                    SHARED: rubric, taxonomy, calibration, output templates
-teams/                        PER TEAM: the only file a team edits
-fixtures/                     recorded envelopes, validated against the contract
-scripts/validate_config.py    config and fixture validation
-logs/triage-log.jsonl         every recommendation and every human override
+teams/                        the two demo configs, schema, example
+fixtures/                     recorded envelopes and worked results: rubric test data, validated in CI
+scripts/                      run_header, render_trace, render_queue, triage_log, validate_config
+
+In your own folder, never in the plugin:
+triage-teams/<team>.json      the only file a team edits
+triage-reports/               reports and run traces
+triage-logs/triage-log.jsonl  every recommendation and every human override
 ```
 
 ## Calibration

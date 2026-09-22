@@ -1,6 +1,6 @@
 ---
 description: Check that every configured source is reachable and correctly wired
-argument-hint: [--team <id>]
+argument-hint: [--team <id>]  (optional; same team resolution as triage)
 ---
 
 Run the readiness check for: $ARGUMENTS
@@ -8,7 +8,8 @@ Run the readiness check for: $ARGUMENTS
 0. Resolve `<plugin root>` and `<working folder>` as in `skills/bug-triage` Setup
    step 0, and report both, with the plugin version from its manifest.
 1. Resolve which file this team actually uses, and say so:
-   `python3 <plugin root>/scripts/run_header.py --workdir <working folder> --team <team> --where`
+   `python3 <plugin root>/scripts/run_header.py --workdir <working folder> [--team <team>] [--user-email <email>] --where`
+   and report which rule chose the team.
    It looks in the config dir, then `triage-teams/` in the working folder, then the
    plugin's shipped configs. If it exits 2, there is no config: offer
    `/bug-triage-agent:triage-config <team>` and stop.
@@ -34,7 +35,12 @@ Run the readiness check for: $ARGUMENTS
    For each live source report: the tool names it needs, whether each was found, and
    which provider supplied it. Where a tool is missing, say what the user must connect
    in their own settings. Do not tell them to configure anything inside the plugin.
-6. Warn if any source is in `fixture` mode, and state that outputs will be banner-marked
+6. For every source that is `off`, check whether the session has tools that could serve
+   it (log or metric query tools for metrics, SQL query tools for warehouse, code or
+   repository search tools for code). List any as **available but off**, with the
+   command to bind them: `/bug-triage-agent:triage-config <team>`. Never bind or use
+   them from here.
+7. Warn if any source is in `fixture` mode, and state that outputs will be banner-marked
    as demo data.
 
 Never print credentials, tokens or connection strings. Report reachability only.

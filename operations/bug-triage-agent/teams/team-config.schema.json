@@ -21,6 +21,17 @@
         },
         "id": {
           "type": "string"
+        },
+        "default": {
+          "type": "boolean",
+          "description": "Use this team when no --team is given and the tickets' project key does not decide it. A default in the user's folder outranks the plugin's shipped one."
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Who belongs to this team, for choosing a team when no ticket names one (the queue, the doctor). Exact addresses, or a whole domain written '*@example.com'. An exact address outranks a domain. Matched locally only; never sent anywhere."
         }
       }
     },
@@ -72,6 +83,10 @@
         },
         "board_id": {
           "type": "integer"
+        },
+        "component_label_prefix": {
+          "type": "string",
+          "description": "For trackers with no component field: the label prefix that marks a component, e.g. 'component-' for 'component-approvals'. Used to scope history and duplicates and to show the area in the queue."
         }
       },
       "description": "Issue tracker. Field names are tracker-neutral; the shipped adapter targets Atlassian by default."
@@ -162,7 +177,7 @@
         },
         "manual_file_path": {
           "type": "string",
-          "description": "Required when manual_file is in manifest_sources. Path to a releases envelope, relative to the plugin root."
+          "description": "Required when manual_file is in manifest_sources. A path to a releases envelope; a relative path resolves beside the team config first, then inside the plugin."
         }
       }
     },
@@ -227,6 +242,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "default_branch": {
+            "type": "string",
+            "description": "Branch a fix should start from, written into the fix brief. Defaults to 'main' when unset."
           }
         }
       }

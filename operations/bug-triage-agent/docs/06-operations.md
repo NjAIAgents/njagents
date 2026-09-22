@@ -57,7 +57,7 @@ and final decision is the measurement.
 Implemented as `scripts/triage_log.py`:
 
 ```bash
-triage_log.py append --ticket BUG-1 --team demo --disposition defect \
+triage_log.py append --ticket BUG-1 --team demo-live --disposition defect \
     --priority P2 --confidence high --modes tracker=live,metrics=off
 triage_log.py override --ticket BUG-1 --priority P3 --reason "workaround exists"
 triage_log.py report --days 30

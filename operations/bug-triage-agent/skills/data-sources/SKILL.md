@@ -83,8 +83,18 @@ related            issues in the project matching the summary's distinctive noun
                    only; unresolved tickets carry no resolution to read.
 duplicates         issues in the same component, created within 180 days, whose
                    summary is close to this one                      (limit 5)
-component_history  count of issues in the component resolved in the last 90 days
+component_history  count of issues in the component resolved AS FIXED DEFECTS in the
+                   last 90 days. Exclude works-as-designed, duplicate, won't do,
+                   cannot reproduce, config or data, and feature-request closures.
+                   Where the resolution field is generic ("Done"), read the closing
+                   comment; if still unclear, exclude it. List what was excluded and
+                   why in `notes`, so a reviewer can check the count.
 open_in_component  count currently unresolved in the component
+
+                   A tracker with no component field can name one by label:
+                   when `tracker.component_label_prefix` is set, the label that
+                   starts with it is the component (`component-approvals` ->
+                   `approvals`), and every component-scoped search uses that label.
 
                    If the ticket has **no component set**, these counts cannot be
                    component-scoped. Compute them project-wide, set status to
@@ -94,6 +104,16 @@ open_in_component  count currently unresolved in the component
                    on a project with no components configured produced 6 resolved and
                    30 open, which would have escalated every ticket in the project.
 sprint_collision   whether the component has work in an open sprint  -> bool
+```
+
+**Queue retrieval** (`open_bugs`, used only by `skills/triage-queue`, not by a triage):
+
+```
+open_bugs          unresolved issues of the bug type in tracker.project_key, most
+                   recently created first                              (limit 50)
+                   fields: key, summary, status, priority, component, labels,
+                   created, updated. Do not fetch descriptions or comments; the
+                   queue does not need them and they make the result heavy.
 ```
 
 An Atlassian tracker expresses those as JQL, for example

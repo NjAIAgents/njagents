@@ -1,13 +1,16 @@
 {
-  "//": "Copy this, fill it in, done. Do not copy the rubric or taxonomy: those are shared.",
+  "//": "Starting point for a team config written by hand. Easier: run /bug-triage-agent:triage-config <team>. Save your copy as triage-teams/<team>.json in your own repo, never in the plugin. Do not copy the rubric or taxonomy: those are shared.",
   "team": {
     "name": "Your Team",
     "id": "your-team",
-    "product_line": ""
+    "//members": "Optional. Only used to pick a team when no ticket names one. Exact addresses or '*@example.com'.",
+    "members": [],
+    "default": false
   },
   "tracker": {
     "project_key": "ABC",
     "instance_id": "REPLACE_WITH_INSTANCE_ID",
+    "host": "REPLACE_WITH_TRACKER_HOST",
     "priority_names": {
       "P1": "Blocker",
       "P2": "Critical",
@@ -36,6 +39,13 @@
       "mode": "off"
     }
   },
+  "//zero-setup": "Leave every source except tracker and releases as 'off'. Add a source later by flipping its mode and adding its tool_bindings entry, using tool names found in your session.",
+  "tool_bindings": {
+    "tracker": {
+      "get_issue": "REPLACE_WITH_TOOL_FOUND_IN_SESSION",
+      "search_issues": "REPLACE_WITH_TOOL_FOUND_IN_SESSION"
+    }
+  },
   "release_correlation": {
     "cadence_days": 30,
     "lookback_days": 60,
@@ -56,10 +66,9 @@
   },
   "repos": [],
   "routing": {},
-  "//zero-setup": "Leave every source except tracker and releases as 'off'. Add a connector later by flipping its mode and adding its entry to mcp_tools.",
-  "tool_bindings": {},
   "output": {
     "reports_dir": "triage-reports",
-    "write_report": "always"
+    "write_report": "always",
+    "run_trace": "file"
   }
 }

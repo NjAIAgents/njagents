@@ -36,6 +36,7 @@ drops it, must lose nothing. `🟠 P2`, never `🟠` alone.
 | Source on fixture, or partial | 🟡 | `🟡 fixture` · `🟡 partial` |
 | Source off | ⚫ | `⚫ off` |
 | Source in error | 🔴 | `🔴 error` |
+| Location evidence strong / moderate / weak | 🟢 🟡 🔴 | `🔴 weak evidence` |
 
 Confidence uses a meter, not a color, so it cannot be mistaken for a priority:
 `●●● high` · `●●○ medium` · `●○○ low`.
@@ -49,7 +50,7 @@ column always disambiguates it.
 | Callout | Used for, and only for |
 | --- | --- |
 | `> [!WARNING]` | Demo data banner. Any source on fixtures. |
-| `> [!CAUTION]` | A source in `error`. Placed above Recommendation. |
+| `> [!CAUTION]` | A source in `error`, or **weak or moderate location evidence**. Placed above Recommendation. Both say the same thing: do not act on this blindly. |
 | `> [!IMPORTANT]` | A priority gap against the tracker's current value. |
 | `> [!TIP]` | The workaround. |
 | `> [!NOTE]` | The closing reminder that nothing was written to the tracker. |
@@ -125,7 +126,9 @@ Triaged 2026-09-21 14:22 UTC · team `demo` · agent 0.4.2
 | **Disposition** | `defect` |
 | **Priority** | **🟠 P2** → tracker "Critical" |
 | **Confidence** | ●●● high |
+| **Evidence** | 🟢 strong · fault signal at `ApprovalReviewService.ts:89`, same file changed in 2026.09 |
 | **Route to** | **Approvals Team** |
+| **Fix brief** | `triage-reports/BUG-4830.fix-brief.md` |
 
 **Deciding factor:** confirmed regression with error swallowing at the bug site.
 
@@ -208,6 +211,26 @@ assignee  → Approvals Team
   says which questions went unanswered and what they would have changed.
 - A source in `error` gets a `> [!CAUTION]` callout at the **top**, above
   Recommendation, naming the source and the error.
+- When the evidence is not strong, the callout reads, for example:
+
+  ```markdown
+  > [!CAUTION]
+  > Evidence for where this bug lives is **weak**. Confirm the location before changing
+  > code. If it cannot be confirmed, report back rather than opening a pull request
+  > against a guess.
+  > - code search was off, so no file or line was checked for a fault signal
+  > - the only link to approvals-api/src/approvals/ApprovalReviewService.ts is a release
+  >   record, which ties it by area, not by a fault found in the code
+  ```
+- **Evidence.** For every defect, run
+  `python3 <plugin root>/scripts/render_fix_brief.py --assess <result.json>` and add an
+  `Evidence` row to the Recommendation table with its marker and level. When the level
+  is not `strong`, place its `caution` text and `missing` list verbatim in a
+  `> [!CAUTION]` callout above Recommendation. Never soften, reword or omit it: the
+  report, the trace and the fix brief must show the same verdict, and a fixer or
+  reviewer reading any one of them must learn that the location is unconfirmed.
+  Priority confidence and location evidence are separate: a confident P2 can still
+  have weak evidence about which file to change.
 - Never include a section with nothing in it. Omit it.
 
 ## 3. Tracker comment

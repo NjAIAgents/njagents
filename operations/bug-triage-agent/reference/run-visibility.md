@@ -7,8 +7,15 @@ reader who sees "3 of 5 sources unavailable" before the priority reads a low-con
 P3 as a known limitation. A reader who meets the same P3 cold reads it as a weak
 answer and ignores the tool. Visibility is an adoption mechanism, not decoration.
 
-Everything here is plain text and works in every client. The two optional surfaces at
-the end degrade to nothing without changing the triage.
+Everything here is markdown and works in every client. The optional surfaces at the
+end degrade to nothing without changing the triage.
+
+**Never put the header or a stage line in a code block.** Chat renders a code block in
+monospace with no colour, which strips the markers that carry the meaning. The markers
+are the fixed vocabulary from `reference/output-templates.md`: 🟢 live or ok, 🟡
+fixture or partial, ⚫ off or skipped, 🔴 error, 🔴🟠🟡🔵 P1-P4, ⚪ non-defect, and the
+●●● confidence meter. A colour means the same thing in the header, the stage lines,
+the report and the trace.
 
 ## The header
 
@@ -18,21 +25,24 @@ header that arrives with the answer has told the reader nothing they could act o
 Produced by `scripts/run_header.py`, not composed by the model. A first live run showed
 a model-written header collapsing to "All five sources are fixtures", which dropped
 the count and the principle line, and arrived after four opaque file reads. Code
-cannot abbreviate it. The orchestrator repeats the output verbatim as message text,
-because hosts collapse command output.
+cannot abbreviate it. The orchestrator runs it with `--format md` and repeats the
+output verbatim as message text, because hosts collapse command output.
 
-```
-Bug triage · DEMO-7 · team demo-live
+**Bug triage · DEMO-7 · team `demo-live`**
 
-  tracker     live      project DEMO
-  releases    live      manual file, 2 releases
-  metrics     off       not connected
-  warehouse   off       not connected
-  code        off       no code search bound
+| Source | Mode | |
+| --- | --- | --- |
+| tracker | 🟢 live | project DEMO |
+| releases | 🟢 live | manual_file |
+| metrics | ⚫ off | Metrics connector not provisioned yet |
+| warehouse | ⚫ off | Warehouse not provisioned yet |
+| code | ⚫ off | No code-search connector bound |
 
-  1 of 5 sources available. Absent sources lower confidence and drop
-  escalations. They never raise severity.
-```
+> **2 of 5 sources available.** Absent sources lower confidence and drop escalations. They never raise severity.
+> Config: `…/teams/demo-live.json` (plugin) · Agent **0.5.3**
+
+A live source whose bindings are missing or unfilled shows 🔴, not 🟢: it will fail,
+and the header is where the reader should learn that.
 
 Rules:
 
@@ -50,20 +60,33 @@ Rules:
 
 ## Stage lines
 
-One line per stage as it completes, not when it starts. A line that appears before the
-work claims a result the run does not yet have.
+One markdown line per stage, posted as its own message the moment the stage
+completes, not when it starts. A line that appears before the work claims a result the
+run does not yet have. Posted one at a time, they stream: the reader watches the run
+advance.
 
-```
-Stage 1  ticket + releases ........ ok          1.4s
-Stage 2  disposition .............. defect      0.8s
-Stage 3  enrichment, 1 of 4 sources available
-           tracker ................ ok          1.2s
-           metrics ................ skipped     off
-           warehouse .............. skipped     off
-           code ................... skipped     off
-Stage 4  priority ................. P3          confidence low
-Stage 5  report + audit log ....... written
-```
+**Stage 1 · ticket + releases** · 🟢 ok · 25.0s · tracker via `enrich-tracker`
+**Stage 2 · disposition** · `defect`
+**Stage 3 · enrichment** · 🟢 metrics 4.4× baseline · ⚫ warehouse off · 🟢 code swallowed error at `:89`
+**Stage 4 · priority** · **🟠 P2** · ●●○ medium
+**Stage 5 · output** · 🟢 report · 🟢 trace · 🟢 audit log
+
+A non-defect reads:
+
+**Stage 2 · disposition** · ⚪ `voice_of_customer`
+**Stage 3 · enrichment** · ⚫ skipped, non-defect
+**Stage 4 · priority** · ⚫ skipped, non-defect
+
+The closing summary repeats all five as one table, so the finished run can be read in
+one place:
+
+| Stage | Result | |
+| --- | --- | --- |
+| 1 · ticket + releases | 🟢 ok | 25.0s · tracker via `enrich-tracker` |
+| 2 · disposition | `defect` | |
+| 3 · enrichment | ⚫ 0 of 3 sources | metrics, warehouse, code off |
+| 4 · priority | **🟠 P2** | ●●○ medium |
+| 5 · report + audit log | 🟢 written | |
 
 Rules:
 
@@ -96,16 +119,44 @@ way it was read. Two things must stay honest here:
 - Never print a subagent line for a source that was `off`. A skipped source spawned
   no agent, and a line implying otherwise would misrepresent the run.
 
-## Task list (optional)
+## Live progress: the task list (optional)
 
-Where the host offers task tools, create five tasks matching the five stages at the
-start of the run and resolve each as it completes. Where the host does not, skip it
-silently.
+A message cannot be rewritten once posted, so the stage lines stream but never update.
+The one surface that updates **in place** is the host's task list, where the host has
+one. Use it as the live view: it shows which stage is running now and fills in each
+result as it lands.
 
-This surface is additive. The stage lines above are the record; the task list is a
-convenience that some clients render and others do not. Never move information into
-the task list that does not also appear in the stage lines, or the run becomes
-illegible in the clients that lack it.
+Right after the header, create these tasks, all pending:
+
+| Task title | Shown while running |
+| --- | --- |
+| `Stage 1 · ticket + releases` | Fetching the ticket and release history |
+| `Stage 2 · disposition` | Deciding whether this is a defect |
+| `Stage 3 · enrichment` | Querying metrics, warehouse and code |
+| `Stage 4 · priority` | Scoring against the rubric |
+| `Stage 5 · report + log` | Writing the report, trace and audit record |
+
+Drive them as the run moves:
+
+1. Mark a stage **in progress before** starting its work, never after.
+2. When it finishes, **rewrite the title to carry the result**, using the same markers
+   as the stage line, then mark it complete:
+   `Stage 2 · disposition → defect`, `Stage 4 · priority → 🟠 P2 · ●●○ medium`,
+   `Stage 3 · enrichment → ⚫ skipped, non-defect`.
+3. A stage that stops the run (no tracker, information gate) is rewritten with the
+   reason, e.g. `Stage 1 · ticket + releases → 🔴 tracker unavailable`, and the
+   remaining tasks are marked complete as `→ not run`. Never leave a task spinning
+   after the run has ended.
+
+**Batch mode:** one task per ticket instead of per stage, or a batch of ten would be
+fifty tasks. Show the current stage while running (`DEMO-7 · Stage 3 · enrichment`)
+and rewrite the title to the outcome when done: `DEMO-7 → 🟠 P2 · ●●○`,
+`DEMO-8 → ⚪ voice_of_customer`.
+
+This surface is additive. The stage lines are the record; the task list is a live view
+that some clients render and others do not. Never put information in the task list
+that does not also appear in the stage lines, or the run becomes illegible in the
+clients that lack it.
 
 ## Run trace (optional)
 
@@ -167,6 +218,33 @@ The result file, `<TICKET>.result.json`:
   "unanswered": ["Q2 blast radius"]
 }
 ```
+
+**Fix fields**, defects only, read by `scripts/render_fix_brief.py`:
+
+```json
+{
+  "repo": {"name": "approvals-api", "base_branch": "main"},
+  "repro": {"steps": ["…"], "expected": "…", "actual": "…"},
+  "locations": [
+    {"path": "approvals-api/src/approvals/ApprovalReviewService.ts", "line": 89,
+     "signal": "error_swallowing", "evidence": "…", "source": "code"},
+    {"path": "approvals-api/src/approvals/ApprovalReviewService.ts",
+     "signal": "release_touched", "evidence": "…", "source": "releases"},
+    {"area": "settlements", "signal": "area_only", "evidence": "…", "source": "releases"}
+  ],
+  "hypothesis": {"statement": "…", "confirm_by": "…", "refute_by": "…"},
+  "introduced_by": {"release": "2026.09", "pr": "#4412"},
+  "prior_fixes": [{"key": "BUG-4701", "summary": "…", "note": "…"}]
+}
+```
+
+`signal` is one of `error_swallowing`, `stub`, `suppressed_type_error` (found in code),
+`release_touched`, `prior_fix_file` (a file named by a release or a prior fix),
+`candidate` (a path search suggested, no signal), or `area_only`. The evidence verdict
+is computed from these and only counts signals that agree on the **same file**:
+**strong** needs a code signal at a known line plus a release or prior fix on that
+file; **moderate** is a code signal alone, or both a release and a prior fix on one
+file; anything less is **weak**.
 
 Every source appears, including `off` ones: an absent key would hide exactly what the
 trace exists to show. `level` is the level after that step; `null` means the step was

@@ -66,6 +66,9 @@ What to retrieve, expressed as intent rather than one tracker's query language:
 ticket             the issue itself
 related            issues in the project matching the summary's distinctive nouns,
                    excluding this one, most recently updated first   (limit 10)
+                   Include resolution_notes: the resolution text or closing
+                   comment. Without it workaround discovery has nothing to read,
+                   and will correctly but uselessly report none found.
 duplicates         issues in the same component, created within 180 days, whose
                    summary is close to this one                      (limit 5)
 component_history  count of issues in the component resolved in the last 90 days

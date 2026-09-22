@@ -50,7 +50,12 @@ window is wrong for a monthly cadence: bugs surface days or weeks after a releas
 | --- | --- |
 | high | File-level overlap (`vcs_tag` or `vcs_pr`) plus a the metrics source change at the release boundary. |
 | medium | Component-level overlap (`tracker_fixversion` or `wiki_release_notes`) plus plausible timing. |
-| low | Timing only, no area overlap, or the only adapter available was `manual_file`. |
+| low | Timing only, no area overlap; **or** area overlap but the gap exceeds one release cycle; or the only adapter available was `manual_file`. |
+
+A release that touches the right area but shipped several cycles before the first
+report is weak evidence, not medium. Area overlap alone says the release *could* have
+caused it; timing is what makes the claim worth acting on. Report the overlap, report
+the gap in days against the cadence, and let the reader judge.
 
 Low confidence is reported as "shipped near the report date, no evidence it touched
 this area". Do not present proximity in time as causation.

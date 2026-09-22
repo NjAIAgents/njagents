@@ -25,21 +25,24 @@
         "summary": "Approval not persisted on retry",
         "status": "Done",
         "resolution": "Fixed",
-        "resolved": "2026-08-07"
+        "resolved": "2026-08-07",
+        "resolution_notes": "Root cause was a lost write on retry. Fixed in 2026.08. Stopgap while unfixed: support re-submitted the approval through the UI, which persists correctly. Customers can be told to use the UI."
       },
       {
         "key": "BUG-4755",
         "summary": "Request state machine skips transition on concurrent edit",
         "status": "Done",
         "resolution": "Fixed",
-        "resolved": "2026-08-29"
+        "resolved": "2026-08-29",
+        "resolution_notes": "Added an optimistic-lock check on the transition. No workaround existed."
       },
       {
         "key": "BUG-4812",
         "summary": "Reviewer sees stale request status",
         "status": "In Progress",
         "resolution": null,
-        "resolved": null
+        "resolved": null,
+        "resolution_notes": ""
       }
     ],
     "duplicates": [],

@@ -11,21 +11,32 @@ An honest account of what is built and what is not.
 - `scripts/validate_config.py`: config validation, contract validation, read-only SQL
   enforcement, credential-shaped key detection, placeholder detection.
 
-## Built but unexercised
+## Exercised, 2026-09-21
 
-Almost everything above is **instructions the model follows at runtime**, not code that
-executes deterministically. It is written but has never been run.
+Five runs against fixtures: BUG-4830, BUG-4844, BUG-4851, BUG-4858 under `demo`, and
+BUG-4830 again under `demo-gc`. `fixtures/expected-outcomes.md` is now **recorded from
+those runs**, not predicted.
 
-`fixtures/expected-outcomes.md` is a specification derived from the rubric, **not a
-transcript of a real run**. Expect the first execution to surface skipped stages or the
-right answer reached by the wrong reasoning.
+What held: the disposition gate (two non-defects received no priority), the
+two-team consistency guarantee (same rubric, different priority names, no inflation
+from switched-off sources), parallel subagent delegation, the escalation cap.
+
+What the runs found, all since fixed: the tracker contract had no field for resolution
+text so workaround discovery could never succeed; the expectations file assumed a base
+level that the base-precedence rule contradicted; the correlation confidence table had
+no row for area overlap with stale timing; the P1 stoppage criterion was ambiguous
+enough that two readings of BUG-4851 were defensible; nothing wrote the audit log; and
+`mcp.json` declared three unconfigured servers so every install opened with failed
+connections.
+
+Still true: this is instructions the model follows at runtime, not deterministic code.
+Five runs is five runs.
 
 ## Not built
 
 | Missing | Why it matters |
 | --- | --- |
 | Event trigger | The agent runs when a person types a command. The requirement is that it acts when a ticket is submitted. Needs real code. |
-| Log writer and accuracy report | `logs/` is empty. The format is specified; nothing writes it. Needs real code. |
 | Validated taxonomy | The shipped disposition taxonomy is a construction, not any organization's actual judgment. Replace it via interviews plus a changelog-derived benchmark. |
 | Live connection | No credentials have been used. Tool-name bindings for non-tracker sources are informed guesses. |
 
@@ -76,8 +87,9 @@ as unconfigured. Only the tracker entry is needed for the zero-setup tier.
 
 ## Rough completeness
 
-Demo: about 85 percent, the remainder being "run it and fix what breaks".
-Production: closer to 40 percent.
+Demo: runs, with recorded expectations and an implemented audit log.
+Production: still roughly half. The event trigger does not exist, the taxonomy is
+unvalidated, and nothing has touched a live source.
 
 ## Do not
 

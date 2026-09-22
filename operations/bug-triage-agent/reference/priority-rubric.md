@@ -17,6 +17,22 @@ through an API is not an automated workflow: the human is the loop, and their fa
 to act is an ordinary workflow impact. Without this test the criterion swallows every
 API-submitted approval bug.
 
+**Stoppage test (P1).** "Complete workflow stoppage for an at-risk client" means the
+client cannot complete a **business outcome** the product exists to deliver, with no
+path around it. One broken workflow among several they use is a blocked workflow, not
+a stoppage.
+
+Apply it in two steps:
+
+1. Name the outcome the client cannot reach.
+2. Ask whether any other path reaches it, including a manual or engineer-assisted one.
+   If a path exists, however inconvenient, this is not a stoppage.
+
+**When the answer is genuinely arguable, do not pick.** Emit the recommendation at the
+lower level, flag it as a P1 boundary case, name both readings, and route to a human.
+A wrong P1 burns the 45-minute SLA and the on-call's trust; a wrong P2 on something
+that was P1 is caught by the person the flag went to. The asymmetry is deliberate.
+
 **Base precedence.** The criteria are "any of", so a ticket can match several. Two
 rules resolve it:
 

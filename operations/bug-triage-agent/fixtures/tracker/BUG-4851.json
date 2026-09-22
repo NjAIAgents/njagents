@@ -26,7 +26,8 @@
         "summary": "Export scheduler skipped a run after config reload",
         "status": "Done",
         "resolution": "Fixed",
-        "resolved": "2026-07-22"
+        "resolved": "2026-07-22",
+        "resolution_notes": "An engineer restarted the scheduler manually and backfilled the missed run. No customer-side or support-side action is possible; the fix requires shell access to the scheduler host."
       }
     ],
     "duplicates": [],

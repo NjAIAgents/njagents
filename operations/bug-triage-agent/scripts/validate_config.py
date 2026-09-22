@@ -179,6 +179,13 @@ def check_fixture(path):
         if d["data"]:
             err(f"{name}: status 'unavailable' must carry an empty data object")
         return
+    if d["source"] == "tracker":
+        for r in d["data"].get("related", []):
+            if "resolution_notes" not in r:
+                err(f"{name}: related ticket {r.get('key','?')} has no "
+                    "'resolution_notes'. Workaround discovery reads that field; "
+                    "without it the source silently yields nothing.")
+
     if d["source"] == "releases":
         for r in d["data"].get("releases", []):
             need = {"version", "released_on", "components", "issue_keys",

@@ -43,8 +43,12 @@ first install to surface something.
 
 ## MCP servers
 
-`mcp.json` declares four servers. Only the tracker entry has a real URL; the other
-three are literal `REPLACE_WITH_` placeholders you edit before enabling that source.
+`mcp.json` declares **only the tracker**. The other three live in
+`mcp.json.optional`; copy an entry across when you enable that source.
+
+This matters: an earlier version declared all four, so every install opened with three
+failed connections. Teaching people to ignore connection errors is worse than making
+them add a line.
 
 They are placeholders rather than variables on purpose: **no client expands
 environment variables in a `url` field**, so a `${METRICS_MCP_URL}` there ships broken.

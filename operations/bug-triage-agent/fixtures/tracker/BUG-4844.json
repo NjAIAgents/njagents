@@ -25,14 +25,16 @@
         "summary": "Held balance release must be manual and separately approved",
         "status": "Done",
         "resolution": "Works as designed",
-        "resolved": "2025-11-03"
+        "resolved": "2025-11-03",
+        "resolution_notes": "Closed works as designed. Held balance release is deliberately manual and separately approved, per the controls requirement."
       },
       {
         "key": "BUG-4402",
         "summary": "Add optional auto-release of held balance on final approval",
         "status": "Backlog",
         "resolution": null,
-        "resolved": null
+        "resolved": null,
+        "resolution_notes": ""
       }
     ],
     "duplicates": [],

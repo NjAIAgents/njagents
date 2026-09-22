@@ -1,24 +1,11 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
-  "//": "Each team authorizes with its OWN credentials, held by the MCP host. No secrets in this repo, ever.",
-  "//urls": "Edit the REPLACE_WITH_ urls before enabling a source. These are literal placeholders, not variables: no client expands environment variables in a url field. Only the tracker is needed for the zero-setup tier.",
+  "//": "Only the tracker is declared by default. Declaring a server the team has not configured makes every install open with failed connections, which teaches people to ignore connection errors.",
+  "//adding": "To enable another source, copy its entry from mcp.json.optional into mcpServers here, set the url, add its tool_bindings, and flip the source mode in your team config.",
   "mcpServers": {
     "tracker": {
       "type": "http",
       "url": "https://mcp.atlassian.com/v1/mcp"
-    },
-    "metrics": {
-      "type": "http",
-      "url": "https://REPLACE_WITH_METRICS_MCP_HOST/mcp"
-    },
-    "warehouse": {
-      "type": "http",
-      "url": "https://REPLACE_WITH_WAREHOUSE_MCP_HOST/mcp"
-    },
-    "code": {
-      "type": "http",
-      "url": "https://REPLACE_WITH_CODE_MCP_HOST/mcp"
     }
-  },
-  "//tracker": "The tracker url defaults to Atlassian's hosted MCP. Point it at your own tracker's MCP server and set tool_bindings.tracker to match."
+  }
 }

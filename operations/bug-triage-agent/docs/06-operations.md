@@ -54,8 +54,20 @@ those stopping at the information or disposition gate.
 `human_override` is filled later by `/triage-review`. The gap between recommendation
 and final decision is the measurement.
 
-**This is not implemented yet.** The format is specified; nothing writes it. See
-[`STATUS.md`](../STATUS.md).
+Implemented as `scripts/triage_log.py`:
+
+```bash
+triage_log.py append --ticket BUG-1 --team demo --disposition defect \
+    --priority P2 --confidence high --modes tracker=live,metrics=off
+triage_log.py override --ticket BUG-1 --priority P3 --reason "workaround exists"
+triage_log.py report --days 30
+```
+
+`append` refuses a non-defect carrying a priority, so the disposition gate is enforced
+in the log as well as in the pipeline. `override` records the human's call **without
+altering the recommendation**, because the gap between them is the measurement.
+`report` gives agreement per disposition class and priority-within-one-level,
+separately.
 
 ## Weekly and monthly rhythm
 

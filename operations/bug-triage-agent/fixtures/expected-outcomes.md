@@ -1,114 +1,98 @@
 # Expected outcomes
 
-A regression test for the demo. Run each command and compare. A divergence means the
-fixtures drifted or a shared rule changed.
+**Recorded from real runs on 2026-09-21, not derived from the rubric.** An earlier
+version of this file was a prediction, and five runs found nine divergences from it.
+When you change a rule, re-run these and rewrite this file from what happened.
 
-The arithmetic below is recomputed from `reference/priority-rubric.md`. If you change
-the rubric, recompute these.
+Every run below is `--team demo` unless stated.
 
 ## `/triage BUG-4830 --team demo`
 
-All five sources in fixture mode.
-
-| Field | Expected |
+| Field | Observed |
 | --- | --- |
-| Disposition | `defect`, confidence high |
-| Release | 2026.09, shipped 5 Sep, first error 8 Sep, 3 days. File-level overlap on `ApprovalReviewService.ts` via PR #4412. Correlation confidence high |
-| Workaround | Re-submit through the UI rather than the API. Source: BUG-4701 resolution. Applies to: support |
-| Base | P3. The ticket also matches P2 "core workflow blocked", but a practical customer workaround caps the base at P3 per the base-precedence rule |
-| Escalations | `+1 release` confirmed regression (4.4x baseline, deploy 2026.09 in window), `+1 code` error swallowing at line 214 |
-| Not counted | `history` (4 resolved in 90d, sprint collision) - cap reached |
-| Final | **P2** -> tracker "Critical". Current "Minor", gap flagged |
+| Disposition | `defect`, high. Evidence: BUG-4701 same failure mode fixed as a defect; API returns 200 while state stays Pending Review |
+| Alternative | `expected_behavior`, ruled out: no spec or works-as-designed closure describes it |
+| Workaround | Re-submit through the UI. **Applies to: support**, and customers can be told. Source: BUG-4701 `resolution_notes` |
+| Base | **P3**, because a practical customer workaround exists and caps it there |
+| Escalations | `+1 release` confirmed regression (4.4x vs spike_ratio 3.0; deploy 2026.09 52.2h before first error, inside 720h), `+1 code` error swallowing at ApprovalReviewService.ts:214 |
+| Not counted | `history` (4 resolved in 90d, sprint collision) — two-level cap reached |
+| Final | **P2** → "Critical". Current "Minor", gap flagged |
+| Release | 2026.09, shipped 5 Sep, first error 8 Sep, 3 days. File-level overlap via `vcs_tag`. Correlation **high** |
 | Confidence | high |
 | Team | Approvals Team |
-| Not P1 | The reviewer is a human acting through the API, so the automated-approval criterion does not apply |
 
-Two levels from P3 reaches P1 arithmetically. The rule that P1 is never reached by
-escalation holds it at P2. This is the cap doing its job.
+Demonstrates the cap: P3 plus two levels reaches P1 arithmetically, and the
+never-P1-by-escalation rule holds it at P2.
 
 ## `/triage BUG-4844 --team demo`
 
-| Field | Expected |
+| Field | Observed |
 | --- | --- |
-| Disposition | `voice_of_customer`, confidence high |
-| Evidence | BUG-3120 closed works-as-designed, BUG-4402 open feature request for this exact behaviour |
-| Alternative considered | `defect`, ruled out: the system does what it was designed to do, the customer wants a different design |
+| Disposition | `voice_of_customer`, high |
+| Evidence | BUG-3120 closed **Works as designed**: held balance release is deliberately manual. BUG-4402 is an open feature request for this exact behaviour |
+| Alternative | `defect`, ruled out: the system does what it was designed to do |
 | Priority | **none assigned** |
-| Stage 3 | never runs. Two source calls, not five |
-| Routing | PRODUCT (`tracker.voc_destination`) |
+| Stage 3 | never ran. Two source calls, not five |
+| Routing | `tracker.voc_destination` |
 
-The key beat. A `Major` ticket from an unhappy customer that should never enter the
-defect queue.
+The key case. A `Major` ticket from an unhappy customer that never enters the defect
+queue. Note the ticket says "They call this a bug" and the gate disagrees, correctly.
 
 ## `/triage BUG-4851 --team demo`
 
-| Field | Expected |
+| Field | Observed |
 | --- | --- |
-| Disposition | `defect`, confidence medium |
-| Release | 2026.08, shipped 4 Aug, first seen 18 Sep, 45 days. Component-level overlap only (`tracker_fixversion` yields no file detail), timing beyond one cycle. Correlation confidence **low**, reported as "shipped in window, weak evidence it caused this" |
-| the metrics source | No spike. Absence of output produces no errors. Reported as a finding, not as evidence against a defect |
-| Workaround | Engineer-run manual export. **Not a customer workaround**, so the impact escalation still applies |
-| Floor | P2 (labels `at-risk`, `renewal` match `tracker.at_risk_labels`) |
-| Escalations | `+1 impact` no customer workaround. `blast` class not counted at all: the at-risk floor consumes the class, so enterprise tier adds nothing on top |
-| Final | **P2** (escalation cannot reach P1) |
-| Confidence | high. Five sources returned data and agree, and no question is unanswered. The absent spike is consistent with an absence-type failure, not a disagreement |
+| Disposition | `defect`, high |
+| Workaround | Engineer restarts the scheduler and backfills. **Applies to: engineer only.** Source: BUG-4790 `resolution_notes`. Not a customer workaround, so the P3 base cap does **not** apply |
+| P1 stoppage test | Outcome = reconcile settlements. An engineer-assisted path exists, so **not** a stoppage. Stays below P1 |
+| Base | **P2** (core workflow blocked, at-risk client) |
+| Floor | P2 from labels `at-risk`, `renewal`. The floor consumes the blast class, so enterprise tier adds nothing |
+| Escalations | `+1 impact` no customer workaround — absorbed by never-P1 |
+| Final | **P2** → "Critical". Current "Critical", no gap |
+| Release | 2026.08, shipped 4 Aug, first seen 18 Sep, **45 days against a 30-day cadence**. Component overlap only, no file detail. Correlation **low** |
+| Metrics | No spike. An absent output produces no errors. Reported as a finding, not as evidence against a defect |
+| Confidence | high |
 
-Demonstrates an honest negative on release correlation, and the customer-versus-engineer
-workaround distinction.
+Exercises three rules at once: the customer-versus-engineer workaround distinction, the
+P1 stoppage test, and the correlation row for area overlap with stale timing.
 
 ## `/triage BUG-4858 --team demo`
 
-| Field | Expected |
+| Field | Observed |
 | --- | --- |
-| Disposition | `duplicate` of BUG-4849, confidence high |
-| Why | Same failure mode, header offset after the amount column was added. Not merely similar wording |
-| Priority | none assigned. Parent may need review |
-| Release | reported from Stage 1: 2026.09 touched `csvExport.ts`, consistent with the duplicate's cause. Pull-request numbers come from the `code` source in Stage 3, which never runs for a non-defect, so they are not cited here |
+| Disposition | `duplicate` of BUG-4849, high |
+| Why | Same **failure mode**, header offset after the amount column was added. Not wording similarity |
+| Priority | none assigned |
+| Release | from Stage 1: 2026.09 touched `csvExport.ts` |
 
 ## `/triage BUG-4830 --team demo-gc`
 
-Same ticket, same shared rubric, second team running tracker and releases only.
+The consistency test. Same ticket, same shared rubric, second team with metrics,
+warehouse and code `off`.
 
-| Field | Expected |
+| Field | Observed |
 | --- | --- |
-| Disposition | `defect`, confidence medium |
+| Disposition | `defect` |
 | Unanswered | Q2 blast radius, Q4 regression, Q7 code signals, Q10 enterprise tier |
-| Base | P3 |
-| Escalations | `+1 history` recurring component and sprint collision, one escalation for the class. No `release` escalation: a regression needs the metrics source, which is off |
-| Final | **P2** -> tracker "**High**" (different priority name, identical rubric) |
-| Confidence | medium, capped by the unanswered regression question |
-| Team | Second Team Backend (`routing.approvals`) |
-| Round-up | **not applied.** Symptoms are single-account, so switched-off connectors do not inflate priority |
+| Base | P3 (the workaround is still visible: it comes from the tracker, which is on) |
+| Escalations | `+1 history` recurring component and sprint collision, one per class. **No release escalation**: confirming a regression needs metrics |
+| Final | **P2** → "**High**". Different priority name, identical rubric |
+| Confidence | **medium**, capped by the unanswered regression question |
+| Round-up | **not applied.** Single-account symptoms, so switched-off sources do not inflate |
+| Team | Second Team Backend |
 
-The two runs reach the same level by different routes, with different confidence and
-an explicit list of what could not be checked. That is the intended message: more
-connectors buy **certainty**, not severity. The previous design would have rounded this
-up for lack of data, which is what drove teams off it.
+Both teams reach P2 by different routes with different confidence. That is the intended
+message: **more connectors buy certainty, not severity.**
 
 ## Validator behaviour
 
-Two exit paths, deliberately.
-
 ```
-python3 scripts/validate_config.py --all             -> exit 0
-  UNCONFIGURED reference-full.json: tracker.instance_id is a placeholder (REPLACE_WITH_CLOUD_ID). This config cannot go live until it is set.
-  UNCONFIGURED reference-full.json: placeholder value at 'tracker.host' (REPLACE_WITH_SITE.atlassian.net)
-  UNCONFIGURED reference-full.json: placeholder value at 'release_correlation.vcs.org' (REPLACE_WITH_ORG)
-  UNCONFIGURED bta.json: tracker.instance_id is a placeholder (REPLACE_WITH_CLOUD_ID). This config cannot go live until it is set.
-  PASS (0 warning(s), 2 config(s) awaiting real values). Run the validator on a named config before going live with it.
-
-python3 scripts/validate_config.py teams/demo.json  -> exit 0
-python3 scripts/validate_config.py teams/bta.json   -> exit 1
-  1 unset value(s). This config cannot go live yet.
+python3 scripts/validate_config.py --all           -> exit 0, placeholders as UNCONFIGURED
+python3 scripts/validate_config.py teams/demo.json -> exit 0
+python3 scripts/validate_config.py teams/bta.json  -> exit 1, placeholder instance_id
 ```
 
-The suite is green so it can gate CI, while a named config still refuses to certify a
-placeholder. `/triage-doctor --team bta` runs the named form and therefore fails until
-`instance_id` is set. A validator that reports green on a placeholder is worse than no
-validator; one that is permanently red is ignored.
+## Not covered
 
-## Not covered by fixtures
-
-The P1 fast path. No fixture triggers it, deliberately: P1 detection is unchanged from
-the existing design and does not need demo airtime. Verify it separately with a
+The P1 fast path. No fixture triggers it, deliberately. Verify separately with a
 hand-written outage ticket.

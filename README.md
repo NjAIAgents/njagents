@@ -78,6 +78,7 @@ njagents/
 └── operations/
     └── bug-triage-agent/
         ├── README.md
+        ├── docs/                   full documentation
         ├── STATUS.md
         ├── .claude-plugin/plugin.json
         ├── .mcp.json

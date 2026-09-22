@@ -16,6 +16,22 @@ cycle, workaround discovery, and a shared rubric that teams configure rather tha
 - **Missing connectors do not inflate priority.** Round-up is tied to evidence in the
   ticket, not to the absence of a data source.
 
+## Documentation
+
+Full documentation is in [`docs/`](docs/README.md). That index also states **where
+each rule is defined**, so you never have to guess which file wins.
+
+| | |
+| --- | --- |
+| [Overview](docs/01-overview.md) | The problem, what it does, why it is shaped this way |
+| [Architecture](docs/02-architecture.md) | Stages, shared core, source contract |
+| [Installation](docs/03-installation.md) | Per client, and the zero-setup tier |
+| [Configuration](docs/04-configuration.md) | Every team config key |
+| [Usage](docs/05-usage.md) | Commands, reading the output, overrides |
+| [Operations](docs/06-operations.md) | Validator, packaging, logging, troubleshooting |
+| [Extending](docs/07-extending.md) | Where a change belongs, adding sources and adapters |
+| [Glossary](docs/08-glossary.md) | Terms that mean something specific here |
+
 ## Install
 
 Add the marketplace, install the plugin, authorize the connectors your team uses.

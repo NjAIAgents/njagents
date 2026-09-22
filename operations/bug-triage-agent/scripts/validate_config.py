@@ -263,10 +263,24 @@ def main():
 
     check_manifests()
     print("\nFixtures:")
-    fx = sorted(glob.glob(os.path.join(ROOT, "fixtures", "**", "*.json"), recursive=True))
+    allfx = sorted(glob.glob(os.path.join(ROOT, "fixtures", "**", "*.json"), recursive=True))
+    results_dir = os.path.join(ROOT, "fixtures", "results") + os.sep
+    fx = [f for f in allfx if not f.startswith(results_dir)]
+    rs = [f for f in allfx if f.startswith(results_dir)]
     for f in fx:
         check_fixture(f)
     print(f"  {len(fx)} fixture files checked against the source contract")
+
+    # Result files are the orchestrator's output, not source envelopes. Check them
+    # against the renderer's own contract so the two cannot drift apart.
+    if rs:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from render_trace import validate as validate_result
+        for f in rs:
+            with open(f) as fh:
+                for p in validate_result(json.load(fh)):
+                    err(f"{os.path.relpath(f, ROOT)}: {p}")
+        print(f"  {len(rs)} result files checked against the trace contract")
 
     explicit = bool(args) and args[0] != "--all"
 

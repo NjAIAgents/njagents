@@ -1,0 +1,90 @@
+{
+  "team": "demo",
+  "triaged_at": "2026-09-22 10:14 UTC",
+  "agent_version": "0.4.3",
+  "ticket": "BUG-4830",
+  "summary": "Approval step fails silently for Northwind Co when submitted via API",
+  "sources": {
+    "tracker": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "releases": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "metrics": {
+      "mode": "fixture",
+      "status": "ok",
+      "note": "4.4× baseline"
+    },
+    "warehouse": {
+      "mode": "fixture",
+      "status": "ok",
+      "note": "1 account, 0 enterprise"
+    },
+    "code": {
+      "mode": "fixture",
+      "status": "ok",
+      "note": "error swallowing at :89"
+    }
+  },
+  "disposition": "defect",
+  "priority": "P2",
+  "tracker_priority": "Critical",
+  "current_priority": "Minor",
+  "confidence": "high",
+  "confidence_basis": "Five sources returned data and agree; no unanswered question could change the level.",
+  "route": "Approvals Team",
+  "disposition_evidence": [
+    {
+      "text": "API returns 200 while the request stays Pending Review",
+      "source": "ticket description"
+    },
+    {
+      "text": "BUG-4701, same failure mode, closed Fixed rather than as designed",
+      "source": "tracker"
+    }
+  ],
+  "alternative": "Considered expected_behavior; ruled out because no specification or works-as-designed closure describes this behaviour.",
+  "steps": [
+    {
+      "step": "Base",
+      "level": "P3",
+      "because": "A practical customer workaround exists, which caps the base"
+    },
+    {
+      "step": "+1 release",
+      "level": "P2",
+      "because": "Confirmed regression: 4.4× baseline, deploy 2026.09 52h before first error"
+    },
+    {
+      "step": "+1 code",
+      "level": "P2",
+      "ghost": "P1",
+      "because": "Error swallowing at ApprovalReviewService.ts:89. Would reach P1; never by escalation"
+    },
+    {
+      "step": "history",
+      "level": null,
+      "because": "4 resolved in 90d and a sprint collision; the two-level cap already binds"
+    },
+    {
+      "step": "Final",
+      "level": "P2",
+      "because": "Held at P2"
+    }
+  ],
+  "release": {
+    "version": "2026.09",
+    "shipped": "2026-09-05",
+    "gap_days": 3,
+    "confidence": "high",
+    "basis": "File-level overlap on ApprovalReviewService.ts."
+  },
+  "workaround": {
+    "text": "Re-submit the approval through the UI rather than the API.",
+    "who": "support, and customers can be told",
+    "source": "BUG-4701 resolution notes"
+  }
+}

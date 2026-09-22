@@ -1,0 +1,44 @@
+{
+  "team": "demo",
+  "triaged_at": "2026-09-22 10:14 UTC",
+  "agent_version": "0.4.3",
+  "ticket": "BUG-4844",
+  "summary": "Held balance is not released on the final approval and the customer says this is wrong",
+  "sources": {
+    "tracker": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "releases": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "metrics": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "warehouse": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "code": {
+      "mode": "fixture",
+      "status": "ok"
+    }
+  },
+  "disposition": "voice_of_customer",
+  "priority": null,
+  "confidence": "high",
+  "route": "PRODUCT",
+  "disposition_evidence": [
+    {
+      "text": "BUG-3120 closed Works as designed: held balance release is deliberately manual",
+      "source": "tracker"
+    },
+    {
+      "text": "BUG-4402 is an open request for optional auto-release, this exact behaviour",
+      "source": "tracker"
+    }
+  ],
+  "alternative": "Considered defect; ruled out because the system does what it was designed to do."
+}

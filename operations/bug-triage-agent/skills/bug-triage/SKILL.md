@@ -81,9 +81,14 @@ triaging it.
 
 ## Stage 3: deep enrichment (defects only, in parallel)
 
-**Delegate these to parallel subagents and wait for all of them before continuing.**
-One per source, for whichever of `metrics`, `warehouse` and `code` are in `live` or
-`fixture` mode. Skip sources that are `off`.
+**Delegate live sources to parallel subagents and wait for all of them before
+continuing.** One per source, for whichever of `metrics`, `warehouse` and `code` are in
+`live` mode. Skip sources that are `off`.
+
+Read `fixture` sources directly, without a subagent. A fixture is a local envelope
+file; a subagent to read it adds latency and parallelises nothing worth parallelising.
+Delegation exists for network calls that are slow and independent. The envelope is the
+same either way, so nothing downstream can tell the difference.
 
 State the delegation explicitly rather than relying on any one client's bundled-agent
 files: Claude and Cursor load the definitions in `agents/`, and Codex delegates when a
@@ -133,11 +138,19 @@ Three surfaces, all defined in [`reference/output-templates.md`](../../reference
    not the plugin, which may be installed somewhere temporary. Say where you wrote it.
 3. **Tracker comment.** Generated as plain text. Never posted without explicit
    per-ticket confirmation in the conversation.
-4. **Run trace.** Per `output.run_trace` in the team config, defined in
-   [`reference/run-visibility.md`](../../reference/run-visibility.md). Default `file`,
+4. **Run trace.** Unless `output.run_trace` is `never`, write the structured result to
+   `<reports_dir>/<TICKET>.result.json` in the shape defined in
+   [`reference/run-visibility.md`](../../reference/run-visibility.md), then run:
+
+       python3 scripts/render_trace.py --out <reports_dir> <reports_dir>/<TICKET>.result.json
+
+   **Never hand-write the trace HTML.** The script renders it identically every run and
+   refuses a non-defect that carries a priority. If it refuses, the result file is
+   wrong: fix the result, not the script. With `artifact`, publish the rendered file
+   where the client can publish; otherwise keep the file and say so. Default is `file`,
    because a trace carries customer names and account counts and publishing it is a
-   disclosure decision. Where `artifact` is set but the client cannot publish, write
-   the file instead and say so. Never fail a triage over a presentation surface.
+   disclosure decision. Never fail a triage over a presentation surface. In batch mode,
+   render all tickets in one call.
 
 Then append the audit record:
 

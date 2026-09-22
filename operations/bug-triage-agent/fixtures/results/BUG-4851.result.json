@@ -1,0 +1,89 @@
+{
+  "team": "demo",
+  "triaged_at": "2026-09-22 10:14 UTC",
+  "agent_version": "0.4.3",
+  "ticket": "BUG-4851",
+  "summary": "Nightly settlement export missing for Fabrikam since Friday",
+  "sources": {
+    "tracker": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "releases": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "metrics": {
+      "mode": "fixture",
+      "status": "ok",
+      "note": "no spike, no deploys in window"
+    },
+    "warehouse": {
+      "mode": "fixture",
+      "status": "ok",
+      "note": "1 account, 1 enterprise"
+    },
+    "code": {
+      "mode": "fixture",
+      "status": "ok",
+      "note": "nothing at the bug site"
+    }
+  },
+  "disposition": "defect",
+  "priority": "P2",
+  "tracker_priority": "Critical",
+  "current_priority": "Critical",
+  "confidence": "high",
+  "confidence_basis": "Five sources returned data and agree; no unanswered question could change the level.",
+  "route": "Payments Team",
+  "disposition_evidence": [
+    {
+      "text": "No export file for 18, 19 and 20 Sep; one per night is the designed behaviour",
+      "source": "ticket description"
+    },
+    {
+      "text": "BUG-4790, the same scheduler skipping a run, was closed Fixed",
+      "source": "tracker"
+    }
+  ],
+  "steps": [
+    {
+      "step": "P1 test",
+      "level": null,
+      "because": "Not a stoppage: an engineer-assisted path to reconcile exists"
+    },
+    {
+      "step": "Base",
+      "level": "P2",
+      "because": "Core workflow blocked; the only workaround is engineer-only, so the P3 cap does not apply"
+    },
+    {
+      "step": "At-risk floor",
+      "level": "P2",
+      "because": "Labels at-risk, renewal. The floor consumes the blast class"
+    },
+    {
+      "step": "+1 impact",
+      "level": "P2",
+      "ghost": "P1",
+      "because": "No customer workaround. Absorbed: never P1 by escalation"
+    },
+    {
+      "step": "Final",
+      "level": "P2",
+      "because": "Matches the current tracker priority"
+    }
+  ],
+  "release": {
+    "version": "2026.08",
+    "shipped": "2026-08-04",
+    "gap_days": 45,
+    "confidence": "low",
+    "basis": "Component overlap only, 45 days against a 30-day cadence."
+  },
+  "workaround": {
+    "text": "An engineer restarts the export scheduler and backfills the missed runs.",
+    "who": "engineer only",
+    "source": "BUG-4790 resolution notes"
+  }
+}

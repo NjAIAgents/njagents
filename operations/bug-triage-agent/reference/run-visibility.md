@@ -84,8 +84,9 @@ Rules:
 
 ## Subagent visibility
 
-Stage 3 delegates one subagent per available source. Name each in the indented block
-as it returns, in completion order. Two things must stay honest here:
+Stage 3 delegates one subagent per **live** source; fixture sources are read directly.
+Name each source in the indented block as it returns, in completion order, whichever
+way it was read. Two things must stay honest here:
 
 - A client that cannot delegate runs the sources in turn. Print the same lines. The
   reader cares which sources answered, not how the work was scheduled.
@@ -124,3 +125,49 @@ whose tracker holds real customer tickets should leave the default alone.
 
 Where `artifact` is set but the client cannot publish, fall back to `file` and say so
 in one line. Never fail a triage because a presentation surface was unavailable.
+
+### Rendered by code
+
+`scripts/render_trace.py` turns a result file into the page. The orchestrator writes
+the result; it never writes the HTML. A first test run showed why: with no renderer,
+producing four traces meant hand-writing four pages, slow and different every time,
+so none were produced at all.
+
+The result file, `<TICKET>.result.json`:
+
+```json
+{
+  "ticket": "BUG-4830", "summary": "…", "team": "demo",
+  "triaged_at": "2026-09-22 10:14 UTC", "agent_version": "0.4.3",
+  "sources": {
+    "tracker":   {"mode": "fixture", "status": "ok", "note": ""},
+    "releases":  {"mode": "fixture", "status": "ok"},
+    "metrics":   {"mode": "fixture", "status": "ok", "note": "4.4× baseline"},
+    "warehouse": {"mode": "off"},
+    "code":      {"mode": "fixture", "status": "ok", "note": "error swallowing at :89"}
+  },
+  "disposition": "defect",
+  "priority": "P2", "tracker_priority": "Critical", "current_priority": "Minor",
+  "confidence": "high", "confidence_basis": "…", "route": "Approvals Team",
+  "disposition_evidence": [{"text": "…", "source": "tracker"}],
+  "alternative": "Considered expected_behavior; ruled out because …",
+  "steps": [
+    {"step": "Base",       "level": "P3", "because": "…"},
+    {"step": "+1 release", "level": "P2", "because": "…"},
+    {"step": "+1 code",    "level": "P2", "ghost": "P1", "because": "…"},
+    {"step": "history",    "level": null, "because": "not counted: cap binds"},
+    {"step": "Final",      "level": "P2", "because": "…"}
+  ],
+  "release": {"version": "2026.09", "shipped": "2026-09-05", "gap_days": 3,
+              "confidence": "high", "basis": "…"},
+  "workaround": {"text": "…", "who": "support", "source": "BUG-4701"},
+  "unanswered": ["Q2 blast radius"]
+}
+```
+
+Every source appears, including `off` ones: an absent key would hide exactly what the
+trace exists to show. `level` is the level after that step; `null` means the step was
+considered and not counted. `ghost` is where the arithmetic would have gone before a
+rule held it, which the ladder draws as a crossed-out point. A non-defect has
+`"priority": null` and no `steps`; the renderer refuses one that carries a priority.
+Worked examples for all four demo tickets are in `fixtures/results/`.

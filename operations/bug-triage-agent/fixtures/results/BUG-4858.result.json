@@ -1,0 +1,39 @@
+{
+  "team": "demo",
+  "triaged_at": "2026-09-22 10:14 UTC",
+  "agent_version": "0.4.3",
+  "ticket": "BUG-4858",
+  "summary": "Amount column misaligned in the reporting export header",
+  "sources": {
+    "tracker": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "releases": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "metrics": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "warehouse": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "code": {
+      "mode": "fixture",
+      "status": "ok"
+    }
+  },
+  "disposition": "duplicate",
+  "priority": null,
+  "confidence": "high",
+  "route": "link to BUG-4849 and close",
+  "disposition_evidence": [
+    {
+      "text": "BUG-4849 is open in reporting with the same failure mode: header offset by one after the amount column was added",
+      "source": "tracker"
+    }
+  ]
+}

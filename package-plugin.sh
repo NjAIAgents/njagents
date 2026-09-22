@@ -29,6 +29,18 @@ if [[ ! -f "$PLUGIN_DIR/.claude-plugin/plugin.json" ]]; then
   exit 1
 fi
 
+# Repository-wide pre-flight. The constitution is only worth something if
+# something checks it.
+if [[ -f "$SCRIPT_DIR/scripts/check_constitution.py" ]]; then
+  echo "Checking constitution..."
+  python3 "$SCRIPT_DIR/scripts/check_constitution.py" || {
+    echo ""
+    echo "ERROR: constitution violation. Fix it, or add a reasoned entry to"
+    echo "       .constitution-allow. See .specify/memory/constitution.md"
+    exit 1
+  }
+fi
+
 # Plugin-specific pre-flight. A plugin that ships a validator must pass it
 # before it can be packaged.
 if [[ -f "$PLUGIN_DIR/scripts/validate_config.py" ]]; then

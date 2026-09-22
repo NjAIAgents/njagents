@@ -117,3 +117,18 @@ redefined principle, minor for a new one, patch for clarification.
 
 Every plan and review checks compliance. Complexity that violates a principle must be
 justified in writing or removed.
+
+### Enforcement
+
+`scripts/check_constitution.py` runs in CI and before packaging. It checks that the
+shared layer names no known vendor, that each plugin carries three agreeing manifests
+and a `STATUS.md`, that no plugin contains Spec Kit artifacts, and that
+`marketplace.json` matches what is on disk.
+
+Deliberate exceptions live in `.constitution-allow` as `path:token:reason`. A line
+without a reason is rejected, so the file stays a record of decisions rather than a
+list of things that were given up on. The bar: the vendor name must illustrate a
+neutral rule, never be an identifier the code depends on.
+
+The check uses a denylist, so it catches vendor names we know about and not ones we
+have not met. A pass means "no known violation", never a guarantee.

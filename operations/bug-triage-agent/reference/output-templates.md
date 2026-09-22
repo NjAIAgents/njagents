@@ -38,7 +38,7 @@ Escalations applied: {class: signal}, capped at 2
 Release correlation:
   {version} shipped {date}, {n} days before first report
   Touched: {components or files}
-  Evidence: {tracker fixversion | github tag}
+  Evidence: {which adapter contributed}
   {No release in the {lookback} day window touched this area.}
 
 Workaround: {action support can take today}

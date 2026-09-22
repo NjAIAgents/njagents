@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Constitution
+        run: python3 scripts/check_constitution.py
+
+      - name: Plugin validators
+        run: |
+          status=0
+          for manifest in */*/plugin.json; do
+            plugin="$(dirname "$manifest")"
+            if [ -f "$plugin/scripts/validate_config.py" ]; then
+              echo "::group::$plugin"
+              ( cd "$plugin" && python3 scripts/validate_config.py --all ) || status=1
+              echo "::endgroup::"
+            fi
+          done
+          exit $status
+
+      - name: Packaging
+        run: |
+          for manifest in */*/plugin.json; do
+            ./package-plugin.sh "$(dirname "$manifest")"
+          done

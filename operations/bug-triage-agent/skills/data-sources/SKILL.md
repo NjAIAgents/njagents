@@ -96,9 +96,9 @@ rubric treats that as an unanswered question, not as an absent signal.
 
 Pluggable. `release_correlation.manifest_sources` is an **ordered list**; adapters run
 in order, the first to supply a field wins, later ones enrich rather than overwrite.
-Align the order with the org's ecosystem. An tracker-and-wiki-first org uses
-`["tracker_fixversion", "wiki_release_notes", "vcs_tag"]`; a GitHub-first org
-puts the git adapters ahead of the tracker ones.
+Align the order with the org's ecosystem. An org that records releases in its
+tracker and wiki uses `["tracker_fixversion", "wiki_release_notes", "vcs_tag"]`;
+an org that records them in version control puts the vcs adapters first.
 
 Every release object carries `sources[]` naming which adapters contributed, so a
 reviewer can see whether a correlation rests on a fix version, a release-note page, or

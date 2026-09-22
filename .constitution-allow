@@ -1,0 +1,11 @@
+# Deliberate exceptions to Principle I (no product names in the shared layer).
+# Format: path:token:reason
+#
+# Every line needs a reason. An exception without one is rejected by the checker,
+# so this file stays a list of decisions rather than a list of things we gave up on.
+#
+# Bar for adding a line: the vendor name must be an illustration of a neutral rule,
+# never an identifier the code depends on. If removing it would break anything, it
+# is coupling and belongs in a team config instead.
+
+operations/bug-triage-agent/skills/data-sources/SKILL.md:atlassian:Worked JQL example showing how one tracker expresses the neutral retrieval intent. The adapter reads its tool names from tool_bindings; removing the example costs clarity, not function.

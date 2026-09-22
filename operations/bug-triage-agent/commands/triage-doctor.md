@@ -5,8 +5,13 @@ argument-hint: [--team <id>]
 
 Run the readiness check for: $ARGUMENTS
 
-1. Validate the team config against `teams/team-config.schema.json`.
-   Run: `python3 scripts/validate_config.py teams/<team>.json`
+1. Resolve which file this team actually uses, and say so:
+   `python3 scripts/run_header.py --team <team> --where`
+   It looks in the config dir, then `triage-teams/` in the working folder, then the
+   plugin's shipped configs. If it exits 2, there is no config: offer
+   `/bug-triage-agent:triage-config <team>` and stop.
+   Then validate that exact file against `teams/team-config.schema.json`:
+   `python3 scripts/validate_config.py <resolved path>`
    This is the named form, so it exits non-zero on any placeholder. Stop if it fails.
 2. For every source in `live` mode, make one cheap read-only probe:
    - tracker: resolve `tracker.host` to its cloud id and confirm it matches `tracker.instance_id`,

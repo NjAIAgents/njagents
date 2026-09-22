@@ -1,15 +1,46 @@
 # Configuration
 
-A team owns exactly one file: `teams/<team>.json`. Nothing else. The authoritative
-list of allowed keys is [`teams/team-config.schema.json`](../teams/team-config.schema.json);
+A team owns exactly one file: `<team>.json`. Nothing else. The authoritative list of
+allowed keys is [`teams/team-config.schema.json`](../teams/team-config.schema.json);
 this page explains what each one is for and which ones bite.
 
 ## Getting started
 
+Run the setup command and answer the questions:
+
+```
+/bug-triage-agent:triage-config <your-team>
+```
+
+It finds the connectors already in your session, reads project keys, priority names
+and labels from them rather than asking you to type them, proposes each value, shows
+the whole file before writing, and runs the validator on it. It never asks for
+credentials: access comes from the connectors you have authorised in the app.
+
+A triage run that finds no config for its team offers this command instead of
+stopping.
+
+## Where the file lives
+
+The plugin looks for a team in this order, first match on `team.id` wins:
+
+| Order | Location | Use it for |
+| --- | --- | --- |
+| 1 | `$CLAUDE_TRIAGE_CONFIG_DIR` | A shared config folder outside any one repo |
+| 2 | `triage-teams/` in the working folder | **The default.** Committed to the team's own repository and reviewed like code |
+| 3 | `teams/` inside the plugin | Shipped demos and examples only |
+
+Do not put a team's config in the plugin's `teams/`. An installed plugin is read-only
+and is replaced on every update, so a file there is lost at the next release. The run
+header and `triage-doctor` both print which file was loaded, so a local copy
+shadowing a shipped one is never a surprise.
+
+To edit by hand instead:
+
 ```bash
-cp teams/team-config.example.json teams/<your-team>.json
-# set tracker project key and instance id, then:
-python3 scripts/validate_config.py teams/<your-team>.json
+mkdir -p triage-teams
+cp <plugin>/teams/team-config.example.json triage-teams/<your-team>.json
+python3 <plugin>/scripts/validate_config.py triage-teams/<your-team>.json
 ```
 
 `team.id` must match the filename. The validator enforces it, because the `--team`
@@ -34,7 +65,7 @@ argument resolves against `team.id`.
 | --- | --- |
 | `project_key` | Which project to query |
 | `instance_id` | Instance id. **Blocks everything live until set** |
-| `site`, `board_id` | Used by the readiness check |
+| `host`, `board_id` | Used by the readiness check |
 | `priority_names` | Maps P1 to P4 onto this project's own values. This is how two teams share one rubric while their trackers call the levels different things |
 | `at_risk_labels` | Labels triggering the P2 floor. Match your own conventions |
 | `voc_destination` | Where voice-of-customer items route. **A disposition with nowhere to go is useless** |
@@ -54,10 +85,10 @@ missing file resolves to `unavailable`, identical to a switched-off source.
 | `cadence_days` | Your release interval |
 | `lookback_days` | How far back to look. **Default two cycles** |
 | `manifest_sources` | Ordered adapter list, first wins per field, later ones enrich |
-| `wiki`, `github` | Per-adapter settings |
+| `wiki`, `vcs` | Per-adapter settings |
 | `manual_file_path` | Required if `manual_file` is in the adapter list |
 
-Order the adapters to match your ecosystem. An tracker-and-wiki-heavy org starts with
+Order the adapters to match your ecosystem. A tracker-and-wiki-heavy org starts with
 `tracker_fixversion` then `wiki_release_notes`, neither of which needs a connector
 beyond the tracker. Add `vcs_tag` when you want file-level resolution, which is
 what upgrades area overlap from plausible to matched.
@@ -73,13 +104,13 @@ The baseline is a **rolling median**, not the prior day. Prior-day baselines pro
 false regressions every Monday. A `deploy_window_hours` shorter than one release cycle
 earns a warning, because it will miss most regressions.
 
-### `warehouse` / `warehouse`
+### `warehouse`
 
 `database`, `schema`, and `queries`: a map of named read-only templates. **All
 product-specific SQL lives here**, never in a shared skill. The validator rejects any
 query containing a write verb or not beginning with `SELECT` or `WITH`.
 
-### `tool_bindings` / `tool_bindings`
+### `tool_bindings`
 
 Tool-name suffixes per source, **including the tracker**. The plugin declares no MCP
 servers, so this is the only thing connecting it to a real system. A live source

@@ -39,12 +39,15 @@ Credentials live in the MCP host, never in this repo.
 
 ## Configure
 
-```bash
-cp teams/team-config.example.json teams/<your-team>.json
-# set tracker.project_key and tracker.instance_id, then:
-python3 scripts/validate_config.py teams/<your-team>.json   # named form: fails on placeholders
-/triage-doctor --team <your-team>
 ```
+/triage-config <your-team>        # asks a few questions, writes triage-teams/<your-team>.json
+/triage-doctor --team <your-team> # checks every source is reachable and bound
+```
+
+The config is written to `triage-teams/` in your own repository, not into the plugin:
+an installed plugin is read-only and is replaced on every update. Commit the file so
+your team shares it. See [`docs/04-configuration.md`](docs/04-configuration.md) for the
+lookup order and every key.
 
 `teams/bta.json` and `teams/reference-full.json` ship with placeholder values and
 will not certify until those are filled in. `--all` reports them as `UNCONFIGURED` and still
@@ -109,7 +112,7 @@ the one tracker already requires.
 ```
 .claude-plugin/plugin.json
 .mcp.json                     connector declarations, no secrets
-commands/                     triage, release-impact, triage-doctor, triage-review
+commands/                     triage, triage-config, release-impact, triage-doctor, triage-review
 skills/
   bug-triage/                 orchestrator
   data-sources/               source contract, adapters, degradation rules

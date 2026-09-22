@@ -17,10 +17,21 @@ order.
 
    Print its output **verbatim** as your first message text, in a code block. Do not
    paraphrase, shorten or summarise it: the host collapses command output, so a reader
-   sees the header only if you repeat it. Exit code 2 means no such team: show the
-   available ids it lists and ask. Never pick one silently. Exit code 3 means a ticket
-   has no fixture in fixture mode: say which, and triage only the rest.
-   If no team was given at all, list the ids under `teams/` and ask.
+   sees the header only if you repeat it.
+
+   The script looks for the team in the config dir, then `triage-teams/` in the
+   working folder, then the configs shipped in the plugin, and the header names which
+   file it loaded.
+
+   **Exit code 2 means no config for that team.** Show what it printed, then offer two
+   choices: run `skills/triage-config` to create one now, or use one of the listed ids.
+   Never pick one silently, and never improvise a config inline: an untested config
+   produces an untested triage. If the user creates one, resume this triage with the
+   same tickets without asking for them again.
+
+   Exit code 3 means a ticket has no fixture in fixture mode: say which, and triage
+   only the rest. If no team was given at all, run the script with any id to get the
+   available list, and ask.
 2. Load `skills/data-sources/SKILL.md`. Do not call any MCP tool before this.
    For every source in `live` mode other than the tracker, read its tool-name suffixes
    from `tool_bindings` in the team config. A live source with no `tool_bindings` entry is a

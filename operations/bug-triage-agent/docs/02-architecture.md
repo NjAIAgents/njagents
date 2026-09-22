@@ -134,11 +134,11 @@ per-ticket confirmation before anything is written.
 
 | Directory | Holds | Loaded by |
 | --- | --- | --- |
-| `skills/` | Orchestrator and five component skills | all three clients |
+| `skills/` | Orchestrator, five component skills, and triage-config setup | all three clients |
 | `reference/` | Taxonomy, rubric, output templates, run visibility, calibration guide | read by the skills |
 | `agents/` | One enrichment subagent per source, `tools: ["*"]` | Claude, Cursor |
-| `commands/` | Thin wrappers: triage, release-impact, doctor, review | Claude, Cursor |
-| `teams/` | One config per team, plus schema and example | read by the skills |
+| `commands/` | Thin wrappers: triage, triage-config, release-impact, doctor, review | Claude, Cursor |
+| `teams/` | Shipped demo configs, schema and example. A team's own config lives in its repo under `triage-teams/`, found first | read by the skills |
 | `fixtures/` | Recorded envelopes, and worked result files under `results/` | demo mode, tests |
 | `scripts/` | `run_header.py` header, `render_trace.py` trace, `triage_log.py` audit, `validate_config.py` build gate | runtime, CI, packaging |
 | `logs/` | Audit log destination | runtime |

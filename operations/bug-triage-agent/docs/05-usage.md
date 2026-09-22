@@ -14,6 +14,7 @@ loaded.
 /triage BUG-4830 --team demo                      one ticket
 /triage BUG-4830 BUG-4844 BUG-4851 --team demo    batch, returns a ranked table
 /release-impact BUG-4830 --team demo              correlation only
+/triage-config payments                           create or update a team config
 /triage-doctor --team demo                        readiness check
 /triage-review BUG-4844 voice_of_customer "..."   record a human override
 ```

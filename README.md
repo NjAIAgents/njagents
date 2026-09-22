@@ -59,7 +59,9 @@ area over a full release-cycle lookback, and surfaces a workaround the customer 
 use today.
 
 One shared rubric governs every team; a team owns exactly one configuration file. See
-`operations/bug-triage-agent/README.md` for setup and
+`operations/bug-triage-agent/README.md` for setup,
+[`operations/bug-triage-agent/docs/09-examples.md`](operations/bug-triage-agent/docs/09-examples.md)
+for worked examples you can run, and
 `operations/bug-triage-agent/STATUS.md` for an honest account of what is built, what
 is written but unexercised, and what does not exist yet.
 

@@ -9,7 +9,8 @@ the authoritative version of each rule lives**.
 | --- | --- |
 | Deciding whether to adopt this | [Overview](01-overview.md), then [Status](../STATUS.md) |
 | Installing it for your team | [Installation](03-installation.md), [Configuration](04-configuration.md) |
-| Using it day to day | [Usage](05-usage.md) |
+| Trying it for the first time | [Examples](09-examples.md) |
+| Using it day to day | [Usage](05-usage.md), [Examples](09-examples.md) |
 | Running it for several teams | [Operations](06-operations.md) |
 | Building or changing it | [Architecture](02-architecture.md), [Extending](07-extending.md) |
 | Lost in the vocabulary | [Glossary](08-glossary.md) |

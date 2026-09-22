@@ -32,6 +32,7 @@ each rule is defined**, so you never have to guess which file wins.
 | [Operations](docs/06-operations.md) | Validator, packaging, logging, troubleshooting |
 | [Extending](docs/07-extending.md) | Where a change belongs, adding sources and adapters |
 | [Glossary](docs/08-glossary.md) | Terms that mean something specific here |
+| [Examples](docs/09-examples.md) | Worked runs to copy, with expected output |
 
 ## Install
 
@@ -100,6 +101,8 @@ tracker-and-wiki-heavy orgs should start with the first two, which need no conne
 the one tracker already requires.
 
 ## Use
+
+Step-by-step runs with expected output: [`docs/09-examples.md`](docs/09-examples.md).
 
 ```
 # live: the team is found from the ticket's project key

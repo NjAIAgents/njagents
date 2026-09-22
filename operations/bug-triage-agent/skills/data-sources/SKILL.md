@@ -149,6 +149,9 @@ pull requests merged between consecutive tags. This is the only adapter that yie
 **`manual_file`** (fallback)
 : the envelope at `release_correlation.manual_file_path`. For orgs with no queryable
 release record, and for the demo. The path is configuration; never hardcode it.
+A relative path resolves beside the team config first, then inside the plugin, the
+same rule as fixture paths. A team keeping its config in its own repo keeps its
+release file there too.
 
 Merge rule: match releases across adapters on the normalized version string. Conflicting
 release dates are a note, not an error, and the earliest date wins.

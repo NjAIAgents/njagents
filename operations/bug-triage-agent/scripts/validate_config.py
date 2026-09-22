@@ -103,6 +103,11 @@ def check_config(path):
         err(f"{name}: release_correlation.manifest_sources is empty")
     if "manual_file" in adapters and not rc.get("manual_file_path"):
         err(f"{name}: manifest_sources includes manual_file but manual_file_path is unset")
+    elif "manual_file" in adapters:
+        mfp = rc["manual_file_path"]
+        beside = os.path.join(os.path.dirname(os.path.abspath(path)), mfp)
+        if not (os.path.exists(beside) or os.path.exists(os.path.join(ROOT, mfp))):
+            err(f"{name}: manual_file_path not found beside the config or in the plugin: {mfp}")
     if "wiki_release_notes" in adapters and not rc.get("wiki", {}).get("space_key"):
         err(f"{name}: wiki_release_notes adapter selected but wiki.space_key is unset")
 
@@ -257,7 +262,10 @@ def main():
     targets = ([p for p in glob.glob(os.path.join(ROOT, "teams", "*.json"))
                 if "schema" not in p and "example" not in p]
                if (not args or args[0] == "--all") else
-               [a if os.path.isabs(a) else os.path.join(ROOT, a) for a in args])
+               # A relative path means the user's folder first: team configs now live
+               # in triage-teams/ in their repo. Fall back to the plugin for shipped ones.
+               [a if os.path.isabs(a) or os.path.exists(a) else os.path.join(ROOT, a)
+                for a in args])
     for t in targets:
         check_config(t)
 

@@ -89,8 +89,13 @@ def reason(cfg, source):
     if source == "releases":
         adapters = cfg.get("release_correlation", {}).get("manifest_sources", [])
         return ", ".join(adapters) if adapters else "live"
-    bound = cfg.get("tool_bindings", {}).get(source)
-    return "bound" if bound else "live, but no tool_bindings entry"
+    bound = cfg.get("tool_bindings", {}).get(source) or {}
+    if not bound:
+        return "live, but no tool_bindings entry"
+    unfilled = [k for k, v in bound.items() if not v or str(v).startswith("REPLACE_")]
+    if unfilled:
+        return f"live, but bindings not filled: {', '.join(unfilled)}"
+    return "bound"
 
 
 def main():

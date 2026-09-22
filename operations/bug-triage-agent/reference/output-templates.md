@@ -13,37 +13,100 @@ markdown table pasted into one becomes a wall of pipes.
 
 ---
 
+## Visual vocabulary
+
+Markdown has no color. Inline HTML color is stripped by most renderers, so it is not
+used. Color comes from two portable mechanisms only: colored markers, which render
+everywhere, and callout blocks, which render as colored boxes where supported and as
+a labelled quote elsewhere.
+
+**Every color is paired with text.** A reader who cannot see color, or a renderer that
+drops it, must lose nothing. `🟠 P2`, never `🟠` alone.
+
+### Markers
+
+| Meaning | Marker | Written as |
+| --- | --- | --- |
+| Priority P1 | 🔴 | `🔴 P1` |
+| Priority P2 | 🟠 | `🟠 P2` |
+| Priority P3 | 🟡 | `🟡 P3` |
+| Priority P4 | 🔵 | `🔵 P4` |
+| Non-defect, no priority | ⚪ | `⚪ voice_of_customer` |
+| Source live and ok | 🟢 | `🟢 live` |
+| Source on fixture, or partial | 🟡 | `🟡 fixture` · `🟡 partial` |
+| Source off | ⚫ | `⚫ off` |
+| Source in error | 🔴 | `🔴 error` |
+
+Confidence uses a meter, not a color, so it cannot be mistaken for a priority:
+`●●● high` · `●●○ medium` · `●○○ low`.
+
+Markers are fixed. Do not introduce new ones per report; a reader learns the
+vocabulary once. Yellow means two things (P3 and a degraded source) only because the
+column always disambiguates it.
+
+### Callouts
+
+| Callout | Used for, and only for |
+| --- | --- |
+| `> [!WARNING]` | Demo data banner. Any source on fixtures. |
+| `> [!CAUTION]` | A source in `error`. Placed above Recommendation. |
+| `> [!IMPORTANT]` | A priority gap against the tracker's current value. |
+| `> [!TIP]` | The workaround. |
+| `> [!NOTE]` | The closing reminder that nothing was written to the tracker. |
+
+One callout per purpose per report. A report where everything is highlighted has
+highlighted nothing.
+
+### Labels
+
+Dispositions, escalation classes and field names stay in code spans, `defect`,
+`+1 release`, so they read as fixed vocabulary rather than prose. Bold is reserved for
+the answer: the priority, the disposition, the route.
+
+---
+
 ## 1. Chat summary
 
 Lead with the answer. Detail goes in the report.
 
 ```markdown
-**BUG-4830** · Approval step fails silently for Northwind Co when submitted via API
+### 🟠 P2 · BUG-4830 · Approval step fails silently for Northwind Co when submitted via API
 
 | | |
 | --- | --- |
-| **Disposition** | `defect` · high confidence |
-| **Priority** | **P2** → "Critical" · currently "Minor" ⚠ gap |
+| **Disposition** | `defect` · ●●● high |
+| **Priority** | **🟠 P2** → "Critical" · currently "Minor" ⚠ gap |
 | **Release** | 2026.09, 3 days before first error · file-level match |
 | **Workaround** | Re-submit through the UI · support can do this |
 | **Blast radius** | 1 account, 0 enterprise |
 | **Team** | Approvals Team |
 
-Base P3, +1 regression, +1 error swallowing, capped. Never P1 by escalation.
+Base 🟡 P3 · `+1 release` · `+1 code` · capped at 🟠 P2. Never P1 by escalation.
 
-Report: `triage-reports/BUG-4830.md` · Sources: tracker, releases, metrics,
-warehouse, code — all live
+Sources: 🟢 tracker · 🟢 releases · 🟢 metrics · 🟢 warehouse · 🟢 code
+Report: `triage-reports/BUG-4830.md`
+```
+
+A non-defect leads with its disposition instead:
+
+```markdown
+### ⚪ BUG-4844 · `voice_of_customer` · no priority assigned
 ```
 
 Rules:
 
-- The first line is the ticket and its summary. Nothing above it.
+- The heading carries the answer: priority marker and level for a defect, `⚪` and
+  the disposition for anything else. Nothing above it except a callout.
 - A non-defect shows **no priority row at all.** Not "n/a", not "none". Absent.
 - One line of arithmetic, not the full derivation.
 - ⚠ marks only two things: a priority gap against the tracker, and a source in
   `error`. Do not decorate anything else.
-- If any source is on fixtures, the first line of the whole message is
-  `> **DEMO DATA** — tracker, metrics. Not live figures.`
+- If any source is on fixtures, the message opens with the demo banner:
+
+  ```markdown
+  > [!WARNING]
+  > **Demo data.** tracker, metrics are on fixtures. Not live figures.
+  ```
 
 ## 2. Report file
 
@@ -51,17 +114,23 @@ Written to `output.reports_dir`, default `triage-reports/`, as `<TICKET>.md`.
 Overwritten on a re-run; the audit log keeps the history.
 
 ````markdown
-# BUG-4830 — Approval step fails silently for Northwind Co when submitted via API
+# 🟠 P2 · BUG-4830 — Approval step fails silently for Northwind Co when submitted via API
 
-> Triaged 2026-09-21 14:22 UTC · team `demo` · agent 0.2.1
+Triaged 2026-09-21 14:22 UTC · team `demo` · agent 0.4.2
 
 ## Recommendation
 
-**Disposition `defect`** · confidence **high**
-**Priority P2** → tracker "Critical" · currently "Minor" · **gap flagged**
-**Route to** Approvals Team
+| | |
+| --- | --- |
+| **Disposition** | `defect` |
+| **Priority** | **🟠 P2** → tracker "Critical" |
+| **Confidence** | ●●● high |
+| **Route to** | **Approvals Team** |
 
-Deciding factor: confirmed regression with error swallowing at the bug site.
+**Deciding factor:** confirmed regression with error swallowing at the bug site.
+
+> [!IMPORTANT]
+> **Priority gap.** The tracker has this at "Minor". Recommended "Critical".
 
 ## Why this is a defect
 
@@ -77,11 +146,11 @@ prior works-as-designed closure describes this behaviour.
 
 | Step | Level | Because |
 | --- | --- | --- |
-| Base | P3 | A practical customer workaround exists, which caps the base |
-| `+1 release` | P2 | Confirmed regression: 4.4× baseline, deploy 2026.09 52h before first error |
+| Base | 🟡 P3 | A practical customer workaround exists, which caps the base |
+| `+1 release` | 🟠 P2 | Confirmed regression: 4.4× baseline, deploy 2026.09 52h before first error |
 | `+1 code` | — | Error swallowing at `ApprovalReviewService.ts:89` |
 | `history` | — | Not counted: 4 resolved in 90d and a sprint collision, but the cap binds |
-| **Final** | **P2** | Two levels from P3 reaches P1 arithmetically; P1 is never reached by escalation |
+| **Final** | **🟠 P2** | Two levels from P3 reaches P1 arithmetically; P1 is never reached by escalation |
 
 ## Release correlation
 
@@ -94,10 +163,11 @@ both the release manifest and the candidate paths. Adapters: `tracker_fixversion
 
 ## Workaround
 
-> Re-submit the approval through the UI rather than the API.
-
-**Who can do this:** support · **Cost:** a few clicks · **Source:** BUG-4701 resolution notes
-**Does not cover:** bulk approvals submitted by integration.
+> [!TIP]
+> **Re-submit the approval through the UI rather than the API.**
+>
+> **Who can do this:** support · **Cost:** a few clicks · **Source:** BUG-4701 resolution notes
+> **Does not cover:** bulk approvals submitted by integration.
 
 ## Evidence
 
@@ -110,11 +180,11 @@ ApprovalReviewService.ts:89
 
 | Source | Mode | Result |
 | --- | --- | --- |
-| tracker | live | ok |
-| releases | live | ok |
-| metrics | live | ok |
-| warehouse | live | 1 account, 0 enterprise |
-| code | live | ok |
+| tracker | 🟢 live | ok |
+| releases | 🟢 live | ok |
+| metrics | 🟢 live | 4.4× baseline |
+| warehouse | 🟢 live | 1 account, 0 enterprise |
+| code | 🟢 live | error swallowing found |
 
 All ten classification questions answered.
 
@@ -126,7 +196,8 @@ labels    → component:approvals, severity:p2
 assignee  → Approvals Team
 ```
 
-Nothing has been written to the tracker. Confirm before posting.
+> [!NOTE]
+> Nothing has been written to the tracker. Confirm before posting.
 ````
 
 ### Report rules
@@ -135,12 +206,16 @@ Nothing has been written to the tracker. Confirm before posting.
   section. No priority section, no correlation section unless one was gathered.
 - **Unanswered** replaces **Coverage** rows where a source was `off`, and the report
   says which questions went unanswered and what they would have changed.
-- A source in `error` gets its own section at the **top**, above Recommendation.
+- A source in `error` gets a `> [!CAUTION]` callout at the **top**, above
+  Recommendation, naming the source and the error.
 - Never include a section with nothing in it. Omit it.
 
 ## 3. Tracker comment
 
 Plain text. Generated, never posted without per-ticket confirmation.
+
+No markers and no callouts here. Callout syntax appears literally in a tracker, and
+the comment outlives any viewer's rendering. Priority is written as words.
 
 ```
 Triage: P2 (Critical) — confirmed regression, currently Minor
@@ -171,13 +246,13 @@ table below, never ranked among the defects.
 
 | Ticket | Priority | Deciding factor | Confidence |
 | --- | --- | --- | --- |
-| BUG-4851 | **P2** → Critical | At-risk client, no customer workaround | high |
-| BUG-4830 | **P2** → Critical ⚠ was Minor | Confirmed regression + error swallowing | high |
+| BUG-4851 | **🟠 P2** → Critical | At-risk client, no customer workaround | ●●● high |
+| BUG-4830 | **🟠 P2** → Critical ⚠ was Minor | Confirmed regression + error swallowing | ●●● high |
 
 ### Not defects
 
 | Ticket | Disposition | Route | Why |
 | --- | --- | --- | --- |
-| BUG-4844 | `voice_of_customer` | PRODUCT | Working as designed per BUG-3120 |
-| BUG-4858 | `duplicate` of BUG-4849 | link and close | Same failure mode |
+| BUG-4844 | ⚪ `voice_of_customer` | PRODUCT | Working as designed per BUG-3120 |
+| BUG-4858 | ⚪ `duplicate` of BUG-4849 | link and close | Same failure mode |
 ```

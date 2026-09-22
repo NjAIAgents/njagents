@@ -28,13 +28,20 @@ Plugins here target the portable [Agent Plugins](https://agent-plugins.org) stan
 and carry client manifests alongside it, so one copy of the skills serves several
 agents.
 
-| Manifest | Client | Loads |
+Three targets, in order of how thoroughly each is accounted for:
+
+| Manifest | Target | Loads |
 | --- | --- | --- |
-| `plugin.json` at plugin root | Codex, ChatGPT, Copilot, VS Code, Kiro, others | Skills, MCP servers |
 | `.claude-plugin/plugin.json` | Claude Code, Cowork | Skills, agents, commands, MCP |
 | `.cursor-plugin/plugin.json` | Cursor | Skills, agents, commands, MCP, rules |
+| `plugin.json` at plugin root | Codex, ChatGPT | Skills, MCP servers |
 
-Where a client cannot load a component, the degradation is recorded in that plugin's
+The root manifest follows the vendor-neutral Agent Plugins specification, so other
+conformant clients should load the skills as well. That is an inheritance from the
+standard, not a tested claim: only the three targets above have been reasoned through,
+and none has yet been installed and run.
+
+Where a target cannot load a component, the difference is recorded in that plugin's
 `STATUS.md`.
 
 ## Plugin index

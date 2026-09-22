@@ -70,11 +70,19 @@ they are recorded transcripts or predictions.
 Plugins target the portable [Agent Plugins](https://agent-plugins.org) standard and
 carry client manifests alongside it:
 
-| Manifest | Client | Components loaded |
+Supported targets are Claude, Cursor and Codex. A plugin carries one manifest for
+each:
+
+| Manifest | Target | Components loaded |
 | --- | --- | --- |
-| `plugin.json` at root | Codex, ChatGPT, Copilot, VS Code, Kiro and other conformant clients | Skills, MCP servers |
 | `.claude-plugin/plugin.json` | Claude Code and Cowork | Skills, agents, commands, MCP, hooks |
 | `.cursor-plugin/plugin.json` | Cursor | Skills, agents, commands, MCP, rules, hooks |
+| `plugin.json` at root | Codex and ChatGPT | Skills, MCP servers |
+
+Because the root manifest follows the vendor-neutral standard, clients beyond these
+three may load the skills. Do not claim support for a client nobody has installed the
+plugin into. Compatibility is asserted only where it has been reasoned through, and
+verified only where it has been run.
 
 The manifests must agree on name, version and description. Skills are the portable
 core and exist in one copy.

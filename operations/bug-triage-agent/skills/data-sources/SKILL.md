@@ -75,6 +75,11 @@ related            issues in the project matching the summary's distinctive noun
                    Include resolution_notes: the resolution text or closing
                    comment. Without it workaround discovery has nothing to read,
                    and will correctly but uselessly report none found.
+                   A live run showed that a search tool returns summaries and
+                   fields but not comments, so resolution_notes usually needs a
+                   per-ticket `get_issue` call on each resolved related ticket,
+                   requesting the comment field. Do that for the resolved ones
+                   only; unresolved tickets carry no resolution to read.
 duplicates         issues in the same component, created within 180 days, whose
                    summary is close to this one                      (limit 5)
 component_history  count of issues in the component resolved in the last 90 days

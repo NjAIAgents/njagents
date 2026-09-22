@@ -1,6 +1,6 @@
 ---
 description: Check that every configured source is reachable and correctly wired
-argument-hint: [--team <id>]  (optional; same team resolution as triage)
+argument-hint: "[--team <id>]  (optional; same team resolution as triage)"
 ---
 
 Run the readiness check for: $ARGUMENTS

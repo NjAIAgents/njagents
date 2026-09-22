@@ -1,6 +1,6 @@
 ---
 description: List open bugs in the tracker and what still needs triage
-argument-hint: [--team <id>] [--limit N] [--untriaged-only]
+argument-hint: "[--team <id>] [--limit N] [--untriaged-only]"
 ---
 
 Load `skills/triage-queue/SKILL.md` and follow it for: $ARGUMENTS

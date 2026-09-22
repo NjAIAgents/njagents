@@ -262,6 +262,47 @@ def check_manifests():
                 "reference/mcp-servers.example.json.")
 
 
+def check_frontmatter():
+    """Every command and skill front matter must parse, or the host drops it silently.
+
+    A plain YAML value that starts with [ or { is read as a list or a map, so an
+    argument-hint like [--team <id>] made /queue, /triage-log and /triage-doctor
+    vanish in 0.6.0 with only "Unknown skill" to show for it. This checks the
+    shapes that bite without needing a YAML library in CI.
+    """
+    files = (sorted(glob.glob(os.path.join(ROOT, "commands", "*.md"))) +
+             sorted(glob.glob(os.path.join(ROOT, "skills", "*", "SKILL.md"))))
+    for f in files:
+        rel = os.path.relpath(f, ROOT)
+        text = open(f, encoding="utf-8").read()
+        if not text.startswith("---\n"):
+            err(f"{rel}: no front matter")
+            continue
+        head, sep, _ = text[4:].partition("\n---")
+        if not sep:
+            err(f"{rel}: front matter is not closed")
+            continue
+        keys = set()
+        for line in head.splitlines():
+            if not line.strip() or line.startswith((" ", "\t", "#")):
+                continue
+            key, colon, val = line.partition(":")
+            if not colon:
+                err(f"{rel}: front matter line is not key: value: {line!r}")
+                continue
+            keys.add(key.strip())
+            v = val.strip()
+            if not v or v[0] in "\"'|>":
+                continue
+            if v[0] in "[{&*!%@`":
+                err(f"{rel}: '{key.strip()}' starts with {v[0]!r}; quote the value or the host drops this file")
+            elif ": " in v or " #" in v:
+                err(f"{rel}: '{key.strip()}' contains ': ' or ' #'; quote the value")
+        if "description" not in keys:
+            err(f"{rel}: front matter has no description")
+    print(f"  {len(files)} command and skill files have front matter that parses")
+
+
 def main():
     args = sys.argv[1:]
     print("Config:")
@@ -278,6 +319,8 @@ def main():
         check_config(t)
 
     check_manifests()
+    print("\nFront matter:")
+    check_frontmatter()
     print("\nFixtures:")
     allfx = sorted(glob.glob(os.path.join(ROOT, "fixtures", "**", "*.json"), recursive=True))
     results_dir = os.path.join(ROOT, "fixtures", "results") + os.sep

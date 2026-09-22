@@ -1,6 +1,6 @@
 ---
 description: Record a human override of a triage recommendation, for calibration
-argument-hint: <TICKET-ID> <correct-disposition-or-priority> [reason]
+argument-hint: "<TICKET-ID> <correct-disposition-or-priority> [reason]"
 ---
 
 Resolve `<plugin root>` and `<working folder>` as in `skills/bug-triage` Setup step 0,

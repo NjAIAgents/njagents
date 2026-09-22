@@ -1,6 +1,6 @@
 ---
 description: Show which recent release most likely touched a bug's affected area
-argument-hint: <TICKET-ID> | <component> [--team <id>]
+argument-hint: "<TICKET-ID> | <component> [--team <id>]"
 ---
 
 Load `skills/data-sources/SKILL.md` and `skills/release-correlation/SKILL.md`.

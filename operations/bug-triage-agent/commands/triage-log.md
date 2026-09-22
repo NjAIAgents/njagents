@@ -1,6 +1,6 @@
 ---
 description: Show recent triage decisions and how often people agreed with them
-argument-hint: [TICKET-ID] [--days N] [--team <id>] [--limit N] [--accuracy]
+argument-hint: "[TICKET-ID] [--days N] [--team <id>] [--limit N] [--accuracy]"
 ---
 
 Read-only. Show the audit log for: $ARGUMENTS

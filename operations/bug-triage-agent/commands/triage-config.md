@@ -1,6 +1,6 @@
 ---
 description: Create or update a team config by answering a few questions
-argument-hint: [team-id]
+argument-hint: "[team-id]"
 ---
 
 Load `skills/triage-config/SKILL.md` and follow it for: $ARGUMENTS

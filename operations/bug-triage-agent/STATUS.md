@@ -26,6 +26,7 @@ An honest account of what is built and what is not.
 | 0.6.0 | `/queue`, `/triage-log`, fix briefs graded strong, moderate or weak; team from the ticket's project key; `triage-config` stops on a skipped required answer; `+1 history` counts only fixed defects; hint when a connector is present but its source is off |
 | 0.6.1 | Quoted command front matter. An unquoted hint starting with `[` made three commands disappear |
 | 0.6.2 | Team or project as a plain word, because a leading `--flag` was rejected by the host; queue ages from Jira dates with colonless offsets |
+| 0.6.5 | `triage-config <team> <section>` changes one section only, shown as a diff; a code-host name sets up code search and release tags together |
 | 0.6.4 | Added `.codex-plugin/plugin.json`. Codex and ChatGPT installed the plugin but loaded no skills without it, so `@bug-triage-agent` had nothing to call. The validator now checks its `skills` path |
 | 0.6.3 | Every command is a wrapper over a skill (new `triage-readiness`, `triage-history`, `triage-override`), so Codex and ChatGPT reach every feature; bare words like `queue` route without a clarifying question; plugin-root search knows Cursor and Codex install folders; per-client invocation table |
 

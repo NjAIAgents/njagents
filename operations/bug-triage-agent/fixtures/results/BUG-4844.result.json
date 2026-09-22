@@ -1,7 +1,7 @@
 {
   "team": "demo",
   "triaged_at": "2026-09-22 10:14 UTC",
-  "agent_version": "0.6.4",
+  "agent_version": "0.6.5",
   "ticket": "BUG-4844",
   "summary": "Held balance is not released on the final approval and the customer says this is wrong",
   "sources": {

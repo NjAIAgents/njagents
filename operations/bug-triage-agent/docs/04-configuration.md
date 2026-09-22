@@ -20,6 +20,23 @@ credentials: access comes from the connectors you have authorised in the app.
 A triage run that finds no config for its team offers this command instead of
 stopping.
 
+### Changing one section
+
+Name the section after the team to change only that part. Everything else stays as it
+is, and you see a diff before anything is written:
+
+```
+/bug-triage-agent:triage-config demo-live github      code search + release tags from your code host
+/bug-triage-agent:triage-config demo-live code        code search only
+/bug-triage-agent:triage-config demo-live releases
+/bug-triage-agent:triage-config payments metrics
+```
+
+Sections: `tracker`, `releases`, `metrics`, `warehouse`, `code`, `routing`, `output`,
+`members`, `default`. `repo`, `vcs` or the name of your code host (GitHub, GitLab,
+Bitbucket) sets up code search and the release-tag adapters together. If the team's
+config exists only in the plugin, it is copied to your folder first.
+
 ## Which team a run uses
 
 `--team` is optional. The run header states which rule chose the team:

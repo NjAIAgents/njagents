@@ -52,6 +52,28 @@ scripts are missing because a relative path failed.
   question being asked, such as the project the user just chose, but the user must
   confirm it.
 
+## Changing one section
+
+The arguments may name a section after the team id, for example
+`triage-config demo-live code`. Then change only that section and leave every other
+key exactly as it is:
+
+| Word | Walks |
+| --- | --- |
+| `tracker` | Step 2 |
+| `releases` | Step 3 |
+| `metrics`, `warehouse`, `code` | That source in step 4 |
+| `repo`, `vcs`, or the name of the user's code host or version-control product | Code in step 4 **and** the version-control adapters (`vcs_tag`, `vcs_pr`) in step 3, the two things a code host provides |
+| `routing` | Step 5 |
+| `output` | Step 6 |
+| `members`, `default` | Those questions in step 1 |
+
+Step 0 still runs first, to find the file. If the config exists only in the plugin,
+copy it to the working folder as usual, then walk only the named section. Discover and
+prove the tools for that section as in the full flow, then go to step 7: show the diff
+of what changed, not the whole file, and write only on a yes. An unknown section word
+stops with this list.
+
 ## Step 0: where the file goes, and whether it exists
 
 Take the team id from the argument, else ask for it: lowercase, letters, digits and

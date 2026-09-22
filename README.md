@@ -47,7 +47,7 @@ The plugin ships a `demo` team whose five sources are recorded fixtures:
 /bug-triage-agent:triage BUG-4830
 ```
 
-You should see a header with the team, the source modes and **Agent 0.6.4**, then a
+You should see a header with the team, the source modes and **Agent 0.6.5**, then a
 live stage list, then a P2 defect with strong evidence. Three files land in
 `triage-reports/` in your folder: the report, an HTML run trace, and a fix brief.
 
@@ -167,7 +167,7 @@ Where a target cannot load a component, the difference is recorded in that plugi
 
 | Plugin | What it includes | Status |
 | --- | --- | --- |
-| `operations/bug-triage-agent` | Disposition gate, release correlation, workaround discovery and priority scoring, a bug queue, fix briefs for a fix-bug agent, and an audit log, with a shared rubric and per-team configuration | 0.6.4. Run on recorded fixtures and a live Jira demo in Cowork |
+| `operations/bug-triage-agent` | Disposition gate, release correlation, workaround discovery and priority scoring, a bug queue, fix briefs for a fix-bug agent, and an audit log, with a shared rubric and per-team configuration | 0.6.5. Run on recorded fixtures and a live Jira demo in Cowork |
 
 ### bug-triage-agent
 

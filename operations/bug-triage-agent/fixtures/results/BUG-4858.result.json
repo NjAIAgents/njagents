@@ -1,7 +1,7 @@
 {
   "team": "demo",
   "triaged_at": "2026-09-22 10:14 UTC",
-  "agent_version": "0.6.4",
+  "agent_version": "0.6.5",
   "ticket": "BUG-4858",
   "summary": "Amount column misaligned in the reporting export header",
   "sources": {

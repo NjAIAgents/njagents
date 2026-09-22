@@ -1,7 +1,7 @@
 {
   "team": "demo",
   "triaged_at": "2026-09-22 10:14 UTC",
-  "agent_version": "0.6.3",
+  "agent_version": "0.6.4",
   "ticket": "BUG-4830",
   "summary": "Approval step fails silently for Northwind Co when submitted via API",
   "sources": {

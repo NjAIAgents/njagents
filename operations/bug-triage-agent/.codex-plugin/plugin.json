@@ -1,0 +1,34 @@
+{
+  "name": "bug-triage-agent",
+  "version": "0.6.4",
+  "description": "Triage bug tickets with judgment, not just severity. Classifies defect versus expected behaviour, duplicate, config issue or voice-of-customer before any priority is assigned, identifies which release touched the affected area, and surfaces a workaround the customer can use today.",
+  "author": {
+    "name": "Navjyot Nishant"
+  },
+  "repository": "https://github.com/NjAIAgents/njagents",
+  "license": "Apache-2.0",
+  "keywords": [
+    "triage",
+    "bugs",
+    "issue-tracker",
+    "release-correlation",
+    "incident",
+    "operations"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Bug Triage Agent",
+    "shortDescription": "Triage bugs: disposition first, then priority, release and workaround",
+    "longDescription": "Classifies a ticket as defect, expected behaviour, config or data issue, duplicate or customer request before any priority is assigned, finds which release touched the area, surfaces a workaround, and writes a report, a run trace and a fix brief. Also lists the bug queue, keeps an audit log, and sets up a team config by conversation.",
+    "developerName": "Navjyot Nishant",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive"
+    ],
+    "defaultPrompt": [
+      "Show the bug queue for demo",
+      "Triage BUG-4830",
+      "Set up triage for my team"
+    ]
+  }
+}

@@ -232,6 +232,7 @@ def check_manifests():
         "plugin.json (Agent Plugins)": "plugin.json",
         "Claude": ".claude-plugin/plugin.json",
         "Cursor": ".cursor-plugin/plugin.json",
+        "Codex and ChatGPT": ".codex-plugin/plugin.json",
     }
     seen = {}
     for label, rel in manifests.items():
@@ -247,6 +248,16 @@ def check_manifests():
     if len(set(seen.values())) > 1:
         err("manifests disagree on name/version: "
             + "; ".join(f"{k}={v}" for k, v in seen.items()))
+    # Codex and ChatGPT install a plugin without this manifest but load none of its
+    # skills: the plugin appears, and the model has nothing to call. Seen in 0.6.3.
+    cx = os.path.join(ROOT, ".codex-plugin", "plugin.json")
+    if os.path.exists(cx):
+        d = json.load(open(cx))
+        sk = d.get("skills")
+        if not sk:
+            err(".codex-plugin/plugin.json: no 'skills' path, so Codex and ChatGPT load no skills")
+        elif not os.path.isdir(os.path.join(ROOT, sk)):
+            err(f".codex-plugin/plugin.json: skills path {sk} does not exist")
     root_mf = os.path.join(ROOT, "plugin.json")
     if os.path.exists(root_mf):
         d = json.load(open(root_mf))

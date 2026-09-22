@@ -48,10 +48,17 @@ Cursor reads `.cursor-plugin/plugin.json` and discovers `skills/`, `agents/`,
 `commands/` and `mcp.json` by folder. Install from a team marketplace pointed at the
 same repository, or drop the plugin directory in `~/.cursor/plugins/local/` to try it.
 
-### Codex and ChatGPT
+### Codex and ChatGPT desktop
 
-Codex reads the root `plugin.json`, which conforms to the Agent Plugins standard. It
-loads `skills/` and MCP servers; `agents/` and `commands/` are not loaded there. See
+Add the marketplace from the same repository (`https://github.com/NjAIAgents/njagents.git`)
+in the plugin settings, then install `bug-triage-agent`. They read
+`.codex-plugin/plugin.json`, whose `skills` path is what makes the skills load: without
+it the plugin installs and appears, but the model has nothing to call. `agents/` and
+`commands/` are not loaded there; every command has a skill behind it, so nothing is
+lost.
+
+To update, refresh the marketplace first. The app keeps its own copy of the repository
+and reinstalls from that copy, so reinstalling alone keeps the old version. See
 [`STATUS.md`](../STATUS.md) for what that changes and what it does not.
 
 **Cowork is installed and run routinely.** Claude Code uses the same plugin format.

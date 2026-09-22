@@ -79,7 +79,7 @@ prior works-as-designed closure describes this behaviour.
 | --- | --- | --- |
 | Base | P3 | A practical customer workaround exists, which caps the base |
 | `+1 release` | P2 | Confirmed regression: 4.4× baseline, deploy 2026.09 52h before first error |
-| `+1 code` | — | Error swallowing at `ApprovalReviewService.ts:214` |
+| `+1 code` | — | Error swallowing at `ApprovalReviewService.ts:89` |
 | `history` | — | Not counted: 4 resolved in 90d and a sprint collision, but the cap binds |
 | **Final** | **P2** | Two levels from P3 reaches P1 arithmetically; P1 is never reached by escalation |
 
@@ -102,7 +102,7 @@ both the release manifest and the candidate paths. Adapters: `tracker_fixversion
 ## Evidence
 
 ```
-ApprovalReviewService.ts:214
+ApprovalReviewService.ts:89
 } catch (e) { logger.warn('approval not committed', e); return { ok: true }; }
 ```
 
@@ -150,7 +150,7 @@ Why: API returns 200 while the request stays Pending Review. BUG-4701 is the
 same failure mode and was fixed rather than closed as designed.
 
 Release: 2026.09, shipped 5 Sep, 3 days before the first error. Touched
-ApprovalReviewService.ts, which is also where the error is swallowed (line 214).
+ApprovalReviewService.ts, which is also where the error is swallowed (line 89).
 
 Workaround: re-submit through the UI. Support can do this. Source: BUG-4701.
 

@@ -14,7 +14,7 @@ Every run below is `--team demo` unless stated.
 | Alternative | `expected_behavior`, ruled out: no spec or works-as-designed closure describes it |
 | Workaround | Re-submit through the UI. **Applies to: support**, and customers can be told. Source: BUG-4701 `resolution_notes` |
 | Base | **P3**, because a practical customer workaround exists and caps it there |
-| Escalations | `+1 release` confirmed regression (4.4x vs spike_ratio 3.0; deploy 2026.09 52.2h before first error, inside 720h), `+1 code` error swallowing at ApprovalReviewService.ts:214 |
+| Escalations | `+1 release` confirmed regression (4.4x vs spike_ratio 3.0; deploy 2026.09 52.2h before first error, inside 720h), `+1 code` error swallowing at ApprovalReviewService.ts:89 |
 | Not counted | `history` (4 resolved in 90d, sprint collision) — two-level cap reached |
 | Final | **P2** → "Critical". Current "Minor", gap flagged |
 | Release | 2026.09, shipped 5 Sep, first error 8 Sep, 3 days. File-level overlap via `vcs_tag`. Correlation **high** |

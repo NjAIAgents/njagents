@@ -1,0 +1,94 @@
+{
+  "//": "Live demo config. Same rubric as every other team; only source modes differ from teams/demo.json. Tracker is a real Jira project seeded with synthetic tickets. Metrics and warehouse are off until Grafana Cloud and Databricks are provisioned, and the report will say so rather than inventing numbers.",
+  "team": {
+    "name": "Demo (live tracker)",
+    "id": "demo-live"
+  },
+  "tracker": {
+    "name": "Demo app",
+    "project_key": "DEMO",
+    "instance_id": "9311456b-281b-404d-800f-7553b3033447",
+    "host": "nishantnavjyot.atlassian.net",
+    "board_id": 76,
+    "priority_names": {
+      "P1": "Highest",
+      "P2": "High",
+      "P3": "Medium",
+      "P4": "Low"
+    },
+    "at_risk_labels": [
+      "at-risk-renewal",
+      "escalation"
+    ],
+    "voc_destination": "DEMO",
+    "//component_model": "This team-managed project has no components configured. Components are carried as labels of the form component-<name>. Treat a component-* label as the component when scoping history and duplicate search, so the counts stay area-scoped rather than project-wide."
+  },
+  "sources": {
+    "tracker": {
+      "mode": "live"
+    },
+    "releases": {
+      "mode": "live"
+    },
+    "metrics": {
+      "mode": "off",
+      "//": "Grafana Cloud not provisioned yet. Absent metrics lowers confidence and removes the regression escalation; it never raises severity."
+    },
+    "warehouse": {
+      "mode": "off",
+      "//": "Databricks not provisioned yet. Blast radius will be reported as unknown."
+    },
+    "code": {
+      "mode": "off",
+      "//": "No code-search MCP is bound in this session. The demo repo github.com/NjAIAgents/njagents-demo-app can be read directly, but that is not a source binding, so the code envelope is unavailable and the error-swallowing escalation cannot fire."
+    }
+  },
+  "tool_bindings": {
+    "tracker": {
+      "get_issue": "getJiraIssue",
+      "search_issues": "searchJiraIssuesUsingJql"
+    }
+  },
+  "release_correlation": {
+    "cadence_days": 30,
+    "lookback_days": 60,
+    "manifest_sources": [
+      "manual_file"
+    ],
+    "manual_file_path": "fixtures/releases.json",
+    "//": "The demo repo carries real tags 2026.08 and 2026.09 with backdated commits, but no version-control MCP is bound, so vcs_tag cannot run. fixtures/releases.json records the same two releases. Switch manifest_sources to vcs_tag once a version-control MCP is connected.",
+    "vcs": {
+      "org": "NjAIAgents",
+      "repos": [
+        "njagents-demo-app"
+      ],
+      "tag_pattern": "v?(?<version>\\d{4}\\.\\d{2})"
+    }
+  },
+  "regression": {
+    "baseline_days": 7,
+    "baseline_method": "rolling_median",
+    "spike_ratio": 3.0,
+    "deploy_window_hours": 720
+  },
+  "repos": [
+    {
+      "name": "njagents-demo-app",
+      "stack": "TypeScript and Java",
+      "search_when": "any demo defect",
+      "key_paths": [
+        "approvals-api/src",
+        "core-api/src"
+      ]
+    }
+  ],
+  "routing": {
+    "approvals": "Approvals Team",
+    "settlements": "Payments Team",
+    "reporting": "Reporting Team"
+  },
+  "output": {
+    "reports_dir": "triage-reports",
+    "write_report": "always"
+  }
+}

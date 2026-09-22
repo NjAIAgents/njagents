@@ -31,7 +31,7 @@ level. A reviewer who cannot reconstruct the number will not trust the next one.
 ```
 Base: P3 (workaround exists, single account, blocks a task)
   +1 release: confirmed regression, v2026.09 matched
-  +1 code:    error swallowing at ApprovalReviewService line 214
+  +1 code:    error swallowing at ApprovalReviewService line 89
   (history signal present, not counted: cap reached)
 Final: P2 -> tracker "Critical". Current: "Minor". Gap flagged.
 ```

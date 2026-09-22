@@ -12,7 +12,7 @@
     "error_swallowing": [
       {
         "path": "approvals-api/src/approvals/ApprovalReviewService.ts",
-        "line": 214,
+        "line": 89,
         "snippet": "} catch (e) { logger.warn('approval not committed', e); return { ok: true }; }"
       }
     ],

@@ -106,7 +106,7 @@ or only for Claude, in `~/.claude/settings.json`:
 Files in that folder sit directly in it, `~/triage-configs/whodunit.json`, with **no**
 `triage-teams/` subfolder.
 
-**Either way, check it.** `/bug-triage-agent:triage-doctor --team <team>` and every run
+**Either way, check it.** `/bug-triage-agent:triage-doctor <team>` and every run
 header print the config file that was loaded and which rule chose the team.
 
 Reports go to `<working folder>/triage-reports/` and the audit log to

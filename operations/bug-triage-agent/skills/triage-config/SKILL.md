@@ -191,7 +191,7 @@ Ask which team owns each component or area label found in step 2. Write
 
 Finish by suggesting the next two commands:
 
-    /bug-triage-agent:triage-doctor --team <id>
+    /bug-triage-agent:triage-doctor <id>
     /bug-triage-agent:triage <TICKET> --team <id>
 
 and remind the user to commit `triage-teams/<id>.json` so the rest of the team gets it.

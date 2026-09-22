@@ -12,12 +12,14 @@ command and stops.
 ## Setup
 
 Resolve `<plugin root>` and `<working folder>` exactly as in `skills/bug-triage`
-Setup step 0. `--team` is optional: with no ticket to read a project key from, the team
+Setup step 0. The team is optional, and may be given as a plain word: a team id
+(`demo-live`) or a project key (`DEMO`). `--team <id>` also works. Pass the word
+straight through to both scripts. Without one, with no ticket to read a project key from, the team
 comes from `CLAUDE_TRIAGE_TEAM`, the signed-in user's email against `team.members`
 (pass `--user-email` only if the host already tells you who is signed in), a default
 or lone config in the working folder. If none decides, it stops and asks. Confirm it resolves:
 
-    python3 <plugin root>/scripts/run_header.py --workdir <working folder> [--team <id>] \
+    python3 <plugin root>/scripts/run_header.py --workdir <working folder> [<team or project>] \
         [--user-email <email>] --where
 
 If it exits 2, it could not choose a team: show why and offer `/bug-triage-agent:triage-config <id>` and
@@ -43,7 +45,7 @@ Write it to a file in the working folder, e.g. `<working folder>/triage-reports/
 ## Render
 
     python3 <plugin root>/scripts/render_queue.py --workdir <working folder> \
-        [--team <id>] [--user-email <email>] [--issues <working folder>/triage-reports/queue.json] \
+        [<team or project>] [--user-email <email>] [--issues <working folder>/triage-reports/queue.json] \
         [--limit N] [--untriaged-only]
 
 Print its output **verbatim**. Do not re-sort, summarise or annotate the table: the

@@ -48,7 +48,7 @@ rather than improvise.
 
 ```
 /triage-config <your-team>        # asks a few questions, writes triage-teams/<your-team>.json
-/triage-doctor --team <your-team> # checks every source is reachable and bound
+/triage-doctor <your-team> # checks every source is reachable and bound
 ```
 
 The config is written to `triage-teams/` in your own repository, not into the plugin:
@@ -117,11 +117,11 @@ Step-by-step runs with expected output: [`docs/09-examples.md`](docs/09-examples
 /triage BUG-4830 BUG-4844 BUG-4851
 
 # the live demo: synthetic Jira project DEMO
-/queue --team demo-live
+/queue demo-live
 /triage DEMO-7
 /triage DEMO-7 DEMO-8 DEMO-9
 /release-impact DEMO-7
-/triage-doctor --team demo-live
+/triage-doctor demo-live
 /triage-review DEMO-8 voice_of_customer "held balance release is by design"
 ```
 

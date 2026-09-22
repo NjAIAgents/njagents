@@ -1,6 +1,6 @@
 {
   "name": "bug-triage-agent",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Bug triage agent (BTA): disposition gate, release correlation, workaround discovery, and priority scoring. Shared rubric across teams, per-team config only.",
   "author": {
     "name": "Navjyot Nishant"

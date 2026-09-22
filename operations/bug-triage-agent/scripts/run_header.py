@@ -23,6 +23,7 @@ Exit codes:
     2  team not found (available ids and where they came from are listed)
     3  a ticket has no fixture while the tracker is in fixture mode
 """
+import re
 import argparse, glob, json, os, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -112,6 +113,36 @@ def member_of(cfg, email):
     return score
 
 
+def split_targets(teams, words):
+    """Separate a bare team id or project key from ticket keys.
+
+    Hosts may pass a command's arguments through their own parser, and a leading
+    --team flag has been seen to break the command there. So a plain word works too:
+    'demo-live' names a team, 'DEMO' names a project, 'DEMO-7' is a ticket. Returns
+    (team_id or None, tickets, projects). Raises ValueError on a word that is none of these.
+    """
+    team, tickets, projects, unknown = None, [], [], []
+    by_project = {}
+    for tid, (cfg, _p, _l) in teams.items():
+        key = str(cfg.get("tracker", {}).get("project_key", "")).upper()
+        if key:
+            by_project.setdefault(key, []).append(tid)
+    for w in words:
+        if w in teams:
+            team = w
+        elif w.upper() in by_project:
+            projects.append(w.upper())
+        elif re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*-\d+", w):
+            tickets.append(w)
+        else:
+            unknown.append(w)
+    if unknown:
+        raise ValueError("No team or project named " + ", ".join(unknown) +
+                         ". Known teams: " + ", ".join(sorted(teams)) +
+                         (". Projects: " + ", ".join(sorted(by_project)) if by_project else ""))
+    return team, tickets, projects
+
+
 def resolve_team(teams, explicit=None, tickets=(), email=None):
     """Pick a team without making the user name it.
 
@@ -121,7 +152,7 @@ def resolve_team(teams, explicit=None, tickets=(), email=None):
     because they cannot run.
     """
     if explicit:
-        return (explicit, "--team") if explicit in teams else (None, f"No config for team '{explicit}'.")
+        return (explicit, "the team named in the command") if explicit in teams else (None, f"No config for team '{explicit}'.")
     env = os.environ.get("CLAUDE_TRIAGE_TEAM")
     if env:
         return (env, "CLAUDE_TRIAGE_TEAM") if env in teams else (None, f"CLAUDE_TRIAGE_TEAM names '{env}', which has no config.")
@@ -244,7 +275,13 @@ def main():
     a = ap.parse_args()
 
     teams = load_teams(a.config_dir, a.workdir)
-    tid, how = resolve_team(teams, a.team, a.tickets,
+    try:
+        word_team, a.tickets, projects = split_targets(teams, a.tickets)
+    except ValueError as e:
+        print(e)
+        return 2
+    a.team = a.team or word_team
+    tid, how = resolve_team(teams, a.team, a.tickets + [f"{p}-0" for p in projects],
                             a.user_email or os.environ.get("CLAUDE_TRIAGE_USER_EMAIL"))
     if tid is None:
         print(how)

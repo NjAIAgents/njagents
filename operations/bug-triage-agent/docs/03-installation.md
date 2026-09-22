@@ -99,7 +99,7 @@ classification questions each `off` source leaves unanswered.
 
 ```bash
 python3 scripts/validate_config.py teams/<your-team>.json   # named form, fails on placeholders
-/triage-doctor --team <your-team>
+/triage-doctor <your-team>
 ```
 
 Then try the demo, which needs no connectors at all:

@@ -15,11 +15,12 @@ Only "key" and "summary" are required.
 
 Read-only. Prints markdown; writes nothing.
 """
+import re
 import argparse, json, os, sys
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from run_header import load_teams, fixture_root, resolve_team  # noqa: E402
+from run_header import load_teams, fixture_root, resolve_team, split_targets  # noqa: E402
 
 PRIO_MARK = {"P1": "🔴", "P2": "🟠", "P3": "🟡", "P4": "🔵"}
 
@@ -27,10 +28,18 @@ PRIO_MARK = {"P1": "🔴", "P2": "🟠", "P3": "🟡", "P4": "🔵"}
 def parse_ts(s):
     if not s:
         return None
+    s = str(s).strip().replace("Z", "+00:00")
+    # Trackers send offsets without a colon (Jira: 2026-09-18T10:21:33.123-0500) and
+    # fractions of any length. Python before 3.11 accepts neither, so normalise both.
+    s = re.sub(r"([+-]\d{2})(\d{2})$", r"\1:\2", s)
+    s = re.sub(r"\.(\d{1,6})\d*(?=[+-]\d{2}:\d{2}$|$)", lambda m: "." + m.group(1).ljust(6, "0"), s)
     try:
-        return datetime.fromisoformat(str(s).replace("Z", "+00:00")).astimezone(timezone.utc)
+        d = datetime.fromisoformat(s)
     except ValueError:
         return None
+    if d.tzinfo is None:
+        d = d.replace(tzinfo=timezone.utc)
+    return d.astimezone(timezone.utc)
 
 
 def fixture_issues(cfg, cfg_path):
@@ -91,10 +100,16 @@ def main():
     ap.add_argument("--log", help="audit log; default <workdir>/triage-logs/triage-log.jsonl")
     ap.add_argument("--limit", type=int, default=25)
     ap.add_argument("--untriaged-only", action="store_true")
+    ap.add_argument("target", nargs="*", help="a team id or a project key, e.g. demo-live or DEMO")
     a = ap.parse_args()
 
     teams = load_teams(a.config_dir, a.workdir)
-    tid, how = resolve_team(teams, a.team, (), a.user_email or os.environ.get("CLAUDE_TRIAGE_USER_EMAIL"))
+    try:
+        word_team, _t, projects = split_targets(teams, a.target)
+    except ValueError as e:
+        print(e)
+        return 2
+    tid, how = resolve_team(teams, a.team or word_team, [f"{p}-0" for p in projects], a.user_email or os.environ.get("CLAUDE_TRIAGE_USER_EMAIL"))
     if tid is None:
         print(how)
         return 2

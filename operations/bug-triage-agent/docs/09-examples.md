@@ -1,12 +1,12 @@
 # Examples
 
 Worked runs you can copy. Each one gives the command, what you should see, and what to
-check. The outputs shown are real, produced by version 0.6.1 against the shipped demo
+check. The outputs shown are real, produced by version 0.6.2 against the shipped demo
 configs.
 
 ## Before you start
 
-1. Install or update the plugin to **0.6.1** and start a new session.
+1. Install or update the plugin to **0.6.2** and start a new session.
 2. Run it in **Cowork or Claude Code**, not a regular Chat. A Chat syncs only the skill
    folders, so the scripts and configs are missing and the triage stops at step one.
 3. In Cowork, connect a working folder. Reports, traces, fix briefs and the log are
@@ -44,7 +44,7 @@ You do not pass `--team` for either. The team is found from the ticket's project
 > | code | 🟡 fixture | fixtures/code |
 >
 > **5 of 5 sources available.** Absent sources lower confidence and drop escalations. They never raise severity.
-> Team **demo**, chosen by ticket project BUG · Config: `…/teams/demo.json` (plugin) · Agent **0.6.1**
+> Team **demo**, chosen by ticket project BUG · Config: `…/teams/demo.json` (plugin) · Agent **0.6.2**
 
 Then a task list ticks through the stages (disposition, enrichment, correlation,
 workaround, priority, outputs), each rewritten with its result as it finishes.
@@ -144,7 +144,7 @@ candidate_files:
   - "approvals-api/src/approvals/ApprovalReviewService.ts:89"
   - "approvals-api/src/approvals/ApprovalReviewService.ts"
 route_to: Approvals Team
-generated_by: "bug-triage-agent 0.6.1"
+generated_by: "bug-triage-agent 0.6.2"
 ```
 
 Then: Problem, Reproduce, Where to look, Prior fixes, Hypothesis to test, Definition of
@@ -169,10 +169,14 @@ Triage never opens a branch or a pull request itself. The brief is the handoff.
 Needs a tracker connector with access to the `DEMO` project.
 
 ```
-/bug-triage-agent:triage-doctor --team demo-live
-/bug-triage-agent:queue --team demo-live
+/bug-triage-agent:triage-doctor demo-live
+/bug-triage-agent:queue demo-live
 /bug-triage-agent:triage DEMO-7
 ```
+
+A command takes a team or project as a plain word: `demo-live` names the team, `DEMO`
+names the project. `--team demo-live` also works in Claude Code, but some hosts reject a
+command whose first argument is a flag, so the plain word is the form to use.
 
 **Doctor** checks every source is reachable and every tool binding resolves. Tracker
 and releases are 🟢 live; metrics, warehouse and code are ⚫ off.
@@ -204,7 +208,7 @@ triage reads, so results do not change with who happens to be signed in.
 /bug-triage-agent:triage-review DEMO-8 voice_of_customer "held balance release is by design"
 /bug-triage-agent:triage-log
 /bug-triage-agent:triage-log DEMO-7
-/bug-triage-agent:triage-log --accuracy
+/bug-triage-agent:triage-log accuracy
 ```
 
 | Command | Shows |
@@ -212,7 +216,7 @@ triage reads, so results do not change with who happens to be signed in.
 | `triage-review` | Records your decision against the agent's, with the reason |
 | `triage-log` | Recent decisions, newest first, with overrides marked |
 | `triage-log DEMO-7` | One ticket's full history |
-| `triage-log --accuracy` | How often people agreed, per disposition and per escalation class |
+| `triage-log accuracy` | How often people agreed, per disposition and per escalation class |
 
 The gap between what the agent said and what a person decided is the measurement that
 improves the rubric. See [Operations](06-operations.md).
@@ -233,7 +237,7 @@ write the file are never defaulted or guessed from other signals.
 Once written, tickets from that project resolve to `payments` by project key:
 
 ```
-/bug-triage-agent:triage-doctor --team payments
+/bug-triage-agent:triage-doctor payments
 /bug-triage-agent:triage PAY-123
 ```
 
@@ -244,8 +248,9 @@ Commit `triage-teams/payments.json` so your team shares it. See
 
 | You see | Likely cause | Fix |
 | --- | --- | --- |
-| "Unknown skill" or scripts not found | Running in a regular Chat, or an old plugin version | Use Cowork or Claude Code, update to 0.6.1, start a new session |
-| "Could not tell which team" | No ticket, no config in your folder, no default | Pass `--team`, or run `/bug-triage-agent:triage-config` |
-| "No team configures project X" | Ticket from a project no config names | Add it with `triage-config`, or pass `--team` |
-| 🔴 in the header for a live source | Tool bindings not filled or not found | `/bug-triage-agent:triage-doctor --team <id>` |
-| Report written but no trace | Old version | Update to 0.6.1 |
+| "Unknown skill" or scripts not found | Running in a regular Chat, or an old plugin version | Use Cowork or Claude Code, update to 0.6.2, start a new session |
+| "Could not tell which team" | No ticket, no config in your folder, no default | Name the team or project, e.g. `/bug-triage-agent:queue demo-live`, or run `/bug-triage-agent:triage-config` |
+| "Unknown skill" only when you add arguments | The host rejected a leading `--flag` | Use the plain word: `/bug-triage-agent:queue demo-live` |
+| "No team configures project X" | Ticket from a project no config names | Add it with `triage-config`, or name the team |
+| 🔴 in the header for a live source | Tool bindings not filled or not found | `/bug-triage-agent:triage-doctor <id>` |
+| Report written but no trace | Old version | Update to 0.6.2 |

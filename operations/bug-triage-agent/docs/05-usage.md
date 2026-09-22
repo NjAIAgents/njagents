@@ -15,13 +15,13 @@ loaded.
 /triage DEMO-7                                    one ticket; team found from the project key
 /triage DEMO-7 DEMO-8 DEMO-9                      batch, returns a ranked table
 /release-impact DEMO-7                            correlation only
-/queue --team demo-live                           open bugs, what still needs triage
+/queue demo-live                                  open bugs, what still needs triage
 /triage-config payments                           create or update a team config
-/triage-doctor --team demo-live                   readiness check
+/triage-doctor demo-live                          readiness check
 /triage-review DEMO-8 voice_of_customer "..."     record a human override
 /triage-log                                       recent decisions, newest first
 /triage-log DEMO-7                                one ticket's history
-/triage-log --accuracy                            how often people agreed, per class
+/triage-log accuracy                              how often people agreed, per class
 ```
 
 ## Three outputs, not one

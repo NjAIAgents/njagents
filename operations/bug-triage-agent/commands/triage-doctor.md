@@ -1,6 +1,6 @@
 ---
 description: Check that every configured source is reachable and correctly wired
-argument-hint: "[--team <id>]  (optional; same team resolution as triage)"
+argument-hint: "[team or project, e.g. demo-live or DEMO]  (optional; same team resolution as triage)"
 ---
 
 Run the readiness check for: $ARGUMENTS
@@ -8,7 +8,8 @@ Run the readiness check for: $ARGUMENTS
 0. Resolve `<plugin root>` and `<working folder>` as in `skills/bug-triage` Setup
    step 0, and report both, with the plugin version from its manifest.
 1. Resolve which file this team actually uses, and say so:
-   `python3 <plugin root>/scripts/run_header.py --workdir <working folder> [--team <team>] [--user-email <email>] --where`
+   `python3 <plugin root>/scripts/run_header.py --workdir <working folder> [<team or project>] [--user-email <email>] --where`
+   Pass a team id or project key from the arguments as a plain word; `--team <id>` also works.
    and report which rule chose the team.
    It looks in the config dir, then `triage-teams/` in the working folder, then the
    plugin's shipped configs. If it exits 2, there is no config: offer

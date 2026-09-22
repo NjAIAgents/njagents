@@ -18,6 +18,21 @@ loaded.
 /triage-review BUG-4844 voice_of_customer "..."   record a human override
 ```
 
+## Three outputs, not one
+
+| Surface | When | Where |
+| --- | --- | --- |
+| Chat summary | always | in the conversation |
+| Report file | per `output.write_report` | `triage-reports/<TICKET>.md` |
+| Tracker comment | generated, never posted | shown for you to paste |
+
+The report is the one to share. It carries the evidence, the priority arithmetic step
+by step, the release correlation with its confidence, and a coverage table. The chat
+summary is deliberately thin so you can scan a batch.
+
+The tracker comment is plain text rather than markdown, because trackers render their
+own markup and a pasted markdown table becomes a wall of pipes.
+
 ## Reading the output
 
 Full templates are in [`reference/output-templates.md`](../reference/output-templates.md).

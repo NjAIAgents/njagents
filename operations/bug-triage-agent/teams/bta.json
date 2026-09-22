@@ -69,5 +69,9 @@
       "get_page": "getwikiPage",
       "list_pages": "getPagesInwikiSpace"
     }
+  },
+  "output": {
+    "reports_dir": "triage-reports",
+    "write_report": "always"
   }
 }

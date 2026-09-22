@@ -57,5 +57,9 @@
   "repos": [],
   "routing": {},
   "//zero-setup": "Leave every source except tracker and releases as 'off'. Add a connector later by flipping its mode and adding its entry to mcp_tools.",
-  "tool_bindings": {}
+  "tool_bindings": {},
+  "output": {
+    "reports_dir": "triage-reports",
+    "write_report": "always"
+  }
 }

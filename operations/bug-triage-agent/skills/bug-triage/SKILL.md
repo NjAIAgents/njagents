@@ -87,10 +87,24 @@ switched off.
 
 ## Stage 5: output and log
 
-Render per `reference/output-templates.md`, including the provenance line. Append the
-audit record to `logs/triage-log.jsonl`.
+Three surfaces, all defined in [`reference/output-templates.md`](../../reference/output-templates.md):
 
-Never post to tracker without explicit per-ticket confirmation in the conversation.
+1. **Chat summary.** Always. Lead with the answer, one line of arithmetic, a pointer
+   to the report. Ten seconds to read.
+2. **Report file.** Written to `output.reports_dir` as `<TICKET>.md` when
+   `output.write_report` allows. The path is relative to the **working directory**,
+   not the plugin, which may be installed somewhere temporary. Say where you wrote it.
+3. **Tracker comment.** Generated as plain text. Never posted without explicit
+   per-ticket confirmation in the conversation.
+
+Then append the audit record:
+
+    python3 scripts/triage_log.py append --ticket <KEY> --team <team> \
+        --disposition <d> [--priority <P>] --confidence <c> --modes <src=mode,...> \
+        [--escalations ...] [--unanswered ...] [--source-errors ...] [--flags ...]
+
+`append` refuses a non-defect carrying a priority. If it refuses, the pipeline made a
+mistake: a disposition other than `defect` must never have reached scoring.
 
 ## Batch mode
 

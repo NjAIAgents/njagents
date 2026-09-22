@@ -19,3 +19,7 @@ operations/*/logs/*.jsonl
 
 # Filled-in local team configs may carry site hosts and instance ids
 operations/*/teams/local-*.json
+
+# Triage reports are output
+triage-reports/
+operations/*/triage-reports/

@@ -247,6 +247,25 @@
           "type": "string"
         }
       }
+    },
+    "output": {
+      "type": "object",
+      "description": "Where the triage report is written and whether to write one.",
+      "properties": {
+        "reports_dir": {
+          "type": "string",
+          "default": "triage-reports",
+          "description": "Relative to the working directory, not the plugin. The plugin may be installed in a temporary location."
+        },
+        "write_report": {
+          "enum": [
+            "always",
+            "batch",
+            "never"
+          ],
+          "default": "always"
+        }
+      }
     }
   }
 }

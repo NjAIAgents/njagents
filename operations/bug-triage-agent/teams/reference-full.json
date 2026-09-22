@@ -118,5 +118,9 @@
     "approvals": "Approvals Team",
     "settlements": "Payments Team",
     "reporting": "Reporting Team"
+  },
+  "output": {
+    "reports_dir": "triage-reports",
+    "write_report": "always"
   }
 }

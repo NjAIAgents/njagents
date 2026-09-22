@@ -61,5 +61,9 @@
     "approvals": "Second Team Backend",
     "settlements": "Second Team Payments",
     "reporting": "Second Team Data"
+  },
+  "output": {
+    "reports_dir": "triage-reports",
+    "write_report": "always"
   }
 }

@@ -275,11 +275,18 @@ def main():
     # against the renderer's own contract so the two cannot drift apart.
     if rs:
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-        from render_trace import validate as validate_result
+        from render_trace import validate as validate_result, render as render_result
         for f in rs:
-            with open(f) as fh:
-                for p in validate_result(json.load(fh)):
-                    err(f"{os.path.relpath(f, ROOT)}: {p}")
+            with open(f, encoding="utf-8") as fh:
+                r = json.load(fh)
+            problems = validate_result(r)
+            for p in problems:
+                err(f"{os.path.relpath(f, ROOT)}: {p}")
+            # A trace opened from disk is decoded by its own declaration or not at
+            # all. Without one, every non-ASCII mark renders as mojibake.
+            if not problems and not render_result(r).startswith('<meta charset="utf-8">'):
+                err(f"{os.path.relpath(f, ROOT)}: rendered trace does not open with "
+                    "a utf-8 charset declaration")
         print(f"  {len(rs)} result files checked against the trace contract")
 
     explicit = bool(args) and args[0] != "--all"

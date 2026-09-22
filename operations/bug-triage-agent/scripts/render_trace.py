@@ -254,7 +254,12 @@ def render(r):
     else:
         head_mark = "⚪ "
 
-    o = [f'<title>Trace {esc(t)}</title>', f"<style>{CSS}</style>",
+    # The charset must come first. Opened from disk, a page with no declaration is
+    # decoded as Windows-1252 and every non-ASCII mark (·, ●, ⚪, 🟢) turns to
+    # mojibake. A hosting shell may add its own; a local file never does.
+    o = ['<meta charset="utf-8">',
+         '<meta name="viewport" content="width=device-width, initial-scale=1">',
+         f'<title>Trace {esc(t)}</title>', f"<style>{CSS}</style>",
          '<div class="wrap">',
          f'<p class="eyebrow">Run trace · team {esc(r["team"])} · '
          f'{esc(r.get("triaged_at", ""))} · agent {esc(r.get("agent_version", ""))}</p>']
@@ -383,7 +388,7 @@ def main():
         out_dir = a.out or os.path.dirname(os.path.abspath(path))
         os.makedirs(out_dir, exist_ok=True)
         dest = os.path.join(out_dir, f'{r["ticket"]}-trace.html')
-        with open(dest, "w") as f:
+        with open(dest, "w", encoding="utf-8") as f:
             f.write(render(r))
         print(f"wrote {dest}")
     return 1 if failed else 0

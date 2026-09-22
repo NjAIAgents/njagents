@@ -75,6 +75,17 @@ Dispatch `enrich-tracker` and the release adapters. These two are the minimum vi
 sources and the disposition gate depends on them: prior tickets, duplicates and
 component history all come from the tracker envelope.
 
+**When the tracker is `live`, run it as the `enrich-tracker` subagent. Never call a
+tracker tool from this orchestrator.** A live run showed why: called inline, every
+issue fetch and search rendered in the user's chat as a full ticket card, one per
+related ticket, burying the stage lines under noise. Inside a subagent those calls
+stay in its collapsed block and only the envelope comes back. It also keeps raw ticket
+bodies out of this context, which the rest of the run does not need. The same holds for
+every `live` source in Stage 3. `fixture` sources are local files and are read directly.
+
+Where a client cannot delegate, make the calls in turn and say in one line that tool
+output may appear in the conversation; correctness does not depend on the delegation.
+
 Skip nothing here. If `tracker` is unavailable, stop: without it there is no triage.
 
 ## Stage 2: disposition

@@ -84,7 +84,10 @@ Rules:
 
 ## Subagent visibility
 
-Stage 3 delegates one subagent per **live** source; fixture sources are read directly.
+Every **live** source runs in a subagent, the tracker in Stage 1 included; fixture
+sources are read directly. Besides parallelism this keeps connector output out of the
+reader's view: some connectors render each result as a rich card, and a triage that
+calls them inline shows a wall of ticket cards instead of its stage lines.
 Name each source in the indented block as it returns, in completion order, whichever
 way it was read. Two things must stay honest here:
 

@@ -25,8 +25,9 @@ sentence rather than a single word: "show the bug queue for demo-live" is routed
 reliably, a bare "queue" may get a clarifying question back.
 
 The plugin runs Python scripts for the header, queue, trace, fix brief and log, so the
-client needs a shell. Cowork and Claude Code have one. Cursor, Codex and ChatGPT are not
-yet tested; if a client cannot run scripts, the run stops at its first step rather
+client needs a shell. Cowork, Claude Code and Cursor have one and are tested. Codex needs
+a Codex task with a local folder, not a regular ChatGPT chat, and is not yet run end to
+end. If a client cannot run scripts, the run stops at its first step rather
 than improvising the output.
 
 The commands are thin wrappers over the skills, so nothing is lost where they are not

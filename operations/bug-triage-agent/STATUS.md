@@ -79,7 +79,7 @@ core and exist in one copy.
 | MCP servers | yes | yes | yes |
 | `commands/` (7) | yes | yes | **no** |
 | `agents/` (4) | yes | yes | **no** |
-| **Installed and run** | **yes** | not yet | ChatGPT desktop: installed, loads; asked a clarifying question for a bare `queue` (0.6.3 routes it). Codex: not yet |
+| **Installed and run** | **yes** | **yes** (2026-09-22, queue on the demo team) | Installed; skills load since 0.6.4. A regular ChatGPT chat cannot run them (no tool, no shell). A Codex task with a folder is untested |
 
 ### What differs on Codex and ChatGPT
 

@@ -96,7 +96,8 @@ argument is a flag.
 The same plugin installs there from the same repository. Commands differ by client;
 see [Invoking it](operations/bug-triage-agent/docs/05-usage.md#per-client). In Codex and
 ChatGPT, invoke `@bug-triage-agent` and say what you want in a sentence, for example
-"show the bug queue for demo-live". Those clients are not yet tested.
+"show the bug queue for demo-live". Cursor is tested. Codex is installed and loads the
+skills but is not yet run end to end. Codex needs a Codex task with a local folder; a regular ChatGPT chat shows the plugin but cannot run its skills.
 
 ### 7. Use the output
 
@@ -155,9 +156,9 @@ Four manifests, one copy of the skills:
 
 The root manifest follows the vendor-neutral Agent Plugins specification, so other
 conformant clients should load the skills as well. That is an inheritance from the
-standard, not a tested claim. Cowork is installed and run routinely; Claude Code shares
-its plugin format; Cursor and Codex are reasoned from their manifests but not yet
-installed.
+standard, not a tested claim. Cowork and Cursor are installed and run; Claude Code shares
+Cowork's plugin format; Codex and ChatGPT desktop install the plugin and load its
+skills, but a run has not been completed there yet.
 
 Where a target cannot load a component, the difference is recorded in that plugin's
 `STATUS.md`.

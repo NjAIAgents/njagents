@@ -61,9 +61,9 @@ To update, refresh the marketplace first. The app keeps its own copy of the repo
 and reinstalls from that copy, so reinstalling alone keeps the old version. See
 [`STATUS.md`](../STATUS.md) for what that changes and what it does not.
 
-**Cowork is installed and run routinely.** Claude Code uses the same plugin format.
-Cursor and Codex compatibility is reasoned from each client's manifest and discovery
-rules, not observed; expect the first install there to surface something.
+**Cowork and Cursor are installed and run.** Claude Code uses Cowork's plugin format.
+Codex and ChatGPT desktop install the plugin and load its skills since 0.6.4, but a run
+has not been completed there. Codex needs a Codex task with a local folder; a regular ChatGPT chat shows the plugin but cannot run its skills.
 
 ## Connecting sources
 

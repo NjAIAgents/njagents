@@ -7,6 +7,7 @@ the authoritative version of each rule lives**.
 
 | If you are | Read |
 | --- | --- |
+| Setting it up for the first time | [Quick start](../../../README.md#quick-start-bug-triage-agent), then [Examples](09-examples.md) |
 | Deciding whether to adopt this | [Overview](01-overview.md), then [Status](../STATUS.md) |
 | Installing it for your team | [Installation](03-installation.md), [Configuration](04-configuration.md) |
 | Trying it for the first time | [Examples](09-examples.md) |
@@ -37,6 +38,8 @@ bug: file it or delete it.
 ## A caution before you rely on any of this
 
 Most of this plugin is instructions an agent follows at runtime, not code that
-executes deterministically. At the time of writing **none of it has been run**.
+executes deterministically. The header, trace, queue, fix brief and log are rendered by
+scripts and are deterministic; the judgment is not. It has been run on the recorded
+fixtures and a live Jira demo, which is not the same as production use.
 [`STATUS.md`](../STATUS.md) separates what is verified from what is merely written.
 Read it before promising anything to anyone.

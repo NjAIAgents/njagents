@@ -17,13 +17,30 @@ else is additive. See the zero-setup tier below.
 
 The plugin carries three manifests and one copy of everything else.
 
-### Claude Code and Cowork
-
-Add the marketplace, then install:
+### Cowork
 
 1. Customize, Browse plugins, Add marketplace
 2. `github.com/NjAIAgents/njagents`
 3. Sync, then install `bug-triage-agent`
+4. Quit and reopen the app. New sessions then load the plugin's commands
+
+Run it in a **Cowork task with a folder connected**, not a regular Chat. A Chat syncs
+only the skill folders, so the scripts and configs are missing.
+
+### Claude Code
+
+```
+/plugin marketplace add NjAIAgents/njagents
+/plugin install bug-triage-agent@njagents
+```
+
+Restart Claude Code after installing.
+
+### Updating
+
+Sync the marketplace in Cowork, or `/plugin marketplace update njagents` in Claude
+Code, then start a **new** session. A session keeps the plugin version it started
+with; the run header's **Agent** line shows which one you have.
 
 ### Cursor
 
@@ -37,9 +54,9 @@ Codex reads the root `plugin.json`, which conforms to the Agent Plugins standard
 loads `skills/` and MCP servers; `agents/` and `commands/` are not loaded there. See
 [`STATUS.md`](../STATUS.md) for what that changes and what it does not.
 
-**None of these three has actually been installed and run yet.** The compatibility is
-reasoned from each client's manifest and discovery rules, not observed. Expect the
-first install to surface something.
+**Cowork is installed and run routinely.** Claude Code uses the same plugin format.
+Cursor and Codex compatibility is reasoned from each client's manifest and discovery
+rules, not observed; expect the first install there to surface something.
 
 ## Connecting sources
 
@@ -97,16 +114,18 @@ classification questions each `off` source leaves unanswered.
 
 ## Verify the install
 
-```bash
-python3 scripts/validate_config.py teams/<your-team>.json   # named form, fails on placeholders
-/triage-doctor <your-team>
-```
-
-Then try the demo, which needs no connectors at all:
+Try the demo first, which needs no connectors at all:
 
 ```
-/triage BUG-4830
+/bug-triage-agent:triage BUG-4830
 ```
 
-Compare against [`fixtures/expected-outcomes.md`](../fixtures/expected-outcomes.md).
-Note that file is a *prediction* derived from the rubric, not a recorded transcript.
+The header should end with **Agent** and the version you installed. Compare the result
+with [Examples](09-examples.md) and [`fixtures/expected-outcomes.md`](../fixtures/expected-outcomes.md),
+which is recorded from real runs.
+
+Then check your own team:
+
+```
+/bug-triage-agent:triage-doctor <your-team>
+```

@@ -6,10 +6,26 @@ An honest account of what is built and what is not.
 
 - Shared instruction layer: orchestrator, disposition taxonomy, priority rubric with
   escalation caps, release correlation, workaround finder, source contract and adapters.
-- Four team configs under `teams/`, one schema, one worked example.
-- 14 fixtures, each a complete envelope validated against the live source contract.
+- Two demo configs under `teams/` (`demo` on fixtures, `demo-live` on a real Jira
+  project), one schema, one example. Team configs live in the team's own folder under
+  `triage-teams/`.
+- 14 fixtures, each a complete envelope validated against the live source contract, and
+  four worked results.
+- Deterministic renderers, so the model cannot drift or abbreviate them:
+  `run_header.py` (header and team resolution), `render_trace.py` (HTML run trace),
+  `render_queue.py` (bug queue), `render_fix_brief.py` (fix brief with evidence
+  grading), `triage_log.py` (audit log, overrides, accuracy report).
 - `scripts/validate_config.py`: config validation, contract validation, read-only SQL
-  enforcement, credential-shaped key detection, placeholder detection.
+  enforcement, credential-shaped key detection, placeholder detection, result files,
+  and command and skill front matter.
+
+## Added in 0.6.x
+
+| Version | Change |
+| --- | --- |
+| 0.6.0 | `/queue`, `/triage-log`, fix briefs graded strong, moderate or weak; team from the ticket's project key; `triage-config` stops on a skipped required answer; `+1 history` counts only fixed defects; hint when a connector is present but its source is off |
+| 0.6.1 | Quoted command front matter. An unquoted hint starting with `[` made three commands disappear |
+| 0.6.2 | Team or project as a plain word, because a leading `--flag` was rejected by the host; queue ages from Jira dates with colonless offsets |
 
 ## Exercised, 2026-09-21
 
@@ -37,7 +53,7 @@ Five runs is five runs.
 | --- | --- |
 | Event trigger | The agent runs when a person types a command. The requirement is that it acts when a ticket is submitted. Needs real code. |
 | Validated taxonomy | The shipped disposition taxonomy is a construction, not any organization's actual judgment. Replace it via interviews plus a changelog-derived benchmark. |
-| Live connection | No credentials have been used. Tool-name bindings for non-tracker sources are informed guesses. |
+| Live connection beyond the tracker | The tracker has run live against a Jira demo project. Metrics, warehouse and code have only run on fixtures; their tool-name bindings are informed guesses until a team binds them with `triage-config`. |
 
 ## Connections
 
@@ -56,10 +72,10 @@ core and exist in one copy.
 
 | Component | Claude | Cursor | Codex / ChatGPT |
 | --- | --- | --- | --- |
-| `skills/` (6) | yes | yes | yes |
+| `skills/` (8) | yes | yes | yes |
 | `reference/`, `teams/`, `fixtures/` | yes | yes | yes |
 | MCP servers | yes | yes | yes |
-| `commands/` (4) | yes | yes | **no** |
+| `commands/` (7) | yes | yes | **no** |
 | `agents/` (4) | yes | yes | **no** |
 
 ### What differs on Codex and ChatGPT
@@ -99,9 +115,10 @@ as unconfigured. Only the tracker entry is needed for the zero-setup tier.
 
 ## Rough completeness
 
-Demo: runs, with recorded expectations and an implemented audit log.
+Demo: runs on fixtures and on a live Jira project, with recorded expectations, a
+queue, fix briefs and an audit log.
 Production: still roughly half. The event trigger does not exist, the taxonomy is
-unvalidated, and nothing has touched a live source.
+unvalidated, and only the tracker has run against a live source.
 
 ## Do not
 

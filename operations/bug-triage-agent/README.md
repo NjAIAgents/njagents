@@ -34,6 +34,11 @@ each rule is defined**, so you never have to guess which file wins.
 | [Glossary](docs/08-glossary.md) | Terms that mean something specific here |
 | [Examples](docs/09-examples.md) | Worked runs to copy, with expected output |
 
+## Quick start
+
+Install to first triage in seven steps: see the
+[Quick start](../../README.md#quick-start-bug-triage-agent) in the repository README.
+
 ## Install
 
 Add the marketplace, install the plugin, authorize the connectors your team uses.
@@ -47,8 +52,8 @@ rather than improvise.
 ## Configure
 
 ```
-/triage-config <your-team>        # asks a few questions, writes triage-teams/<your-team>.json
-/triage-doctor <your-team> # checks every source is reachable and bound
+/triage-config <your-team>   # asks a few questions, writes triage-teams/<your-team>.json
+/triage-doctor <your-team>   # checks every source is reachable and bound
 ```
 
 The config is written to `triage-teams/` in your own repository, not into the plugin:

@@ -5,9 +5,9 @@
     "id": "your-team",
     "product_line": ""
   },
-  "jira": {
+  "tracker": {
     "project_key": "ABC",
-    "cloud_id": "REPLACE_WITH_CLOUD_ID",
+    "instance_id": "REPLACE_WITH_INSTANCE_ID",
     "priority_names": {
       "P1": "Blocker",
       "P2": "Critical",
@@ -20,16 +20,16 @@
     "voc_destination": "none"
   },
   "sources": {
-    "jira": {
+    "tracker": {
       "mode": "live"
     },
     "releases": {
       "mode": "live"
     },
-    "datadog": {
+    "metrics": {
       "mode": "off"
     },
-    "snowflake": {
+    "warehouse": {
       "mode": "off"
     },
     "code": {
@@ -40,7 +40,7 @@
     "cadence_days": 30,
     "lookback_days": 60,
     "manifest_sources": [
-      "jira_fixversion"
+      "tracker_fixversion"
     ]
   },
   "regression": {
@@ -49,13 +49,13 @@
     "spike_ratio": 3.0,
     "deploy_window_hours": 720
   },
-  "snowflake": {
+  "warehouse": {
     "database": "",
     "schema": "",
     "queries": {}
   },
   "repos": [],
   "routing": {},
-  "//zero-setup": "Leave every source except jira and releases as 'off'. Add a connector later by flipping its mode and adding its entry to mcp_tools.",
-  "mcp_tools": {}
+  "//zero-setup": "Leave every source except tracker and releases as 'off'. Add a connector later by flipping its mode and adding its entry to mcp_tools.",
+  "tool_bindings": {}
 }

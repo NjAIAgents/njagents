@@ -1,7 +1,7 @@
 # Priority rubric (shared, do not fork)
 
 Applies only to tickets dispositioned `defect`. Identical for every team. Teams map
-P1 to P4 onto their own Jira priority names in `jira.priority_names`; they do not
+P1 to P4 onto their own tracker priority names in `tracker.priority_names`; they do not
 change the criteria.
 
 | Level | SLA | Criteria (any) |
@@ -38,15 +38,15 @@ Answer in order. Skip any question whose source is unavailable and record it as
 unanswered rather than guessing.
 
 1. Does this meet any P1 criterion? If yes, stop and emit the fast path.
-2. How many accounts are affected? (`snowflake`)
-3. Is any affected account at risk? Match the ticket's labels against `jira.at_risk_labels` from the team config, then check the ticket text.
-4. Is this a confirmed regression? (`datadog` + `releases`)
+2. How many accounts are affected? (`warehouse`)
+3. Is any affected account at risk? Match the ticket's labels against `tracker.at_risk_labels` from the team config, then check the ticket text.
+4. Is this a confirmed regression? (`metrics` + `releases`)
 5. Is there a practical workaround? (workaround-finder)
 6. What is the workflow impact: blocks, degrades, or cosmetic?
 7. Is there error swallowing or a stub at the bug site? (`code`)
-8. Is this a recurring component? (`jira`, 3 or more resolved in 90 days)
-9. Is there active sprint work in the same component? (`jira`)
-10. Is any affected account enterprise tier? (`snowflake`)
+8. Is this a recurring component? (`tracker`, 3 or more resolved in 90 days)
+9. Is there active sprint work in the same component? (`tracker`)
+10. Is any affected account enterprise tier? (`warehouse`)
 
 ## Escalation signals
 
@@ -55,14 +55,14 @@ never reach P1 by escalation alone. P1 requires meeting a P1 criterion directly.
 
 | Signal | Class | Source |
 | --- | --- | --- |
-| Confirmed regression | release | datadog + releases |
+| Confirmed regression | release | metrics + releases |
 | Error swallowing at bug site | code | code |
 | Stub or suppressed type error at bug site | code | code |
-| Recurring component, 3 or more in 90 days | history | jira |
-| Roadmap collision, active sprint work | history | jira |
+| Recurring component, 3 or more in 90 days | history | tracker |
+| Roadmap collision, active sprint work | history | tracker |
 | No practical workaround | impact | workaround-finder |
-| Enterprise tier account affected | blast | snowflake |
-| At-risk client | blast | jira labels matching `jira.at_risk_labels`, or stated in the ticket |
+| Enterprise tier account affected | blast | warehouse |
+| At-risk client | blast | tracker labels matching `tracker.at_risk_labels`, or stated in the ticket |
 | Automated approval workflow involved | impact | ticket |
 
 **One escalation per class.** Two code signals at the same site count once. This stops

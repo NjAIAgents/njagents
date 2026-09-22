@@ -23,7 +23,7 @@ the repository is noise and will inflate priority for no reason.
 ## Tool restriction
 
 The allowlist above matches **read-shaped verbs** by pattern rather than exact tool
-names, so a team can point `mcp_tools` at its own server without editing this file.
+names, so a team can point `tool_bindings` at its own server without editing this file.
 Write verbs (`create`, `add`, `edit`, `update`, `transition`, `delete`, `post`) do not
 match and are unreachable from this agent.
 

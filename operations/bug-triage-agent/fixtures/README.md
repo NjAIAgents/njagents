@@ -8,9 +8,9 @@ enforces that.
 ## Layout
 
 ```
-fixtures/jira/<TICKET-KEY>.json        one envelope per ticket
-fixtures/datadog/<TICKET-KEY>.json
-fixtures/snowflake/<TICKET-KEY>.json
+fixtures/tracker/<TICKET-KEY>.json        one envelope per ticket
+fixtures/metrics/<TICKET-KEY>.json
+fixtures/warehouse/<TICKET-KEY>.json
 fixtures/code/<TICKET-KEY>.json
 fixtures/releases.json                 not ticket-keyed, one envelope
 ```

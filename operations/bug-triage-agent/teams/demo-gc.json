@@ -1,12 +1,12 @@
 {
-  "//": "Second team, different product area and different Jira priority names. Same shared rubric. This file IS the consistency proof.",
+  "//": "Second team, different product area and different tracker priority names. Same shared rubric. This file IS the consistency proof.",
   "team": {
     "name": "Demo (second team)",
     "id": "demo-gc"
   },
-  "jira": {
+  "tracker": {
     "project_key": "BUG",
-    "cloud_id": "demo",
+    "instance_id": "demo",
     "priority_names": {
       "P1": "Highest",
       "P2": "High",
@@ -20,18 +20,18 @@
     "voc_destination": "PRODUCT-GC"
   },
   "sources": {
-    "jira": {
+    "tracker": {
       "mode": "fixture",
-      "fixture": "fixtures/jira"
+      "fixture": "fixtures/tracker"
     },
     "releases": {
       "mode": "fixture",
       "fixture": "fixtures/releases.json"
     },
-    "datadog": {
+    "metrics": {
       "mode": "off"
     },
-    "snowflake": {
+    "warehouse": {
       "mode": "off"
     },
     "code": {
@@ -42,7 +42,7 @@
     "cadence_days": 30,
     "lookback_days": 60,
     "manifest_sources": [
-      "jira_fixversion"
+      "tracker_fixversion"
     ]
   },
   "regression": {
@@ -51,7 +51,7 @@
     "spike_ratio": 3.0,
     "deploy_window_hours": 720
   },
-  "snowflake": {
+  "warehouse": {
     "database": "",
     "schema": "",
     "queries": {}

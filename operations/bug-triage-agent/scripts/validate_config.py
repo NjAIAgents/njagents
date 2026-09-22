@@ -8,7 +8,7 @@ Usage:
 import json, sys, os, glob, re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SOURCES = ["jira", "releases", "datadog", "snowflake", "code"]
+SOURCES = ["tracker", "releases", "metrics", "warehouse", "code"]
 MODES = {"live", "fixture", "off"}
 ENVELOPE = {"source", "mode", "status", "as_of", "latency_ms", "notes", "data"}
 STATUSES = {"ok", "partial", "unavailable", "error"}
@@ -19,10 +19,10 @@ def is_placeholder(v):
                                    or v.upper() in ("TODO", "CHANGEME", "XXX"))
 
 SHAPES = {
-    "jira": {"ticket", "related", "duplicates", "component_history", "sprint_collision"},
+    "tracker": {"ticket", "related", "duplicates", "component_history", "sprint_collision"},
     "releases": {"releases", "lookback_days", "adapters_run", "adapters_failed"},
-    "datadog": {"baseline", "current", "spike", "deploys_in_window", "sample_errors"},
-    "snowflake": {"affected_accounts", "enterprise_accounts", "account_names",
+    "metrics": {"baseline", "current", "spike", "deploys_in_window", "sample_errors"},
+    "warehouse": {"affected_accounts", "enterprise_accounts", "account_names",
                   "first_seen", "query_template", "query_used"},
     "code": {"candidate_paths", "error_swallowing", "stubs", "recent_changes"},
 }
@@ -40,21 +40,21 @@ def check_config(path):
         cfg = json.load(f)
     name = os.path.basename(path)
 
-    for key in ("team", "jira", "sources"):
+    for key in ("team", "tracker", "sources"):
         if key not in cfg:
             err(f"{name}: missing required key '{key}'")
-    if "jira" in cfg:
-        for key in ("project_key", "cloud_id"):
-            v = cfg["jira"].get(key)
+    if "tracker" in cfg:
+        for key in ("project_key", "instance_id"):
+            v = cfg["tracker"].get(key)
             if not v:
-                err(f"{name}: jira.{key} is empty")
+                err(f"{name}: tracker.{key} is empty")
             elif is_placeholder(v):
-                unconf(f"{name}: jira.{key} is a placeholder ({v}). "
+                unconf(f"{name}: tracker.{key} is a placeholder ({v}). "
                        "This config cannot go live until it is set.")
-        pn = cfg["jira"].get("priority_names", {})
+        pn = cfg["tracker"].get("priority_names", {})
         missing = [p for p in ("P1", "P2", "P3", "P4") if p not in pn]
         if missing:
-            err(f"{name}: jira.priority_names missing {missing}")
+            err(f"{name}: tracker.priority_names missing {missing}")
 
     srcs = cfg.get("sources", {})
     for s in SOURCES:
@@ -71,8 +71,8 @@ def check_config(path):
             if not os.path.exists(fp):
                 err(f"{name}: fixture not found: {srcs[s]['fixture']}")
 
-    if srcs.get("jira", {}).get("mode") == "off":
-        err(f"{name}: jira cannot be 'off'. It is the minimum viable source.")
+    if srcs.get("tracker", {}).get("mode") == "off":
+        err(f"{name}: tracker cannot be 'off'. It is the minimum viable source.")
 
     rc = cfg.get("release_correlation", {})
     cad, look = rc.get("cadence_days", 30), rc.get("lookback_days", 60)
@@ -87,33 +87,33 @@ def check_config(path):
         warn(f"{name}: deploy_window_hours ({reg.get('deploy_window_hours')}) is shorter "
              f"than one release cycle ({cad*24}h). Regressions will be missed.")
 
-    if srcs.get("snowflake", {}).get("mode") == "live" and not cfg.get("snowflake", {}).get("queries"):
-        err(f"{name}: snowflake is live but snowflake.queries is empty")
+    if srcs.get("warehouse", {}).get("mode") == "live" and not cfg.get("warehouse", {}).get("queries"):
+        err(f"{name}: warehouse is live but warehouse.queries is empty")
     if srcs.get("code", {}).get("mode") == "live" and not cfg.get("repos"):
         err(f"{name}: code is live but repos is empty")
 
-    tools = cfg.get("mcp_tools", {})
-    for s_ in ("datadog", "snowflake", "code"):
+    tools = cfg.get("tool_bindings", {})
+    for s_ in ("metrics", "warehouse", "code"):
         if srcs.get(s_, {}).get("mode") == "live" and not tools.get(s_):
-            err(f"{name}: {s_} is live but mcp_tools.{s_} is missing. "
+            err(f"{name}: {s_} is live but tool_bindings.{s_} is missing. "
                 "Tool names are configuration; the adapter cannot be bound without them.")
 
-    adapters = rc.get("manifest_sources", ["jira_fixversion"])
+    adapters = rc.get("manifest_sources", ["tracker_fixversion"])
     if not adapters:
         err(f"{name}: release_correlation.manifest_sources is empty")
     if "manual_file" in adapters and not rc.get("manual_file_path"):
         err(f"{name}: manifest_sources includes manual_file but manual_file_path is unset")
-    if "confluence_release_notes" in adapters and not rc.get("confluence", {}).get("space_key"):
-        err(f"{name}: confluence_release_notes adapter selected but confluence.space_key is unset")
+    if "wiki_release_notes" in adapters and not rc.get("wiki", {}).get("space_key"):
+        err(f"{name}: wiki_release_notes adapter selected but wiki.space_key is unset")
 
     write_verbs = ("INSERT", "UPDATE", "DELETE", "DROP", "MERGE", "CREATE", "TRUNCATE",
                    "ALTER", "GRANT", "REVOKE", "CALL", "EXECUTE", "COPY", "PUT", "REMOVE", "UNDROP")
-    for qname, q in cfg.get("snowflake", {}).get("queries", {}).items():
+    for qname, q in cfg.get("warehouse", {}).get("queries", {}).items():
         for tok in re.findall(r"[A-Za-z_]+", q.upper()):
             if tok in write_verbs:
-                err(f"{name}: snowflake query '{qname}' is not read-only, contains {tok}")
+                err(f"{name}: warehouse query '{qname}' is not read-only, contains {tok}")
         if not q.strip().upper().startswith(("SELECT", "WITH")):
-            err(f"{name}: snowflake query '{qname}' must start with SELECT or WITH")
+            err(f"{name}: warehouse query '{qname}' must start with SELECT or WITH")
 
     def placeholders(node, path=""):
         if isinstance(node, dict):
@@ -124,7 +124,7 @@ def check_config(path):
                 placeholders(v, path)
         elif isinstance(node, str) and is_placeholder(node):
             key = path.rstrip(".")
-            if key not in ("jira.cloud_id", "jira.project_key"):
+            if key not in ("tracker.instance_id", "tracker.project_key"):
                 unconf(f"{name}: placeholder value at '{key}' ({node})")
     placeholders(cfg)
 
@@ -142,14 +142,15 @@ def check_config(path):
     scan(cfg)
 
     live = [s for s in SOURCES if srcs.get(s, {}).get("mode") == "live"]
+    _LIVE.update(live)
     fix = [s for s in SOURCES if srcs.get(s, {}).get("mode") == "fixture"]
     off = [s for s in SOURCES if srcs.get(s, {}).get("mode") == "off"]
     print(f"  {name}: live={live or '-'} fixture={fix or '-'} off={off or '-'}")
     if fix:
         print(f"    note: outputs will be banner-marked DEMO DATA ({', '.join(fix)})")
     if off:
-        blocked = {"snowflake": "Q2 blast radius, Q10 enterprise tier",
-                   "datadog": "Q4 regression", "code": "Q7 stub / error swallowing"}
+        blocked = {"warehouse": "Q2 blast radius, Q10 enterprise tier",
+                   "metrics": "Q4 regression", "code": "Q7 stub / error swallowing"}
         for s in off:
             if s in blocked:
                 print(f"    note: {s} off, cannot answer {blocked[s]}")
@@ -185,13 +186,21 @@ def check_fixture(path):
             rm = need - set(r)
             if rm:
                 err(f"{name}: release {r.get('version','?')} missing {sorted(rm)}")
-            if r.get("files_touched") and not ({"github_tag", "github_pr"} & set(r.get("sources", []))):
-                err(f"{name}: release {r.get('version','?')} has files_touched but no github "
-                    "adapter in sources. Only github adapters yield file-level detail.")
+            if r.get("files_touched") and not ({"vcs_tag", "vcs_pr"} & set(r.get("sources", []))):
+                err(f"{name}: release {r.get('version','?')} has files_touched but no version-control "
+                    "adapter in sources. Only vcs adapters yield file-level detail.")
     miss = SHAPES[d["source"]] - set(d["data"])
     if miss:
         err(f"{name}: data missing {sorted(miss)}. Fixtures must match the live contract "
             "exactly, with no extra nesting.")
+
+
+
+_LIVE = set()
+
+
+def _live_sources():
+    return _LIVE
 
 
 def check_manifests():
@@ -238,7 +247,11 @@ def check_manifests():
                 err(f"{rel}: server '{name}' uses a ${{VAR}} in url. No client expands "
                     "environment variables there; use a literal placeholder.")
             elif "REPLACE_WITH" in url:
-                unconf(f"{rel}: server '{name}' url is a placeholder, edit before enabling")
+                # Only a problem for a source something actually runs live. A config
+                # on fixtures must still be able to certify.
+                if name in _live_sources():
+                    unconf(f"{rel}: server '{name}' url is a placeholder but the source "
+                           "is live, edit before enabling")
     a = json.load(open(os.path.join(ROOT, "mcp.json")))
     b = json.load(open(os.path.join(ROOT, ".mcp.json")))
     if a != b:
@@ -248,7 +261,6 @@ def check_manifests():
 
 def main():
     args = sys.argv[1:]
-    check_manifests()
     print("Config:")
     targets = ([p for p in glob.glob(os.path.join(ROOT, "teams", "*.json"))
                 if "schema" not in p and "example" not in p]
@@ -257,6 +269,7 @@ def main():
     for t in targets:
         check_config(t)
 
+    check_manifests()
     print("\nFixtures:")
     fx = sorted(glob.glob(os.path.join(ROOT, "fixtures", "**", "*.json"), recursive=True))
     for f in fx:

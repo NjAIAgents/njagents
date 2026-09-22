@@ -3,21 +3,22 @@
   "//": "Each team authorizes with its OWN credentials, held by the MCP host. No secrets in this repo, ever.",
   "//urls": "Edit the REPLACE_WITH_ urls before enabling a source. These are literal placeholders, not variables: no client expands environment variables in a url field. Only the tracker is needed for the zero-setup tier.",
   "mcpServers": {
-    "atlassian": {
+    "tracker": {
       "type": "http",
       "url": "https://mcp.atlassian.com/v1/mcp"
     },
-    "datadog": {
+    "metrics": {
       "type": "http",
-      "url": "https://REPLACE_WITH_DATADOG_MCP_HOST/mcp"
+      "url": "https://REPLACE_WITH_METRICS_MCP_HOST/mcp"
     },
-    "snowflake": {
+    "warehouse": {
       "type": "http",
-      "url": "https://REPLACE_WITH_SNOWFLAKE_MCP_HOST/mcp"
+      "url": "https://REPLACE_WITH_WAREHOUSE_MCP_HOST/mcp"
     },
-    "codesearch": {
+    "code": {
       "type": "http",
-      "url": "https://REPLACE_WITH_CODESEARCH_MCP_HOST/mcp"
+      "url": "https://REPLACE_WITH_CODE_MCP_HOST/mcp"
     }
-  }
+  },
+  "//tracker": "The tracker url defaults to Atlassian's hosted MCP. Point it at your own tracker's MCP server and set tool_bindings.tracker to match."
 }

@@ -7,7 +7,7 @@ else is additive. See the zero-setup tier below.
 
 | Source | Needed for | Required? |
 | --- | --- | --- |
-| Tracker (Atlassian MCP) | Everything | Yes |
+| Tracker (tracker MCP) | Everything | Yes |
 | Release manifest | Release correlation | Uses the tracker; no extra connector |
 | Metrics | Regression detection | No |
 | Warehouse | Blast radius, enterprise tier | No |
@@ -47,7 +47,7 @@ first install to surface something.
 three are literal `REPLACE_WITH_` placeholders you edit before enabling that source.
 
 They are placeholders rather than variables on purpose: **no client expands
-environment variables in a `url` field**, so a `${DATADOG_MCP_URL}` there ships broken.
+environment variables in a `url` field**, so a `${METRICS_MCP_URL}` there ships broken.
 The validator now rejects that pattern.
 
 Credentials never live in this repository. Each team authorizes with its own, held by
@@ -55,14 +55,14 @@ the MCP host.
 
 ## The zero-setup tier
 
-The adoption path. Leave every source except `jira` and `releases` set to `off`:
+The adoption path. Leave every source except `tracker` and `releases` set to `off`:
 
 ```json
 "sources": {
-  "jira":      { "mode": "live" },
+  "tracker":      { "mode": "live" },
   "releases":  { "mode": "live" },
-  "datadog":   { "mode": "off" },
-  "snowflake": { "mode": "off" },
+  "metrics":   { "mode": "off" },
+  "warehouse": { "mode": "off" },
   "code":      { "mode": "off" }
 }
 ```

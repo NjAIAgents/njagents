@@ -5,7 +5,7 @@
   "type": "object",
   "required": [
     "team",
-    "jira",
+    "tracker",
     "sources"
   ],
   "properties": {
@@ -24,18 +24,19 @@
         }
       }
     },
-    "jira": {
+    "tracker": {
       "type": "object",
       "required": [
         "project_key",
-        "cloud_id"
+        "instance_id"
       ],
       "properties": {
         "project_key": {
           "type": "string"
         },
-        "cloud_id": {
-          "type": "string"
+        "instance_id": {
+          "type": "string",
+          "description": "Tracker instance identifier (Atlassian calls this the cloud id)."
         },
         "priority_names": {
           "type": "object",
@@ -65,14 +66,15 @@
           "type": "string",
           "description": "Where voice-of-customer items are routed. Project key, board, or 'none'."
         },
-        "site": {
+        "host": {
           "type": "string",
-          "description": "Atlassian site host, e.g. example.atlassian.net."
+          "description": "Tracker host, e.g. example.atlassian.net."
         },
         "board_id": {
           "type": "integer"
         }
-      }
+      },
+      "description": "Issue tracker. Field names are tracker-neutral; the shipped adapter targets Atlassian by default."
     },
     "sources": {
       "type": "object",
@@ -112,18 +114,18 @@
           "description": "Ordered list of release-manifest adapters. First that returns data wins per field; later ones enrich. Align with the org's ecosystem.",
           "items": {
             "enum": [
-              "jira_fixversion",
-              "confluence_release_notes",
-              "github_tag",
-              "github_pr",
+              "tracker_fixversion",
+              "wiki_release_notes",
+              "vcs_tag",
+              "vcs_pr",
               "manual_file"
             ]
           },
           "default": [
-            "jira_fixversion"
+            "tracker_fixversion"
           ]
         },
-        "confluence": {
+        "wiki": {
           "type": "object",
           "properties": {
             "space_key": {
@@ -137,9 +139,10 @@
               "type": "string",
               "description": "Regex capturing the version from the page title, e.g. 'Release (?<version>\\\\d{4}\\\\.\\\\d{2})'."
             }
-          }
+          },
+          "description": "Wiki release-note pages. Keys match wiki but any wiki with labelled pages fits."
         },
-        "github": {
+        "vcs": {
           "type": "object",
           "properties": {
             "org": {
@@ -154,7 +157,8 @@
             "tag_pattern": {
               "type": "string"
             }
-          }
+          },
+          "description": "Version control. Only these adapters yield file-level detail."
         },
         "manual_file_path": {
           "type": "string",
@@ -186,9 +190,9 @@
         }
       }
     },
-    "snowflake": {
+    "warehouse": {
       "type": "object",
-      "description": "All product-specific SQL lives here, never in a shared skill.",
+      "description": "Analytics warehouse. All product-specific SQL lives here, never in a shared skill.",
       "properties": {
         "database": {
           "type": "string"
@@ -234,9 +238,9 @@
         "type": "string"
       }
     },
-    "mcp_tools": {
+    "tool_bindings": {
       "type": "object",
-      "description": "Per-source MCP tool-name suffixes. Required for any source in live mode whose adapter is not Atlassian. Lets a team point at its own Datadog / Snowflake / code-search server without editing a skill.",
+      "description": "Per-source MCP tool-name suffixes. Required for any source in live mode. Tool names differ between deployments, so they are configuration, not constants. The tracker is configurable like every other source.",
       "additionalProperties": {
         "type": "object",
         "additionalProperties": {

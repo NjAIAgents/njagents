@@ -15,7 +15,7 @@ file is the procedure.
    `insufficient_information`.
 
 2. **Find the intended behaviour.** Search, in order:
-   - prior tickets in the same component closed as works-as-designed (`jira` source,
+   - prior tickets in the same component closed as works-as-designed (`tracker` source,
      JQL on resolution and component)
    - release notes for the component
    - the code path, if the `code` source is live: an explicit conditional or guard

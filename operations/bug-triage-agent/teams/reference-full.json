@@ -4,10 +4,10 @@
     "name": "Reference Team",
     "id": "reference-full"
   },
-  "jira": {
+  "tracker": {
     "project_key": "DEMO",
-    "cloud_id": "REPLACE_WITH_CLOUD_ID",
-    "site": "REPLACE_WITH_SITE.atlassian.net",
+    "instance_id": "REPLACE_WITH_INSTANCE_ID",
+    "host": "REPLACE_WITH_TRACKER_HOST",
     "board_id": 1,
     "priority_names": {
       "P1": "Blocker",
@@ -24,16 +24,16 @@
     "voc_destination": "PRODUCT"
   },
   "sources": {
-    "jira": {
+    "tracker": {
       "mode": "live"
     },
     "releases": {
       "mode": "live"
     },
-    "datadog": {
+    "metrics": {
       "mode": "live"
     },
-    "snowflake": {
+    "warehouse": {
       "mode": "live"
     },
     "code": {
@@ -44,16 +44,16 @@
     "cadence_days": 30,
     "lookback_days": 60,
     "manifest_sources": [
-      "jira_fixversion",
-      "confluence_release_notes",
-      "github_tag"
+      "tracker_fixversion",
+      "wiki_release_notes",
+      "vcs_tag"
     ],
-    "confluence": {
+    "wiki": {
       "space_key": "ENG",
       "page_label": "release-notes",
       "title_pattern": "Release (?<version>\\d{4}\\.\\d{2})"
     },
-    "github": {
+    "vcs": {
       "org": "REPLACE_WITH_ORG",
       "repos": [
         "approvals-api",
@@ -69,20 +69,28 @@
     "spike_ratio": 3.0,
     "deploy_window_hours": 720
   },
-  "snowflake": {
+  "warehouse": {
     "database": "EXAMPLE_LAKE",
     "schema": "CURATED",
     "queries": {
       "affected_accounts_core": "SELECT COUNT(DISTINCT account_id) AS affected, COUNT_IF(tier='ENTERPRISE') AS enterprise FROM EXAMPLE_LAKE.CURATED.LATEST_ACCOUNT_ACTIVITY WHERE product_line = 'CORE' AND updated_at >= DATEADD(day, -7, CURRENT_DATE())"
     }
   },
-  "mcp_tools": {
-    "datadog": {
+  "tool_bindings": {
+    "tracker": {
+      "get_issue": "gettrackerIssue",
+      "search_issues": "searchtrackerIssuesUsingJql"
+    },
+    "wiki": {
+      "get_page": "getwikiPage",
+      "list_pages": "getPagesInwikiSpace"
+    },
+    "metrics": {
       "logs_search": "search_logs",
       "metrics_query": "query_metrics",
       "deploy_events": "search_events"
     },
-    "snowflake": {
+    "warehouse": {
       "query": "run_query"
     },
     "code": {

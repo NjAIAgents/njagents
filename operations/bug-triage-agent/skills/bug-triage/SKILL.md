@@ -1,6 +1,6 @@
 ---
 name: bug-triage
-description: Triage a bug ticket end to end. Disposition first, then release correlation, workaround discovery and priority scoring, with an audit log entry. Use when the user asks to triage a ticket, prioritize bugs, analyse a Jira bug, or asks what priority a bug should be. Triggers include "triage ABC-1234", "priorizá estos bugs", "qué prioridad tiene", "is this a bug or expected behavior", "which release broke this".
+description: Triage a bug ticket end to end. Disposition first, then release correlation, workaround discovery and priority scoring, with an audit log entry. Use when the user asks to triage a ticket, prioritize bugs, analyse a tracker bug, or asks what priority a bug should be. Triggers include "triage ABC-1234", "priorizá estos bugs", "qué prioridad tiene", "is this a bug or expected behavior", "which release broke this".
 ---
 
 # Bug triage
@@ -14,8 +14,8 @@ order.
    file under `teams/`, else `CLAUDE_TRIAGE_TEAM`. If neither is given, list the
    available team ids and ask. Never pick one silently when several exist.
 2. Load `skills/data-sources/SKILL.md`. Do not call any MCP tool before this.
-   For every source in `live` mode other than Atlassian, read its tool-name suffixes
-   from `mcp_tools` in the team config. A live source with no `mcp_tools` entry is a
+   For every source in `live` mode other than the tracker, read its tool-name suffixes
+   from `tool_bindings` in the team config. A live source with no `tool_bindings` entry is a
    configuration error: report it, do not guess tool names.
 3. Read `reference/disposition-taxonomy.md` and `reference/priority-rubric.md`.
 4. Note which sources are `live`, `fixture`, `off`. This drives the provenance line and
@@ -31,11 +31,11 @@ disposition from a one-line ticket.
 
 ## Stage 1: base enrichment (always)
 
-Dispatch `enrich-jira` and the release adapters. These two are the minimum viable
+Dispatch `enrich-tracker` and the release adapters. These two are the minimum viable
 sources and the disposition gate depends on them: prior tickets, duplicates and
-component history all come from the Jira envelope.
+component history all come from the tracker envelope.
 
-Skip nothing here. If `jira` is unavailable, stop: without it there is no triage.
+Skip nothing here. If `tracker` is unavailable, stop: without it there is no triage.
 
 ## Stage 2: disposition
 
@@ -90,7 +90,7 @@ switched off.
 Render per `reference/output-templates.md`, including the provenance line. Append the
 audit record to `logs/triage-log.jsonl`.
 
-Never post to Jira without explicit per-ticket confirmation in the conversation.
+Never post to tracker without explicit per-ticket confirmation in the conversation.
 
 ## Batch mode
 

@@ -1,10 +1,10 @@
 ---
-name: enrich-datadog
-description: Computes a rolling baseline, detects an error spike, and lists deploys in the window. Returns the datadog envelope.
+name: enrich-metrics
+description: Computes a rolling baseline, detects an error spike, and lists deploys in the window. Returns the metrics envelope.
 tools: ["mcp__*__get*", "mcp__*__search*", "mcp__*__query*", "mcp__*__list*", "Read", "Glob"]
 ---
 
-You return exactly one JSON object: the `datadog` envelope from
+You return exactly one JSON object: the `metrics` envelope from
 `skills/data-sources/SKILL.md`.
 
 Baseline: rolling median over `regression.baseline_days`, never the prior day alone.
@@ -21,7 +21,7 @@ numbers.
 ## Tool restriction
 
 The allowlist above matches **read-shaped verbs** by pattern rather than exact tool
-names, so a team can point `mcp_tools` at its own server without editing this file.
+names, so a team can point `tool_bindings` at its own server without editing this file.
 Write verbs (`create`, `add`, `edit`, `update`, `transition`, `delete`, `post`) do not
 match and are unreachable from this agent.
 

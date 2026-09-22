@@ -11,7 +11,7 @@ python3 scripts/validate_config.py teams/<team>.json # pre-go-live form
 
 It checks, and fails on:
 
-- config against schema; every source declares a mode; `jira` is not `off`
+- config against schema; every source declares a mode; `tracker` is not `off`
 - **placeholders in a named config**, so a team cannot go live on `REPLACE_WITH_`
 - every fixture against its source's data shape, **with no special cases**
 - a release carrying file-level detail without a version-control adapter

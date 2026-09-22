@@ -8,7 +8,7 @@ description: Identify which release most likely touched the area a bug affects, 
 Answers: which recent release touched this area, and how does the report date sit
 relative to it.
 
-Works with Jira alone. Code search improves it but is not required.
+Works with tracker alone. Code search improves it but is not required.
 
 ## Window
 
@@ -21,9 +21,9 @@ window is wrong for a monthly cadence: bugs surface days or weeks after a releas
    `release_correlation.manifest_sources`, in order, and merging on the normalized
    version string. The adapters are defined in `skills/data-sources/SKILL.md`.
 
-   Match the order to the org's ecosystem. Atlassian-heavy orgs start with
-   `jira_fixversion` and `confluence_release_notes`, which need no connector beyond
-   the one Jira already requires. Add `github_tag` when file-level resolution is
+   Match the order to the org's ecosystem. tracker-and-wiki-heavy orgs start with
+   `tracker_fixversion` and `wiki_release_notes`, which need no connector beyond
+   the one tracker already requires. Add `vcs_tag` when file-level resolution is
    wanted.
 
    Each release records which adapters contributed. Report that in the output: a
@@ -31,7 +31,7 @@ window is wrong for a monthly cadence: bugs surface days or weeks after a releas
    the merged pull requests, and the reader should be able to tell them apart.
 
 2. **Determine the bug's affected area.** In order of strength: the component field,
-   the code paths returned by the `code` source, the service named in Datadog errors,
+   the code paths returned by the `code` source, the service named in the metrics source errors,
    the feature named in the ticket text.
 
 3. **Score each release** on:
@@ -39,7 +39,7 @@ window is wrong for a monthly cadence: bugs surface days or weeks after a releas
    - **timing**: days between release date and first report. Inside one cycle is
      ordinary; a report on the day of release is stronger; a report before the release
      rules it out.
-   - **signal**: an error-rate change at the release boundary, when Datadog is live.
+   - **signal**: an error-rate change at the release boundary, when the metrics source is live.
 
 4. **Rank and report.** Name the strongest candidate and the runner-up. State the
    evidence class for each.
@@ -48,8 +48,8 @@ window is wrong for a monthly cadence: bugs surface days or weeks after a releas
 
 | Confidence | Condition |
 | --- | --- |
-| high | File-level overlap (`github_tag` or `github_pr`) plus a Datadog change at the release boundary. |
-| medium | Component-level overlap (`jira_fixversion` or `confluence_release_notes`) plus plausible timing. |
+| high | File-level overlap (`vcs_tag` or `vcs_pr`) plus a the metrics source change at the release boundary. |
+| medium | Component-level overlap (`tracker_fixversion` or `wiki_release_notes`) plus plausible timing. |
 | low | Timing only, no area overlap, or the only adapter available was `manual_file`. |
 
 Low confidence is reported as "shipped near the report date, no evidence it touched

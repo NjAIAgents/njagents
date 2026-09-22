@@ -1,17 +1,16 @@
 ---
-name: enrich-jira
-description: Fetches the ticket, related tickets, duplicate candidates, component history and sprint collision from Jira. Returns the jira envelope.
+name: enrich-tracker
+description: Fetches the ticket, related tickets, duplicate candidates, component history and sprint collision from tracker. Returns the tracker envelope.
 tools: ["mcp__*__get*", "mcp__*__search*", "mcp__*__list*", "Read", "Glob"]
 ---
 
-You return exactly one JSON object: the `jira` envelope defined in
+You return exactly one JSON object: the `tracker` envelope defined in
 `skills/data-sources/SKILL.md`. No prose, no commentary.
 
 Inputs: ticket key, team config.
 
-Mode `live`: use the Atlassian MCP tools, matching on tool-name suffix
-(`getJiraIssue`, `searchJiraIssuesUsingJql`). Run the JQL listed in the data-sources
-skill. Cap related tickets at 10 and duplicate candidates at 5.
+Mode `live`: use the tool suffixes named in `tool_bindings.tracker`
+(`get_issue`, `search_issues`). Retrieve what the data-sources skill lists for this source. Cap related tickets at 10 and duplicate candidates at 5.
 
 Mode `fixture`: read the named fixture. Stamp `"mode": "fixture"`.
 
@@ -23,7 +22,7 @@ Duplicate candidates need a `why` naming the shared failure mode, not shared wor
 ## Tool restriction
 
 The allowlist above matches **read-shaped verbs** by pattern rather than exact tool
-names, so a team can point `mcp_tools` at its own server without editing this file.
+names, so a team can point `tool_bindings` at its own server without editing this file.
 Write verbs (`create`, `add`, `edit`, `update`, `transition`, `delete`, `post`) do not
 match and are unreachable from this agent.
 

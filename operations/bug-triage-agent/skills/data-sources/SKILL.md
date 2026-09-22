@@ -1,6 +1,6 @@
 ---
 name: data-sources
-description: Resolves every enrichment source (Jira, releases, Datadog, Snowflake, code search) to live MCP calls, recorded fixtures, or a typed unavailable result. Load this before any enrichment. It defines the source contract that the rubric consumes, so live and fixture modes are indistinguishable downstream.
+description: Resolves every enrichment source (tracker, releases, the metrics source, the warehouse, code search) to live MCP calls, recorded fixtures, or a typed unavailable result. Load this before any enrichment. It defines the source contract that the rubric consumes, so live and fixture modes are indistinguishable downstream.
 ---
 
 # Data sources
@@ -14,7 +14,7 @@ whole point: switching a team from demo to production is a change to
 
 ```json
 {
-  "source": "jira | releases | datadog | snowflake | code",
+  "source": "tracker | releases | metrics | warehouse | code",
   "mode": "live | fixture | off",
   "status": "ok | partial | unavailable | error",
   "as_of": "2026-09-21T14:22:00Z",
@@ -54,22 +54,30 @@ If **any** source is in fixture mode, the final output must carry a banner:
 
 MCP tool names are prefixed differently per host. Match on the **suffix** shown here.
 
-### jira
+### tracker
 
-Tools: `getJiraIssue`, `searchJiraIssuesUsingJql`.
+Tool suffixes come from `tool_bindings.tracker`, keyed `get_issue` and
+`search_issues`. The tracker is configuration-driven like every other source; it is
+not special-cased to one vendor.
+
+What to retrieve, expressed as intent rather than one tracker's query language:
 
 ```
-ticket             getJiraIssue(cloudId, issueIdOrKey)
-related            JQL: project = {key} AND text ~ "{top 3 nouns from summary}"
-                        AND key != {id} ORDER BY updated DESC   (limit 10)
-duplicates         JQL: project = {key} AND summary ~ "{summary}" AND created >= -180d
-component_history  JQL: project = {key} AND component = "{component}"
-                        AND resolved >= -90d                      -> count
-open_in_component  JQL: project = {key} AND component = "{component}"
-                        AND statusCategory != Done                -> count
-sprint_collision   JQL: project = {key} AND component = "{component}"
-                        AND sprint in openSprints()               -> bool
+ticket             the issue itself
+related            issues in the project matching the summary's distinctive nouns,
+                   excluding this one, most recently updated first   (limit 10)
+duplicates         issues in the same component, created within 180 days, whose
+                   summary is close to this one                      (limit 5)
+component_history  count of issues in the component resolved in the last 90 days
+open_in_component  count currently unresolved in the component
+sprint_collision   whether the component has work in an open sprint  -> bool
 ```
+
+An Atlassian tracker expresses those as JQL, for example
+`project = {key} AND component = "{component}" AND resolved >= -90d` for
+`component_history`, and `sprint in openSprints()` for `sprint_collision`. A tracker
+without a sprint concept returns `false` for `sprint_collision` and notes it; the
+rubric treats that as an unanswered question, not as an absent signal.
 
 `data` shape:
 
@@ -88,30 +96,31 @@ sprint_collision   JQL: project = {key} AND component = "{component}"
 
 Pluggable. `release_correlation.manifest_sources` is an **ordered list**; adapters run
 in order, the first to supply a field wins, later ones enrich rather than overwrite.
-Align the order with the org's ecosystem. An Atlassian-first org uses
-`["jira_fixversion", "confluence_release_notes", "github_tag"]`; a GitHub-first org
-puts the git adapters ahead of the Jira ones.
+Align the order with the org's ecosystem. An tracker-and-wiki-first org uses
+`["tracker_fixversion", "wiki_release_notes", "vcs_tag"]`; a GitHub-first org
+puts the git adapters ahead of the tracker ones.
 
 Every release object carries `sources[]` naming which adapters contributed, so a
 reviewer can see whether a correlation rests on a fix version, a release-note page, or
 a git tag.
 
-**`jira_fixversion`** (baseline, needs nothing but Atlassian)
+**`tracker_fixversion`** (baseline, needs nothing but the tracker)
 : project versions released inside the lookback window, plus
-`searchJiraIssuesUsingJql` with `project = {key} AND fixVersion = "{version}"`.
-Components come from those issues. Always available when Jira is live, which is what
+the tracker's `search_issues`, filtered to each release version (on Atlassian,
+`project = {key} AND fixVersion = "{version}"`).
+Components come from those issues. Always available when tracker is live, which is what
 makes the zero-setup tier work.
 
-**`confluence_release_notes`** (Atlassian, no extra connector)
-: pages in `release_correlation.confluence.space_key` carrying `page_label`. Extract
+**`wiki_release_notes`** (wiki, no extra connector)
+: pages in `release_correlation.wiki.space_key` carrying `page_label`. Extract
 the version with `title_pattern`, the release date from the page date or a stated
 field, and the components and areas from the page body. Use
-`getPagesInConfluenceSpace` and `getConfluencePage`, matching on tool-name suffix.
+the suffixes named in `tool_bindings.wiki`, keyed `list_pages` and `get_page`.
 Best source for human-written "what changed" text, which often names an area no fix
 version records.
 
-**`github_tag`** / **`github_pr`** (highest resolution)
-: release tags matching `tag_pattern` in `release_correlation.github.repos`, and the
+**`vcs_tag`** / **`vcs_pr`** (highest resolution)
+: release tags matching `tag_pattern` in `release_correlation.vcs.repos`, and the
 pull requests merged between consecutive tags. This is the only adapter that yields
 `files_touched`, which is what turns area overlap from a guess into a match.
 
@@ -126,10 +135,10 @@ release dates are a note, not an error, and the earliest date wins.
 {
   "releases": [
     {"version": "", "released_on": "", "components": [], "issue_keys": [],
-     "files_touched": [], "notes_url": null, "sources": ["jira_fixversion"]}
+     "files_touched": [], "notes_url": null, "sources": ["tracker_fixversion"]}
   ],
   "lookback_days": 60,
-  "adapters_run": ["jira_fixversion", "confluence_release_notes"],
+  "adapters_run": ["tracker_fixversion", "wiki_release_notes"],
   "adapters_failed": []
 }
 ```
@@ -137,10 +146,10 @@ release dates are a note, not an error, and the earliest date wins.
 An adapter that fails goes in `adapters_failed` with its error. The envelope status is
 `partial`, not `error`, as long as one adapter succeeded.
 
-### datadog
+### metrics
 
-Tool suffixes come from `mcp_tools.datadog` in the team config, keyed
-`logs_search`, `metrics_query`, `deploy_events`. Tool names differ between Datadog MCP
+Tool suffixes come from `tool_bindings.metrics` in the team config, keyed
+`logs_search`, `metrics_query`, `deploy_events`. Tool names differ between metrics MCP
 deployments, so they are configuration, not a constant in this file.
 
 ```json
@@ -157,11 +166,11 @@ Baseline uses `regression.baseline_method` over `regression.baseline_days`, defa
 to a rolling median, not the prior day.
 Prior-day baselines produce false regressions across weekends.
 
-### snowflake
+### warehouse
 
-Read-only. Query templates live in `teams/<team>.json` under `snowflake.queries`, so
+Read-only. Query templates live in `teams/<team>.json` under `warehouse.queries`, so
 no product-specific SQL sits in this shared skill. The tool suffix comes from
-`mcp_tools.snowflake.query`.
+`tool_bindings.warehouse.query`.
 
 ```json
 {
@@ -179,9 +188,9 @@ can check exactly what was counted.
 
 ### code
 
-Zoekt or GitHub code search across repos listed in `repos` in the team config,
+A code-search service across repos listed in `repos` in the team config,
 restricted to `repos[].key_paths` when that is set. The tool suffix comes from
-`mcp_tools.code.search`.
+`tool_bindings.code.search`.
 
 ```json
 {
@@ -211,7 +220,7 @@ Rounding up is now tied to evidence in the ticket, not to the absence of a conne
 After every run append one JSON line to `logs/triage-log.jsonl`:
 
 ```json
-{"ts":"","ticket":"","team":"","modes":{"jira":"live","datadog":"off"},
+{"ts":"","ticket":"","team":"","modes":{"tracker":"live","metrics":"off"},
  "disposition":"","priority":"","confidence":"","escalations":[],
  "human_override":null,"override_reason":null}
 ```

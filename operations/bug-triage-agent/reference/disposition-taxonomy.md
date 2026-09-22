@@ -9,7 +9,7 @@ priority. This is the judgment that currently lives with a few people.
 | `expected_behavior` | System is working as designed. The reporter's expectation differs from the design. | A specification, release note, help doc, or a prior ticket closed as works-as-designed describing this exact behaviour. | Close with explanation. Offer the workaround. Consider a docs gap ticket. |
 | `config_or_data` | Behaviour caused by a tenant's configuration, permissions, or bad data, not by code. | Config or data value that explains the symptom, and the behaviour is correct given that value. | Route to support or implementation. Not engineering. |
 | `duplicate` | Same underlying problem as an existing open ticket. | An open ticket with the same component and the same failure mode. Similar wording alone is not enough. | Link and close. Priority of the parent may need raising. |
-| `voice_of_customer` | Working as designed, but the design is wrong or insufficient. A request for change. | No deviation from intended behaviour, and the reporter is asking for different behaviour rather than reporting breakage. | `jira.voc_destination`. Never scored as a defect. |
+| `voice_of_customer` | Working as designed, but the design is wrong or insufficient. A request for change. | No deviation from intended behaviour, and the reporter is asking for different behaviour rather than reporting breakage. | `tracker.voc_destination`. Never scored as a defect. |
 | `insufficient_information` | Cannot be classified. | Missing repro, component, or error. | Return to reporter with the specific missing items. |
 
 ## Rules

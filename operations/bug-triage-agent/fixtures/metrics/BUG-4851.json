@@ -1,5 +1,5 @@
 {
-  "source": "datadog",
+  "source": "metrics",
   "mode": "fixture",
   "status": "ok",
   "as_of": "2026-09-21T09:00:00Z",
@@ -19,13 +19,7 @@
       "detected": false,
       "first_seen": null
     },
-    "deploys_in_window": [
-      {
-        "version": "2026.09",
-        "at": "2026-09-05T22:00:00Z",
-        "service": "approvals-api"
-      }
-    ],
+    "deploys_in_window": [],
     "sample_errors": []
   }
 }

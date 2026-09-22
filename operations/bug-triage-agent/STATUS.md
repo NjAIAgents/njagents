@@ -69,7 +69,7 @@ capability is lost.
 
 ### MCP server urls are placeholders, not variables
 
-An earlier version used `${DATADOG_MCP_URL}` style placeholders in `url` fields. No
+An earlier version used `${METRICS_MCP_URL}` style placeholders in `url` fields. No
 client expands environment variables there, so those entries would have shipped
 broken. They are now literal `REPLACE_WITH_` placeholders that the validator reports
 as unconfigured. Only the tracker entry is needed for the zero-setup tier.

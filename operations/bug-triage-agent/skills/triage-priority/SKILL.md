@@ -19,7 +19,7 @@ This file is the procedure.
 5. Collect escalation signals. Group by class. **One escalation per class.** Total cap
    is two levels. Apply the at-risk P2 floor before the cap.
 6. Compute confidence from the table. Write the basis in one line.
-7. Map to the team's Jira priority name via `jira.priority_names`. Compare against the
+7. Map to the team's tracker priority name via `tracker.priority_names`. Compare against the
    ticket's current priority and flag a gap if they differ.
 8. Route via `routing[component]`.
 
@@ -33,5 +33,5 @@ Base: P3 (workaround exists, single account, blocks a task)
   +1 release: confirmed regression, v2026.09 matched
   +1 code:    error swallowing at ApprovalReviewService line 214
   (history signal present, not counted: cap reached)
-Final: P2 -> Jira "Critical". Current: "Minor". Gap flagged.
+Final: P2 -> tracker "Critical". Current: "Minor". Gap flagged.
 ```

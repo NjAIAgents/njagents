@@ -4,9 +4,9 @@
     "name": "Demo (all sources)",
     "id": "demo"
   },
-  "jira": {
+  "tracker": {
     "project_key": "BUG",
-    "cloud_id": "demo",
+    "instance_id": "demo",
     "priority_names": {
       "P1": "Blocker",
       "P2": "Critical",
@@ -21,21 +21,21 @@
     "voc_destination": "PRODUCT"
   },
   "sources": {
-    "jira": {
+    "tracker": {
       "mode": "fixture",
-      "fixture": "fixtures/jira"
+      "fixture": "fixtures/tracker"
     },
     "releases": {
       "mode": "fixture",
       "fixture": "fixtures/releases.json"
     },
-    "datadog": {
+    "metrics": {
       "mode": "fixture",
-      "fixture": "fixtures/datadog"
+      "fixture": "fixtures/metrics"
     },
-    "snowflake": {
+    "warehouse": {
       "mode": "fixture",
-      "fixture": "fixtures/snowflake"
+      "fixture": "fixtures/warehouse"
     },
     "code": {
       "mode": "fixture",
@@ -46,16 +46,16 @@
     "cadence_days": 30,
     "lookback_days": 60,
     "manifest_sources": [
-      "jira_fixversion",
-      "confluence_release_notes",
-      "github_tag"
+      "tracker_fixversion",
+      "wiki_release_notes",
+      "vcs_tag"
     ],
-    "confluence": {
+    "wiki": {
       "space_key": "ENG",
       "page_label": "release-notes",
       "title_pattern": "Release (?<version>\\d{4}\\.\\d{2})"
     },
-    "github": {
+    "vcs": {
       "org": "example-org",
       "repos": [
         "approvals-api",
@@ -70,7 +70,7 @@
     "spike_ratio": 3.0,
     "deploy_window_hours": 720
   },
-  "snowflake": {
+  "warehouse": {
     "database": "EXAMPLE_LAKE",
     "schema": "CURATED",
     "queries": {

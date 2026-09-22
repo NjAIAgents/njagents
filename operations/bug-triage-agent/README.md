@@ -41,7 +41,7 @@ Credentials live in the MCP host, never in this repo.
 
 ```bash
 cp teams/team-config.example.json teams/<your-team>.json
-# set jira.project_key and jira.cloud_id, then:
+# set tracker.project_key and tracker.instance_id, then:
 python3 scripts/validate_config.py teams/<your-team>.json   # named form: fails on placeholders
 /triage-doctor --team <your-team>
 ```
@@ -52,9 +52,9 @@ exits zero, so the suite can gate CI; naming a config exits non-zero.
 
 ### Zero-setup tier
 
-Leave every source except `jira` and `releases` set to `off`. You still get related
+Leave every source except `tracker` and `releases` set to `off`. You still get related
 tickets, duplicate detection, release correlation from fix versions, disposition, and
-workaround discovery from resolved tickets. Add Datadog, Snowflake and code search
+workaround discovery from resolved tickets. Add the metrics source, the warehouse and code search
 later by flipping a mode. `/triage-doctor` lists which classification questions each
 `off` source costs you.
 
@@ -62,13 +62,13 @@ later by flipping a mode. `/triage-doctor` lists which classification questions 
 
 ```bash
 # in teams/<team>.json
-"sources": { "jira": {"mode":"live"}, "releases": {"mode":"live"},
-             "datadog": {"mode":"live"}, "snowflake": {"mode":"live"},
+"sources": { "tracker": {"mode":"live"}, "releases": {"mode":"live"},
+             "metrics": {"mode":"live"}, "warehouse": {"mode":"live"},
              "code": {"mode":"live"} }
 ```
 
-Then fill `jira.cloud_id`, `mcp_tools` for each non-Atlassian source,
-`snowflake.queries`, `repos`, and the `release_correlation` adapters. Run
+Then fill `tracker.instance_id`, `tool_bindings` for each non-tracker source,
+`warehouse.queries`, `repos`, and the `release_correlation` adapters. Run
 `/triage-doctor`. No skill file changes.
 
 Tool names differ between MCP deployments, which is why they are configuration.
@@ -81,18 +81,18 @@ they do not need editing either.
 
 | Adapter | Needs | Gives |
 | --- | --- | --- |
-| `jira_fixversion` | Atlassian only | Version, date, components, issue keys |
-| `confluence_release_notes` | Atlassian only | Human-written "what changed", areas |
-| `github_tag` / `github_pr` | GitHub | Files touched, merged pull requests |
+| `tracker_fixversion` | tracker only | Version, date, components, issue keys |
+| `wiki_release_notes` | tracker only | Human-written "what changed", areas |
+| `vcs_tag` / `vcs_pr` | GitHub | Files touched, merged pull requests |
 | `manual_file` | Nothing | A team-maintained list, for orgs with no queryable release record |
 
-Atlassian-heavy orgs should start with the first two, which need no connector beyond
-the one Jira already requires.
+tracker-and-wiki-heavy orgs should start with the first two, which need no connector beyond
+the one tracker already requires.
 
 ## Use
 
 ```
-# live, zero-setup tier (Jira + releases only)
+# live, zero-setup tier (tracker + releases only)
 /triage ABC-12 --team <your-team>
 /triage-doctor --team <your-team>
 
@@ -133,9 +133,9 @@ the monthly override review that improves it.
 
 ## Guardrails
 
-- No automatic Jira writes. Posting a comment or changing a field needs explicit
+- No automatic tracker writes. Posting a comment or changing a field needs explicit
   per-ticket confirmation.
-- Snowflake queries are read-only and come from the team config. `validate_config.py`
+- the warehouse queries are read-only and come from the team config. `validate_config.py`
   rejects any write verb.
 - No credentials in this repo. `validate_config.py` fails on credential-shaped keys.
 - Any output built on a fixture is banner-marked `DEMO DATA`.

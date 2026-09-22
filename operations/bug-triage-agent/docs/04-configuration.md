@@ -28,12 +28,12 @@ argument resolves against `team.id`.
 
 ## Key reference
 
-### `jira`
+### `tracker`
 
 | Key | Notes |
 | --- | --- |
 | `project_key` | Which project to query |
-| `cloud_id` | Instance id. **Blocks everything live until set** |
+| `instance_id` | Instance id. **Blocks everything live until set** |
 | `site`, `board_id` | Used by the readiness check |
 | `priority_names` | Maps P1 to P4 onto this project's own values. This is how two teams share one rubric while their trackers call the levels different things |
 | `at_risk_labels` | Labels triggering the P2 floor. Match your own conventions |
@@ -45,7 +45,7 @@ One entry per source: `mode` of `live`, `fixture` or `off`, plus `fixture` namin
 path when in fixture mode. A directory path resolves to `<dir>/<TICKET-KEY>.json`; a
 missing file resolves to `unavailable`, identical to a switched-off source.
 
-`jira` may not be `off`. It is the minimum viable source and the validator rejects it.
+`tracker` may not be `off`. It is the minimum viable source and the validator rejects it.
 
 ### `release_correlation`
 
@@ -54,12 +54,12 @@ missing file resolves to `unavailable`, identical to a switched-off source.
 | `cadence_days` | Your release interval |
 | `lookback_days` | How far back to look. **Default two cycles** |
 | `manifest_sources` | Ordered adapter list, first wins per field, later ones enrich |
-| `confluence`, `github` | Per-adapter settings |
+| `wiki`, `github` | Per-adapter settings |
 | `manual_file_path` | Required if `manual_file` is in the adapter list |
 
-Order the adapters to match your ecosystem. An Atlassian-heavy org starts with
-`jira_fixversion` then `confluence_release_notes`, neither of which needs a connector
-beyond the tracker. Add `github_tag` when you want file-level resolution, which is
+Order the adapters to match your ecosystem. An tracker-and-wiki-heavy org starts with
+`tracker_fixversion` then `wiki_release_notes`, neither of which needs a connector
+beyond the tracker. Add `vcs_tag` when you want file-level resolution, which is
 what upgrades area overlap from plausible to matched.
 
 A lookback shorter than two cycles earns a warning. Under a monthly cadence, bugs
@@ -73,13 +73,13 @@ The baseline is a **rolling median**, not the prior day. Prior-day baselines pro
 false regressions every Monday. A `deploy_window_hours` shorter than one release cycle
 earns a warning, because it will miss most regressions.
 
-### `warehouse` / `snowflake`
+### `warehouse` / `warehouse`
 
 `database`, `schema`, and `queries`: a map of named read-only templates. **All
 product-specific SQL lives here**, never in a shared skill. The validator rejects any
 query containing a write verb or not beginning with `SELECT` or `WITH`.
 
-### `tool_bindings` / `mcp_tools`
+### `tool_bindings` / `tool_bindings`
 
 Tool-name suffixes per non-tracker source. Tool names differ between MCP deployments,
 so they are configuration rather than constants. A live non-tracker source without a
@@ -100,12 +100,12 @@ them. Authentication lives in the MCP host.
 ## Going live from the demo
 
 ```json
-"sources": { "jira": {"mode":"live"}, "releases": {"mode":"live"},
-             "datadog": {"mode":"live"}, "snowflake": {"mode":"live"},
+"sources": { "tracker": {"mode":"live"}, "releases": {"mode":"live"},
+             "metrics": {"mode":"live"}, "warehouse": {"mode":"live"},
              "code": {"mode":"live"} }
 ```
 
-Then fill `cloud_id`, the tool bindings, the query templates, `repos` and the release
+Then fill `instance_id`, the tool bindings, the query templates, `repos` and the release
 adapters. **No skill file changes.** Run `/triage-doctor`.
 
 ## Two validator behaviours

@@ -18,7 +18,7 @@ All five sources in fixture mode.
 | Base | P3. The ticket also matches P2 "core workflow blocked", but a practical customer workaround caps the base at P3 per the base-precedence rule |
 | Escalations | `+1 release` confirmed regression (4.4x baseline, deploy 2026.09 in window), `+1 code` error swallowing at line 214 |
 | Not counted | `history` (4 resolved in 90d, sprint collision) - cap reached |
-| Final | **P2** -> Jira "Critical". Current "Minor", gap flagged |
+| Final | **P2** -> tracker "Critical". Current "Minor", gap flagged |
 | Confidence | high |
 | Team | Approvals Team |
 | Not P1 | The reviewer is a human acting through the API, so the automated-approval criterion does not apply |
@@ -35,7 +35,7 @@ escalation holds it at P2. This is the cap doing its job.
 | Alternative considered | `defect`, ruled out: the system does what it was designed to do, the customer wants a different design |
 | Priority | **none assigned** |
 | Stage 3 | never runs. Two source calls, not five |
-| Routing | PRODUCT (`jira.voc_destination`) |
+| Routing | PRODUCT (`tracker.voc_destination`) |
 
 The key beat. A `Major` ticket from an unhappy customer that should never enter the
 defect queue.
@@ -45,10 +45,10 @@ defect queue.
 | Field | Expected |
 | --- | --- |
 | Disposition | `defect`, confidence medium |
-| Release | 2026.08, shipped 4 Aug, first seen 18 Sep, 45 days. Component-level overlap only (`jira_fixversion` yields no file detail), timing beyond one cycle. Correlation confidence **low**, reported as "shipped in window, weak evidence it caused this" |
-| Datadog | No spike. Absence of output produces no errors. Reported as a finding, not as evidence against a defect |
+| Release | 2026.08, shipped 4 Aug, first seen 18 Sep, 45 days. Component-level overlap only (`tracker_fixversion` yields no file detail), timing beyond one cycle. Correlation confidence **low**, reported as "shipped in window, weak evidence it caused this" |
+| the metrics source | No spike. Absence of output produces no errors. Reported as a finding, not as evidence against a defect |
 | Workaround | Engineer-run manual export. **Not a customer workaround**, so the impact escalation still applies |
-| Floor | P2 (labels `at-risk`, `renewal` match `jira.at_risk_labels`) |
+| Floor | P2 (labels `at-risk`, `renewal` match `tracker.at_risk_labels`) |
 | Escalations | `+1 impact` no customer workaround. `blast` class not counted at all: the at-risk floor consumes the class, so enterprise tier adds nothing on top |
 | Final | **P2** (escalation cannot reach P1) |
 | Confidence | high. Five sources returned data and agree, and no question is unanswered. The absent spike is consistent with an absence-type failure, not a disagreement |
@@ -67,15 +67,15 @@ workaround distinction.
 
 ## `/triage BUG-4830 --team demo-gc`
 
-Same ticket, same shared rubric, second team running Jira and releases only.
+Same ticket, same shared rubric, second team running tracker and releases only.
 
 | Field | Expected |
 | --- | --- |
 | Disposition | `defect`, confidence medium |
 | Unanswered | Q2 blast radius, Q4 regression, Q7 code signals, Q10 enterprise tier |
 | Base | P3 |
-| Escalations | `+1 history` recurring component and sprint collision, one escalation for the class. No `release` escalation: a regression needs Datadog, which is off |
-| Final | **P2** -> Jira "**High**" (different priority name, identical rubric) |
+| Escalations | `+1 history` recurring component and sprint collision, one escalation for the class. No `release` escalation: a regression needs the metrics source, which is off |
+| Final | **P2** -> tracker "**High**" (different priority name, identical rubric) |
 | Confidence | medium, capped by the unanswered regression question |
 | Team | Second Team Backend (`routing.approvals`) |
 | Round-up | **not applied.** Symptoms are single-account, so switched-off connectors do not inflate priority |
@@ -91,10 +91,10 @@ Two exit paths, deliberately.
 
 ```
 python3 scripts/validate_config.py --all             -> exit 0
-  UNCONFIGURED reference-full.json: jira.cloud_id is a placeholder (REPLACE_WITH_CLOUD_ID). This config cannot go live until it is set.
-  UNCONFIGURED reference-full.json: placeholder value at 'jira.site' (REPLACE_WITH_SITE.atlassian.net)
-  UNCONFIGURED reference-full.json: placeholder value at 'release_correlation.github.org' (REPLACE_WITH_ORG)
-  UNCONFIGURED bta.json: jira.cloud_id is a placeholder (REPLACE_WITH_CLOUD_ID). This config cannot go live until it is set.
+  UNCONFIGURED reference-full.json: tracker.instance_id is a placeholder (REPLACE_WITH_CLOUD_ID). This config cannot go live until it is set.
+  UNCONFIGURED reference-full.json: placeholder value at 'tracker.host' (REPLACE_WITH_SITE.atlassian.net)
+  UNCONFIGURED reference-full.json: placeholder value at 'release_correlation.vcs.org' (REPLACE_WITH_ORG)
+  UNCONFIGURED bta.json: tracker.instance_id is a placeholder (REPLACE_WITH_CLOUD_ID). This config cannot go live until it is set.
   PASS (0 warning(s), 2 config(s) awaiting real values). Run the validator on a named config before going live with it.
 
 python3 scripts/validate_config.py teams/demo.json  -> exit 0
@@ -104,7 +104,7 @@ python3 scripts/validate_config.py teams/bta.json   -> exit 1
 
 The suite is green so it can gate CI, while a named config still refuses to certify a
 placeholder. `/triage-doctor --team bta` runs the named form and therefore fails until
-`cloud_id` is set. A validator that reports green on a placeholder is worse than no
+`instance_id` is set. A validator that reports green on a placeholder is worse than no
 validator; one that is permanently red is ignored.
 
 ## Not covered by fixtures

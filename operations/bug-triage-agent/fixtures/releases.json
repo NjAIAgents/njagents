@@ -8,9 +8,9 @@
   "data": {
     "lookback_days": 60,
     "adapters_run": [
-      "jira_fixversion",
-      "confluence_release_notes",
-      "github_tag"
+      "tracker_fixversion",
+      "wiki_release_notes",
+      "vcs_tag"
     ],
     "adapters_failed": [],
     "releases": [
@@ -31,11 +31,11 @@
           "approvals-api/src/approvals/ApprovalReviewService.ts",
           "approvals-api/src/reporting/csvExport.ts"
         ],
-        "notes_url": "https://confluence.example/ENG/Release+2026.09",
+        "notes_url": "https://wiki.example/ENG/Release+2026.09",
         "sources": [
-          "jira_fixversion",
-          "confluence_release_notes",
-          "github_tag"
+          "tracker_fixversion",
+          "wiki_release_notes",
+          "vcs_tag"
         ]
       },
       {
@@ -52,7 +52,7 @@
         "files_touched": [],
         "notes_url": null,
         "sources": [
-          "jira_fixversion"
+          "tracker_fixversion"
         ]
       }
     ]

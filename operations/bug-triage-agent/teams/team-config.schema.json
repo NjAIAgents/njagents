@@ -109,6 +109,32 @@
           },
           "fixture": {
             "type": "string"
+          },
+          "datasource_uid": {
+            "type": "string",
+            "description": "metrics: the log or metrics store's data source id, e.g. a Grafana data source uid."
+          },
+          "queries": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "metrics: read-only query templates by purpose (error_rate, deploys, expected_heartbeat). Placeholders like <area-service> and <error text from the ticket> are filled in per ticket."
+          },
+          "deploys": {
+            "type": "object",
+            "description": "metrics: a hosting platform that records deploys and runtime logs, used with tool_bindings.metrics.deploy_events and runtime_logs.",
+            "properties": {
+              "provider": {
+                "type": "string"
+              },
+              "team_id": {
+                "type": "string"
+              },
+              "project_id": {
+                "type": "string"
+              }
+            }
           }
         }
       }
@@ -246,6 +272,10 @@
           "default_branch": {
             "type": "string",
             "description": "Branch a fix should start from, written into the fix brief. Defaults to 'main' when unset."
+          },
+          "owner": {
+            "type": "string",
+            "description": "Organisation or user that owns the repository on the code host. Needed for file reads."
           }
         }
       }

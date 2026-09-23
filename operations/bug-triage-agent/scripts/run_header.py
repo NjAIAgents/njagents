@@ -320,6 +320,17 @@ def main():
     return 3 if missing else 0
 
 
+def plugin_copy_note(a, modes, origin):
+    """A live team read from the plugin's shipped copy usually means the user's folder,
+    which holds their own copy, is not the one this session is working in. Seen in a
+    real run: the doctor probed the plugin's demo-live while the edited one sat unread."""
+    if origin != "plugin" or not any(m == "live" for m in modes.values()):
+        return None
+    return (f"Using the plugin's shipped `{a.team}` config, not one from your folder. "
+            f"If you have your own `triage-teams/{a.team}.json`, this session's working "
+            "folder is not the one that holds it: connect that folder and run again.")
+
+
 def plain(a, label, modes, reasons, available, cfg_path, origin, missing):
     lines = [f"Bug triage · {label} · team {a.team}", ""]
     for s in SOURCES:
@@ -330,6 +341,9 @@ def plain(a, label, modes, reasons, available, cfg_path, origin, missing):
               f"  Agent:  {plugin_version()} · {ROOT}"]
     if len(a.tickets) > 1:
         lines += ["", "  Tickets: " + ", ".join(a.tickets)]
+    note = plugin_copy_note(a, modes, origin)
+    if note:
+        lines += ["", "  ! " + note.replace("`", "")]
     if missing:
         lines += ["", "  No tracker fixture for: " + ", ".join(missing),
                   "  Those tickets cannot be triaged in fixture mode."]
@@ -365,6 +379,9 @@ def markdown(a, label, modes, reasons, available, cfg_path, origin, missing):
         fx = [s for s in SOURCES if modes[s] == "fixture"]
         lines += ["", "> [!WARNING]",
                   f"> **Demo data.** {', '.join(fx)} on fixtures. Not live figures."]
+    note = plugin_copy_note(a, modes, origin)
+    if note:
+        lines += ["", "> [!WARNING]", "> " + note]
     if missing:
         lines += ["", f"> [!CAUTION]", f"> No tracker fixture for {', '.join(missing)}. "
                   "Those tickets cannot be triaged in fixture mode."]

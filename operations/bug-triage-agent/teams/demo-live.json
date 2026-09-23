@@ -1,5 +1,5 @@
 {
-  "//": "The live demo. Tracker is the synthetic Jira project DEMO; DEMO-* tickets resolve to this team by project key. Metrics, warehouse and code are off until provisioned, and the report says so rather than inventing numbers.",
+  "//": "The live demo. Tracker is the synthetic Jira project DEMO; DEMO-* tickets resolve to this team by project key. Releases come from GitHub tags on NjAIAgents/njagents-demo-app. Metrics come from Grafana Cloud Loki (history, heartbeats) and Vercel (deploys, runtime logs). Code is off until GitHub code search works for the repo; warehouse is off until provisioned. Every ticket, log line and deploy is synthetic.",
   "team": {
     "name": "Demo (live tracker)",
     "id": "demo-live"
@@ -32,32 +32,61 @@
       "mode": "live"
     },
     "metrics": {
-      "mode": "off",
-      "//": "Grafana Cloud not provisioned yet. Absent metrics lowers confidence and removes the regression escalation; it never raises severity."
+      "mode": "live",
+      "datasource_uid": "grafanacloud-logs",
+      "queries": {
+        "error_rate": "sum(count_over_time({app=\"njagents-demo\",service=\"<area-service>\"} |= \"<error text from the ticket>\" [1h]))",
+        "deploys": "{app=\"njagents-demo\",service=\"deployer\"}",
+        "expected_heartbeat": "{app=\"njagents-demo\",service=\"settlement-exporter\"} |= \"export completed\""
+      },
+      "//": "Grafana Cloud Loki (grafanacloud-fondlizard977-logs), seeded by njagents-demo-app/seed/seed_grafana.py. Proven 2026-09-23: approvals-api 'approval not committed' ~12/h then ~53/h from 2026-09-19 01:00 UTC; deploy 2026.09 at 2026-09-16 21:00 UTC; settlement exports stop after 2026-09-20. Read-only queries only. Deploys and live runtime logs also come from Vercel project njagents-demo-app.",
+      "deploys": {
+        "provider": "vercel",
+        "team_id": "team_gv3LiIqkK68PwP23Kn2z0VB9",
+        "project_id": "prj_TpuVwpDxUy2Qigydiasxtm4iNyp2",
+        "//": "Production deployments carry the release as meta.githubCommitRef (2026.08, 2026.09). Runtime logs per deployment: 'approval commit failed' on 2026.08, 'approval not committed' on 2026.09."
+      }
     },
     "warehouse": {
       "mode": "off",
       "//": "Warehouse not provisioned yet, Neon planned. Blast radius will be reported as unknown."
     },
     "code": {
-      "mode": "off",
-      "//": "No code-search MCP is bound in this session. The demo repo github.com/NjAIAgents/njagents-demo-app can be read directly, but that is not a source binding, so the code envelope is unavailable and the error-swallowing escalation cannot fire."
+      "mode": "live",
+      "//": "Search first; when search returns nothing, the file-read fallback reads files under key_paths (GitHub code search did not return repo-scoped results for this repo on 2026-09-23, file reads do)."
     }
   },
   "tool_bindings": {
     "tracker": {
       "get_issue": "getJiraIssue",
       "search_issues": "searchJiraIssuesUsingJql"
+    },
+    "vcs": {
+      "list_tags": "list_tags",
+      "list_commits": "list_commits",
+      "get_commit": "get_commit",
+      "list_pull_requests": "list_pull_requests"
+    },
+    "metrics": {
+      "metrics_query": "query_loki_logs",
+      "logs_search": "query_loki_logs",
+      "deploy_events": "list_deployments",
+      "runtime_logs": "get_runtime_logs"
+    },
+    "code": {
+      "search": "search_code",
+      "get_file": "get_file_contents"
     }
   },
   "release_correlation": {
     "cadence_days": 30,
     "lookback_days": 60,
     "manifest_sources": [
+      "vcs_tag",
       "manual_file"
     ],
     "manual_file_path": "fixtures/releases.json",
-    "//": "The demo repo carries real tags 2026.08 and 2026.09 with backdated commits, but no version-control MCP is bound, so vcs_tag cannot run. fixtures/releases.json records the same two releases. Switch manifest_sources to vcs_tag once a version-control MCP is connected.",
+    "//": "vcs_tag reads the real 2026.08 and 2026.09 tags and the commits between them from GitHub, which gives files_touched. manual_file stays as a fallback; the merge rule matches releases on version. Vercel's 2026.09 production deploy was built from main at 8c32c8b, not the tag commit 919f499; approvals-api/ and core-api/ are identical between them (only api/, docs/, seed/ were added), so the tag's file list is what runs.",
     "vcs": {
       "org": "NjAIAgents",
       "repos": [
@@ -80,7 +109,9 @@
       "key_paths": [
         "approvals-api/src",
         "core-api/src"
-      ]
+      ],
+      "default_branch": "main",
+      "owner": "NjAIAgents"
     }
   ],
   "routing": {

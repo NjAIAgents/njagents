@@ -1,12 +1,12 @@
 # Examples
 
 Worked runs you can copy. Each one gives the command, what you should see, and what to
-check. The outputs shown are real, produced by version 0.6.5 against the shipped demo
+check. The outputs shown are real, produced by version 0.6.6 against the shipped demo
 configs.
 
 ## Before you start
 
-1. Install or update the plugin to **0.6.5** and start a new session.
+1. Install or update the plugin to **0.6.6** and start a new session.
 2. Run it in **Cowork or Claude Code**, not a regular Chat. A Chat syncs only the skill
    folders, so the scripts and configs are missing and the triage stops at step one.
 3. In Cowork, connect a working folder. Reports, traces, fix briefs and the log are
@@ -20,7 +20,7 @@ Two demo teams ship with the plugin:
 | Team | Tickets | Needs | Use it to |
 | --- | --- | --- | --- |
 | `demo` | `BUG-4830`, `BUG-4844`, `BUG-4851`, `BUG-4858` | Nothing. All five sources are recorded fixtures | See every stage and every disposition without connecting anything |
-| `demo-live` | `DEMO-1` to `DEMO-9` | A tracker connector with access to the `DEMO` project | See a real tracker read, and how the agent behaves with sources off |
+| `demo-live` | `DEMO-1` to `DEMO-10` | Jira (`DEMO`), GitHub (`NjAIAgents/njagents-demo-app`), Grafana Cloud Loki, Vercel | A full live run: tracker, releases, metrics and code from real systems carrying one synthetic story |
 
 You do not pass `--team` for either. The team is found from the ticket's project key:
 `BUG-*` resolves to `demo`, `DEMO-*` to `demo-live`.
@@ -44,7 +44,7 @@ You do not pass `--team` for either. The team is found from the ticket's project
 > | code | 🟡 fixture | fixtures/code |
 >
 > **5 of 5 sources available.** Absent sources lower confidence and drop escalations. They never raise severity.
-> Team **demo**, chosen by ticket project BUG · Config: `…/teams/demo.json` (plugin) · Agent **0.6.5**
+> Team **demo**, chosen by ticket project BUG · Config: `…/teams/demo.json` (plugin) · Agent **0.6.6**
 
 Then a task list ticks through the stages (disposition, enrichment, correlation,
 workaround, priority, outputs), each rewritten with its result as it finishes.
@@ -144,7 +144,7 @@ candidate_files:
   - "approvals-api/src/approvals/ApprovalReviewService.ts:89"
   - "approvals-api/src/approvals/ApprovalReviewService.ts"
 route_to: Approvals Team
-generated_by: "bug-triage-agent 0.6.5"
+generated_by: "bug-triage-agent 0.6.6"
 ```
 
 Then: Problem, Reproduce, Where to look, Prior fixes, Hypothesis to test, Definition of
@@ -166,7 +166,9 @@ Triage never opens a branch or a pull request itself. The brief is the handoff.
 
 ## 5. The live demo
 
-Needs a tracker connector with access to the `DEMO` project.
+Needs Jira, GitHub, Grafana and Vercel connected, and the Loki data seeded within the
+last week (`seed/seed_grafana.py` in the demo repo; Grafana Cloud drops older lines).
+The story every system tells is in the demo repo's `docs/STORY.md`.
 
 ```
 /bug-triage-agent:triage-doctor demo-live
@@ -178,17 +180,26 @@ A command takes a team or project as a plain word: `demo-live` names the team, `
 names the project. `--team demo-live` also works in Claude Code, but some hosts reject a
 command whose first argument is a flag, so the plain word is the form to use.
 
-**Doctor** checks every source is reachable and every tool binding resolves. Tracker
-and releases are 🟢 live; metrics, warehouse and code are ⚫ off.
+**Doctor** checks every source is reachable and every tool binding resolves. Tracker,
+releases, metrics and code are 🟢 live; warehouse is ⚫ off. If it says it is using the
+plugin's shipped config, your folder with `triage-teams/demo-live.json` is not the one
+connected.
 
 **Triage DEMO-7.** Expected:
 
 | Field | Value |
 | --- | --- |
 | Disposition | `defect` |
-| Priority | 🟡 **P3** |
-| Evidence | 🔴 weak, because code search is off |
+| Release | 2026.09 changed `ApprovalReviewService.ts` (#4412), from the GitHub tag |
+| Metrics | Loki: "approval not committed" rises 4.4x, 52h after the deploy. Vercel: the warning appears only on the 2026.09 deployment |
+| Code | Error swallowing at `ApprovalReviewService.ts:89`, found by search or, while GitHub search lags, by the file-read fallback |
+| Priority | 🟠 **P2**, confirmed regression |
+| Evidence | 🟢 strong: code signal and the release both point at the same file |
 | History | Only fixed defects count toward `+1 history`. A works-as-designed closure in the same area does not |
+
+Other live tickets: DEMO-9 is an at-risk defect whose nightly export has been silent
+since the seeded date; DEMO-10 is a duplicate of DEMO-6; DEMO-8 is a customer request
+with no priority.
 
 **Check:** no tracker cards appear in the chat. Live reads run inside a subagent and
 only a summary comes back.
@@ -248,9 +259,9 @@ Commit `triage-teams/payments.json` so your team shares it. See
 
 | You see | Likely cause | Fix |
 | --- | --- | --- |
-| "Unknown skill" or scripts not found | Running in a regular Chat, or an old plugin version | Use Cowork or Claude Code, update to 0.6.5, start a new session |
+| "Unknown skill" or scripts not found | Running in a regular Chat, or an old plugin version | Use Cowork or Claude Code, update to 0.6.6, start a new session |
 | "Could not tell which team" | No ticket, no config in your folder, no default | Name the team or project, e.g. `/bug-triage-agent:queue demo-live`, or run `/bug-triage-agent:triage-config` |
 | "Unknown skill" only when you add arguments | The host rejected a leading `--flag` | Use the plain word: `/bug-triage-agent:queue demo-live` |
 | "No team configures project X" | Ticket from a project no config names | Add it with `triage-config`, or name the team |
 | 🔴 in the header for a live source | Tool bindings not filled or not found | `/bug-triage-agent:triage-doctor <id>` |
-| Report written but no trace | Old version | Update to 0.6.5 |
+| Report written but no trace | Old version | Update to 0.6.6 |

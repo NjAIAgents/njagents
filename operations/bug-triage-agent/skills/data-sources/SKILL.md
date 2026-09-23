@@ -195,8 +195,19 @@ An adapter that fails goes in `adapters_failed` with its error. The envelope sta
 ### metrics
 
 Tool suffixes come from `tool_bindings.metrics` in the team config, keyed
-`logs_search`, `metrics_query`, `deploy_events`. Tool names differ between metrics MCP
-deployments, so they are configuration, not a constant in this file.
+`logs_search`, `metrics_query`, `deploy_events`, and optionally `runtime_logs`. Tool
+names differ between metrics MCP deployments, so they are configuration, not a
+constant in this file.
+
+The keys may be served by different providers: history and error rates from a log
+store, deploys and live runtime logs from a hosting platform. Provider details live
+beside the mode in `sources.metrics`: `datasource_uid` and `queries` for the log
+store (templates with `<area-service>` and `<error text from the ticket>`
+placeholders the agent fills in), and `deploys` (`provider`, `team_id`,
+`project_id`) for the hosting platform. When both supply deploys, prefer the hosting
+platform's record and report any disagreement in `notes`. Runtime logs grouped by
+deployment answer "did this start with that release" directly: an error present on
+one deployment and absent on the previous one is regression evidence.
 
 ```json
 {
@@ -235,8 +246,22 @@ can check exactly what was counted.
 ### code
 
 A code-search service across repos listed in `repos` in the team config,
-restricted to `repos[].key_paths` when that is set. The tool suffix comes from
-`tool_bindings.code.search`.
+restricted to `repos[].key_paths` when that is set. Tool suffixes come from
+`tool_bindings.code`: `search` for search, and optionally `list_files` and `get_file`
+for reading files directly.
+
+**Search, then read.** Search first. When search returns nothing for a query that
+should match (an error string from the ticket, a class named in a stack trace), do not
+conclude "no fault found": a code host's search index can lag a new repository, or
+reject repository-scoped queries. If `get_file` is bound, fall back to reading the
+files under `repos[].key_paths` directly, starting with paths whose names match the
+ticket's area, and inspect them yourself. Record which path was used in the envelope's
+`notes` (`"search"` or `"file_read"`), so a reviewer knows how a finding was reached.
+Only report "no signal" after the fallback has also run. If neither search nor
+`get_file` works, the source is `error`, never an empty success.
+
+Keep the fallback bounded: at most 20 files per repository, preferring the ticket's
+area and the files the release correlation says changed.
 
 ```json
 {

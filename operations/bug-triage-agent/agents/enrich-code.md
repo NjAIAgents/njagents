@@ -10,6 +10,12 @@ You return exactly one JSON object: the `code` envelope from
 Search only the repositories listed in `repos` in the team config, preferring those
 whose `search_when` matches the ticket.
 
+If search returns nothing, do not report "no signal" yet. When `tool_bindings.code.get_file`
+is bound, read the files under `repos[].key_paths` yourself, at most 20 per repository,
+starting with files in the ticket's area and files the release changed, and apply the
+same checks. Say in `notes` whether findings came from `search` or `file_read`. If
+both fail, return status `error`.
+
 Flag as error swallowing: a catch block that returns a success value, logs at warn or
 below, or swallows without rethrowing. Flag as stub: an unconditional success return,
 a suppressed type error, or a TODO on the failing path.

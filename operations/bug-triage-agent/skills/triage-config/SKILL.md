@@ -171,12 +171,17 @@ If yes, search the session for matching tools and propose bindings:
 
 | Source | Binding keys | Then ask |
 | --- | --- | --- |
-| metrics | `metrics_query`, `logs_search`, `deploy_events` | Nothing else unless the team wants non-default `regression` values |
+| metrics | `metrics_query`, `logs_search`, `deploy_events`, optional `runtime_logs` | The log store's data source and the queries to use (error rate, deploys, expected heartbeats), and optionally a hosting platform for deploys and runtime logs (`sources.metrics.deploys`). Keys may be served by different providers |
 | warehouse | `query` | Database and schema, then the query template (below) |
-| code | `search` | Which repos, what each holds, optional `key_paths` to narrow search |
+| code | `search`, plus `get_file` (and `list_files` if offered) when the host can read files | Which repos, what each holds, `key_paths` to narrow search and to bound the file-read fallback |
 
 If a binding cannot be found, the source is `off` and the reason says which connector
 to add. Do not write a partial binding.
+
+**Prove code search against the team's own repo.** Search for a string you have just
+read from a file in `key_paths`. If search returns nothing but `get_file` reads the
+file, bind both and say that triage will use the file-read fallback until search
+works. If neither works, write code as `off`.
 
 **Warehouse query template.** Ask what table records account activity and how an
 affected account and an enterprise account are identified. Draft one template named

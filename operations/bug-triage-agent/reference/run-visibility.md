@@ -187,7 +187,11 @@ the result; it never writes the HTML. A first test run showed why: with no rende
 producing four traces meant hand-writing four pages, slow and different every time,
 so none were produced at all.
 
-The result file, `<TICKET>.result.json`:
+The result file, `<TICKET>.result.json`. Any evidence item may carry a `url`, taken
+from a tool result; renderers show it behind a short label and validate it is a plain
+https URL. Add `introduced_by.sha` when the changing commit is known, and a top-level
+`links` list for evidence that has no other home, such as a log query or a deployment:
+`{"label": "Logs", "kind": "spike", "text": "…", "source": "metrics", "url": "https://…"}`.
 
 ```json
 {

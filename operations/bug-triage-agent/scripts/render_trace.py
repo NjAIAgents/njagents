@@ -21,6 +21,9 @@ documented in reference/run-visibility.md and checked below.
 """
 import argparse, html, json, os, sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import links  # noqa: E402
+
 SOURCES = ["tracker", "releases", "metrics", "warehouse", "code"]
 DISPOSITIONS = {"defect", "expected_behavior", "config_or_data", "duplicate",
                 "voice_of_customer", "insufficient_information"}
@@ -62,11 +65,55 @@ def validate(r):
             p.append(f"sources.{s} missing; every source is reported, even when off")
         elif srcs[s].get("mode") not in MODE_MARK:
             p.append(f"sources.{s}.mode must be live, fixture or off")
+    for where, url in _urls(r):
+        if not links.safe_url(url):
+            p.append(f"{where}: url must be a plain https URL")
     for i, st in enumerate(r.get("steps") or []):
         for key in ("level", "ghost"):
             if st.get(key) is not None and st[key] not in LEVELS:
                 p.append(f"steps[{i}].{key} must be P1-P4 or null")
     return p
+
+
+def _urls(r):
+    """Every url field in a result, for validation."""
+    out = []
+    for i, l in enumerate(r.get("locations") or []):
+        if l.get("url"): out.append((f"locations[{i}].url", l["url"]))
+    for i, e in enumerate(r.get("disposition_evidence") or []):
+        if e.get("url"): out.append((f"disposition_evidence[{i}].url", e["url"]))
+    for i, p in enumerate(r.get("prior_fixes") or []):
+        if p.get("url"): out.append((f"prior_fixes[{i}].url", p["url"]))
+    for i, x in enumerate(r.get("links") or []):
+        out.append((f"links[{i}].url", x.get("url")))
+    for k, obj in (("release", r.get("release") or {}), ("introduced_by", r.get("introduced_by") or {})):
+        for f in ("url", "pr_url", "release_url"):
+            if obj.get(f): out.append((f"{k}.{f}", obj[f]))
+    if r.get("ticket_url"): out.append(("ticket_url", r["ticket_url"]))
+    return out
+
+
+def evidence_section(r):
+    """Where the evidence lives, each item a short label with its link behind it."""
+    rows = []
+    for l in r.get("locations") or []:
+        rows.append((links.a(links.location_label(l), l.get("url"), code=True),
+                     l.get("signal", ""), l.get("evidence", ""), l.get("source", "")))
+    intro = r.get("introduced_by") or {}
+    if intro.get("pr"):
+        rows.append((links.a(intro["pr"], intro.get("pr_url")), "change",
+                     f"introduced in {intro.get('release', '?')}", "releases"))
+    for p in r.get("prior_fixes") or []:
+        rows.append((links.a(p.get("key"), p.get("url")), "prior fix", p.get("summary", ""), "tracker"))
+    for x in r.get("links") or []:
+        rows.append((links.a(x.get("label"), x.get("url")), x.get("kind", ""), x.get("text", ""),
+                     x.get("source", "")))
+    if not rows:
+        return ""
+    body = "".join(f"<tr><td>{w}</td><td>{esc(s)}</td><td>{esc(e)}</td><td>{esc(src)}</td></tr>"
+                   for w, s, e, src in rows)
+    return ('<h2>Evidence</h2><div class="tbl"><table><thead><tr><th>Where</th><th>Signal</th>'
+            '<th>What</th><th>Source</th></tr></thead><tbody>' + body + "</tbody></table></div>")
 
 
 # ------------------------------------------------------------------ ladder
@@ -272,7 +319,7 @@ def render(r):
         o.append(f'<div class="banner"><strong>Demo data.</strong> '
                  f'{esc(", ".join(fixtures))} on fixtures. Not live figures.</div>')
 
-    o.append(f'<h1>{head_mark}{esc(t)} · {esc(r["summary"])}</h1>')
+    o.append(f'<h1>{head_mark}{links.a(t, r.get("ticket_url"))} · {esc(r["summary"])}</h1>')
 
     o.append('<dl class="verdict">')
     o.append(f'<div><dt>Disposition</dt><dd><code>{esc(r["disposition"])}</code></dd></div>')
@@ -310,7 +357,8 @@ def render(r):
         o.append(f'<h2>Why <code>{esc(r["disposition"])}</code></h2><div class="tbl">'
                  '<table><thead><tr><th>Evidence</th><th>Source</th></tr></thead><tbody>')
         for e in ev:
-            o.append(f'<tr><td>{esc(e.get("text"))}</td><td>{esc(e.get("source"))}</td></tr>')
+            src = links.a(e.get("label") or e.get("source"), e.get("url")) if e.get("url") else esc(e.get("source"))
+            o.append(f'<tr><td>{esc(e.get("text"))}</td><td>{src}</td></tr>')
         o.append("</tbody></table></div>")
     if r.get("alternative"):
         o.append(f'<p class="muted">{esc(r["alternative"])}</p>')
@@ -335,10 +383,12 @@ def render(r):
     rel = r.get("release")
     if rel:
         o.append("<h2>Release correlation</h2>")
-        o.append(f'<p><strong>{esc(rel.get("version"))}</strong>, shipped '
+        o.append(f'<p><strong>{links.a(rel.get("version"), rel.get("url"))}</strong>, shipped '
                  f'{esc(rel.get("shipped"))}, {esc(rel.get("gap_days"))} days before first '
                  f'seen. {esc(rel.get("basis", ""))} Correlation confidence: '
                  f'<strong>{esc(rel.get("confidence"))}</strong>.</p>')
+
+    o.append(evidence_section(r))
 
     wa = r.get("workaround")
     if wa:
@@ -380,6 +430,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("results", nargs="+")
     ap.add_argument("--out", help="directory for the traces; default next to each result")
+    ap.add_argument("--team-config", help="team config; fills evidence links from its `links` templates")
     a = ap.parse_args()
 
     failed = 0
@@ -391,6 +442,9 @@ def main():
             print(f"{path}: cannot read ({e})", file=sys.stderr)
             failed += 1
             continue
+        if a.team_config:
+            with open(a.team_config, encoding="utf-8") as cf:
+                links.enrich(r, json.load(cf))
         problems = validate(r)
         if problems:
             print(f"{path}: refusing to render", file=sys.stderr)

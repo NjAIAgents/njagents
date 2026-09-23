@@ -197,6 +197,14 @@ Ask which team owns each component or area label found in step 2. Write
 
 ## Step 6: output
 
+**Evidence links.** Offer a `links` section so reports can link each piece of evidence.
+Build the templates from URLs the connected tools actually returned during discovery
+(an issue's web URL, a file's or commit's html URL), replacing the variable parts with
+placeholders: `code` `{owner} {repo} {ref} {path} {line}`, `commit` `{owner} {repo}
+{sha}`, `release` `{owner} {repo} {version}`, `pr` `{owner} {repo} {number}`, `ticket`
+`{key}`. Show them, and write only what the user confirms. They are used only when a
+tool returns no URL.
+
 - `output.reports_dir`: default `triage-reports`.
 - `output.write_report`: default `always`.
 - `output.run_trace`: default `file`. Offer `artifact` only after saying plainly that

@@ -58,6 +58,15 @@ column always disambiguates it.
 One callout per purpose per report. A report where everything is highlighted has
 highlighted nothing.
 
+### Links
+
+Evidence carries its link behind a short label, never as a bare URL:
+[`ApprovalReviewService.ts:89`](#), [2026.09](#), [#4412](#), [DEMO-1](#), [Logs](#),
+[Deploy 2026.09](#). A label is at most 40 characters. The URL comes from a tool result
+or the team config's `links` templates, never from the model. Evidence with no real URL
+shows its label as plain text. The chat summary links the two or three items that
+decided the priority; the report, trace and fix brief link every item.
+
 ### Labels
 
 Dispositions, escalation classes and field names stay in code spans, `defect`,

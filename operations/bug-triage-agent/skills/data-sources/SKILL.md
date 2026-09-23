@@ -33,6 +33,9 @@ Rules:
 - `data` must match the per-source shape below **exactly** in every mode. A fixture
   that does not validate against the shape is a bug in the fixture.
 - Never invent a field you could not retrieve. Omit it and add a note.
+- Keep the URL a tool returns with an item (a ticket's web URL, a commit's or
+  release's html URL, a deployment's page, a log store's deep link) in a `url` field
+  on that item, so the report can link to the evidence. Never build one by hand.
 
 ## Mode resolution
 

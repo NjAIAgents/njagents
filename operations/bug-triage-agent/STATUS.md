@@ -26,6 +26,7 @@ An honest account of what is built and what is not.
 | 0.6.0 | `/queue`, `/triage-log`, fix briefs graded strong, moderate or weak; team from the ticket's project key; `triage-config` stops on a skipped required answer; `+1 history` counts only fixed defects; hint when a connector is present but its source is off |
 | 0.6.1 | Quoted command front matter. An unquoted hint starting with `[` made three commands disappear |
 | 0.6.2 | Team or project as a plain word, because a leading `--flag` was rejected by the host; queue ages from Jira dates with colonless offsets |
+| 0.6.7 | Evidence links: every cited item links to its source behind a short label (file:line pinned to a commit, release, commit, ticket, log query, deploy). URLs come from tool results or the config's `links` templates, never from the model; the validator checks templates and result URLs |
 | 0.6.6 | Code source reads files under `key_paths` when search returns nothing; metrics can combine a log store with a hosting platform's deploys and runtime logs; the header warns when a live run uses the plugin's shipped config; demo-live runs on Jira, GitHub, Grafana Loki and Vercel |
 | 0.6.5 | `triage-config <team> <section>` changes one section only, shown as a diff; a code-host name sets up code search and release tags together |
 | 0.6.4 | Added `.codex-plugin/plugin.json`. Codex and ChatGPT installed the plugin but loaded no skills without it, so `@bug-triage-agent` had nothing to call. The validator now checks its `skills` path |

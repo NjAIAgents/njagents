@@ -324,6 +324,27 @@
           "description": "Where the run trace goes. 'file' writes <TICKET>-trace.html next to the report. 'artifact' publishes a hosted page, where the client can. Default is 'file' because a trace carries customer names and account counts, so publishing is opt-in per team rather than automatic."
         }
       }
+    },
+    "links": {
+      "type": "object",
+      "description": "URL templates for evidence links, used only when a tool returns no URL. Renderers show a short label with the URL behind it, never a bare URL. Placeholders: code {owner} {repo} {ref} {path} {line}; commit {owner} {repo} {sha}; release {owner} {repo} {version}; pr {owner} {repo} {number}; ticket {key}.",
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "commit": {
+          "type": "string"
+        },
+        "release": {
+          "type": "string"
+        },
+        "pr": {
+          "type": "string"
+        },
+        "ticket": {
+          "type": "string"
+        }
+      }
     }
   }
 }

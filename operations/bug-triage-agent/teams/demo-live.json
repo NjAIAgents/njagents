@@ -124,5 +124,13 @@
     "write_report": "always",
     "run_trace": "artifact",
     "//run_trace": "Safe to publish here because every ticket in DEMO is synthetic. A team whose tracker holds real customer tickets should leave this at the 'file' default."
+  },
+  "links": {
+    "code": "https://github.com/{owner}/{repo}/blob/{ref}/{path}#L{line}",
+    "commit": "https://github.com/{owner}/{repo}/commit/{sha}",
+    "release": "https://github.com/{owner}/{repo}/releases/tag/{version}",
+    "pr": "https://github.com/{owner}/{repo}/pull/{number}",
+    "ticket": "https://nishantnavjyot.atlassian.net/browse/{key}",
+    "//": "Used only when a tool returns no URL. Code links pin to a commit when one is known."
   }
 }

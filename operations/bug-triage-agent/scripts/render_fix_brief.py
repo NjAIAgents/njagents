@@ -25,6 +25,9 @@ with high confidence can still have weak evidence about which file to change.
 import argparse, json, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import links  # noqa: E402
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from render_trace import validate as validate_result  # noqa: E402
 
 CODE_SIGNALS = {"error_swallowing", "stub", "suppressed_type_error"}
@@ -145,7 +148,7 @@ def render(r):
            f"generated_by: {yq('bug-triage-agent ' + str(r.get('agent_version', '')))}",
            "---", ""]
 
-    o = fm + [f"# Fix brief · {t} · {r.get('summary', '')}", ""]
+    o = fm + [f"# Fix brief · {links.md(t, r.get('ticket_url'))} · {r.get('summary', '')}", ""]
     if ev["caution"]:
         o += ["> [!CAUTION]", "> " + ev["caution"]]
         for m in ev["missing"]:
@@ -173,22 +176,30 @@ def render(r):
     if locs:
         o += ["| # | Location | Signal | Evidence | From |", "| --- | --- | --- | --- | --- |"]
         for i, l in enumerate(locs, 1):
-            where = (f"`{l['path']}:{l['line']}`" if l.get("line") else f"`{l['path']}`") \
-                if l.get("path") else (l.get("area") or "—")
+            if l.get("path"):
+                # Short label, link behind it; the full path is in candidate_files above.
+                where = links.md_code(links.location_label(l), l.get("url"))
+            else:
+                where = l.get("area") or "—"
             o.append(f"| {i} | {where} | `{l.get('signal', '—')}` | "
                      f"{(l.get('evidence') or '').replace('|', '/')} | {l.get('source', '—')} |")
     else:
         o.append("No candidate location. Start from the affected component and the release below.")
     intro = r.get("introduced_by") or {}
     if intro:
-        o += ["", f"Likely introduced by release **{intro.get('release', '?')}**"
-                  + (f", PR {intro['pr']}" if intro.get("pr") else "") + ". Read that diff first."]
+        o += ["", f"Likely introduced by release **{links.md(intro.get('release', '?'), intro.get('release_url'))}**"
+                  + (f", PR {links.md(intro['pr'], intro.get('pr_url'))}" if intro.get("pr") else "")
+                  + ". Read that diff first."]
+    extra = [links.md(x.get("label"), x.get("url")) for x in r.get("links") or [] if x.get("label")]
+    if extra:
+        o += ["", "Evidence: " + " · ".join(extra)]
     o.append("")
 
     prior = r.get("prior_fixes") or []
     if prior:
         o += ["## Prior fixes in this area", ""]
-        o += [f"- **{p.get('key')}**: {p.get('summary', '')}. {p.get('note', '')}".rstrip() for p in prior]
+        o += [f"- **{links.md(p.get('key'), p.get('url'))}**: {p.get('summary', '')}. {p.get('note', '')}".rstrip()
+              for p in prior]
         o += ["", "A regression of an earlier fix usually means that fix's test did not "
                   "cover this path. Check it.", ""]
 
@@ -243,12 +254,16 @@ def main():
     ap.add_argument("results", nargs="+")
     ap.add_argument("--out", help="directory; default next to each result")
     ap.add_argument("--assess", action="store_true", help="print the evidence verdict as JSON only")
+    ap.add_argument("--team-config", help="team config; fills evidence links from its `links` templates")
     a = ap.parse_args()
 
     failed = 0
     for path in a.results:
         with open(path, encoding="utf-8") as f:
             r = json.load(f)
+        if a.team_config:
+            with open(a.team_config, encoding="utf-8") as cf:
+                links.enrich(r, json.load(cf))
         problems = validate_result(r)
         if problems:
             print(f"{path}: invalid result: " + "; ".join(problems), file=sys.stderr)

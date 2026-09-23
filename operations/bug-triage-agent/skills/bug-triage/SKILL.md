@@ -251,7 +251,15 @@ These surfaces, all defined in [`reference/output-templates.md`](../../reference
    [`reference/run-visibility.md`](../../reference/run-visibility.md), then run:
 
        python3 <plugin root>/scripts/render_trace.py --out <working folder>/<reports_dir> \
-           <working folder>/<reports_dir>/<TICKET>.result.json
+           --team-config <resolved team config> <working folder>/<reports_dir>/<TICKET>.result.json
+
+   **Evidence links.** Put the URL a tool returned beside each piece of evidence in the
+   result (`url` on `locations`, `disposition_evidence`, `prior_fixes`, `release`;
+   `sha` on `introduced_by`; a top-level `links` list of `{label, kind, text, source,
+   url}` for things like a log query or a deployment). Take URLs only from tool
+   results: a ticket's web URL, a commit's or release's html URL, a deployment's page,
+   a log store's deep link. `--team-config` fills the rest from the config's `links`
+   templates. Never construct or guess a URL yourself.
 
    **Never hand-write the trace HTML.** The script renders it identically every run and
    refuses a non-defect that carries a priority. If it refuses, the result file is
@@ -266,7 +274,7 @@ These surfaces, all defined in [`reference/output-templates.md`](../../reference
    [`reference/run-visibility.md`](../../reference/run-visibility.md)), then run:
 
        python3 <plugin root>/scripts/render_fix_brief.py --out <working folder>/<reports_dir> \
-           <working folder>/<reports_dir>/<TICKET>.result.json
+           --team-config <resolved team config> <working folder>/<reports_dir>/<TICKET>.result.json
 
    It writes `<TICKET>.fix-brief.md`, a hand-off a coding agent can act on, and refuses
    a non-defect. Fill `locations` only with what the run actually found, each with its

@@ -40,6 +40,12 @@ def check_config(path):
         cfg = json.load(f)
     name = os.path.basename(path)
 
+    # Evidence link templates must fill into plain https URLs, with known placeholders.
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import links as _links
+    for problem in _links.check(cfg):
+        err(f"{name}: {problem}")
+
     for key in ("team", "tracker", "sources"):
         if key not in cfg:
             err(f"{name}: missing required key '{key}'")

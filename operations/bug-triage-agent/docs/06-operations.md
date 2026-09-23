@@ -88,6 +88,24 @@ wrong on every voice-of-customer item has not captured the judgment you wanted.
 That last row matters most. Where experts genuinely disagree, the agent should say so
 and route to a person rather than pick a side confidently.
 
+`triage_log.py calibrate` runs this review for you and prints each pattern it finds with
+the change it suggests; `triage_log.py dashboard --out triage-reports/accuracy.html`
+draws the same data as a page with tabs. Pass `--area` on `append` and `--reviewer` on
+`override` so the last two rows can be detected. Both commands only suggest: rubric
+and taxonomy changes go through review like code, config changes through
+`triage-config`. A weekly trend that falls after a change means the change made things
+worse; revert it.
+
+## Automatic triage in operation
+
+- It never writes to the tracker. The digest in `triage-reports/auto/` is the output.
+- A run takes a lock (`triage-logs/auto-triage.lock`) and releases it when the digest is
+  written; a second run within an hour skips. Delete a stale lock if a run crashed.
+- Automatic runs are logged with the flag `auto`, so accuracy can be compared between
+  automatic and manual triage.
+- To stop it, set `automation.enabled` to false. A scheduled task left in place then
+  does nothing.
+
 ## Onboarding a second team
 
 1. Copy `team-config.example.json`, set `team.id` to match the filename

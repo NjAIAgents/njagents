@@ -70,5 +70,31 @@
     "reports_dir": "triage-reports",
     "write_report": "always",
     "run_trace": "file"
+  },
+  "queue": {
+    "triage_within_hours": {
+      "at_risk": 24,
+      "default": 72
+    },
+    "stuck_after_days": 7
+  },
+  "automation": {
+    "enabled": false,
+    "trigger": "schedule",
+    "schedule": "0 * * * *",
+    "max_per_run": 10
+  },
+  "verification": {
+    "enabled": false,
+    "runner": "docker",
+    "environment": "local",
+    "docker": {
+      "base_url": "http://localhost:3000",
+      "start": "docker compose up -d",
+      "stop": "docker compose down",
+      "allow_methods": [
+        "GET"
+      ]
+    }
   }
 }

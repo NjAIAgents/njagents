@@ -26,6 +26,7 @@ import argparse, json, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import links  # noqa: E402
+import summary as S  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from render_trace import validate as validate_result  # noqa: E402
@@ -150,10 +151,17 @@ def render(r):
 
     o = fm + [f"# Fix brief · {links.md(t, r.get('ticket_url'))} · {r.get('summary', '')}", ""]
     if ev["caution"]:
-        o += ["> [!CAUTION]", "> " + ev["caution"]]
+        o += links.callout("caution", ev["caution"])
         for m in ev["missing"]:
             o.append(f"> - {m}")
         o.append("")
+
+    corr = S.corroboration(r)
+    if corr:
+        o += ["**Supported by:** " + " · ".join(f"{c['source']} {links.md(c['label'], c['url'])}" for c in corr), ""]
+    _, stale = S.freshness(r)
+    if stale:
+        o += links.callout("warning", "**Stale data.** " + "; ".join(stale) + ". Re-check before acting.") + [""]
 
     o += ["This brief was produced by triage, not by reading the fix. Treat every location "
           "and cause below as a lead to verify, not a finding.", ""]
@@ -194,6 +202,8 @@ def render(r):
     if extra:
         o += ["", "Evidence: " + " · ".join(extra)]
     o.append("")
+    import timeline as TL
+    o += TL.md(r)
 
     prior = r.get("prior_fixes") or []
     if prior:
@@ -222,6 +232,9 @@ def render(r):
         wa = r.get("workaround") or {}
         if wa.get("text"):
             acc.append(f"The path the workaround relies on still works: {wa['text']}")
+            import verify_workaround as V
+            if V.line(wa):
+                acc.append("Workaround check from triage: " + V.md_line(wa))
     o += [f"- [ ] {a}" for a in acc] + [""]
 
     o += ["## Constraints", "",

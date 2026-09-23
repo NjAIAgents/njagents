@@ -26,7 +26,13 @@ file is the procedure.
 
 3. **Duplicate check.** Open tickets in the same component with the same failure mode.
    Same wording with a different failure mode is not a duplicate. Same failure mode
-   with different wording is.
+   with different wording is. The comparison is done by `scripts/dupes.py` (see
+   `skills/bug-triage` Stage 2), which scores each candidate on the same error text, the
+   same symptom in the description, shared stack frames, the same endpoint or file, the
+   same area and the same release, and caps a title-only match at `related`. Accept
+   `duplicate` only from a candidate it scored `duplicate`, and name the matched signals
+   in the evidence. A candidate scored `recurrence` was already fixed: the ticket is a
+   defect, and that fix goes into `prior_fixes`.
 
 4. **Config or data test.** Would the behaviour be correct if a specific setting or
    record had a particular value? If yes and you can name the setting, it is
@@ -50,6 +56,7 @@ reviewer correct the agent quickly, and what makes the log useful for calibratio
 
 - Inferring `expected_behavior` from the absence of similar reports. Absence of reports
   is not documentation.
-- Marking `duplicate` on summary-text similarity alone.
+- Marking `duplicate` on summary-text similarity alone, or overriding the script's
+  `related` or `different` because two titles look alike.
 - Treating a support escalation as evidence of defect.
 - Emitting a disposition with an empty `evidence` array and a confidence above `low`.

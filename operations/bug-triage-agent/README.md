@@ -134,7 +134,7 @@ Step-by-step runs with expected output: [`docs/09-examples.md`](docs/09-examples
 
 ```
 .claude-plugin/plugin.json    also plugin.json and .cursor-plugin/plugin.json, kept in step
-commands/                     triage, queue, triage-log, triage-config, release-impact, triage-doctor, triage-review
+commands/                     triage, queue, triage-log, triage-config, release-impact, triage-doctor, triage-review, triage-auto
 skills/
   bug-triage/                 orchestrator
   data-sources/               source contract, adapters, degradation rules
@@ -147,6 +147,7 @@ skills/
   triage-readiness/           behind /triage-doctor
   triage-history/             behind /triage-log
   triage-override/            behind /triage-review
+  triage-auto/                behind /triage-auto (off unless the team config enables it)
 agents/                       parallel enrichment, one per source
 reference/                    SHARED: rubric, taxonomy, calibration, output templates
 teams/                        the two demo configs, schema, example

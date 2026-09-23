@@ -212,7 +212,8 @@ query containing a write verb or not beginning with `SELECT` or `WITH`.
 
 ### `tool_bindings`
 
-Tool-name suffixes per source, **including the tracker**. The plugin declares no MCP
+Tool-name suffixes per source, **including the tracker**, plus `verification` when the
+`ci` runner dispatches a workflow. The plugin declares no MCP
 servers, so this is the only thing connecting it to a real system. A live source
 without a binding fails validation: the adapter cannot be bound, and guessing tool
 names is worse than stopping.
@@ -225,6 +226,78 @@ which provider supplied them.
 Repositories to search with a note on when each is relevant, and a component-to-team
 map used to suggest an assignee. A component with no routing entry produces a
 recommendation with no team.
+
+### `queue`
+
+How long a bug may wait for triage. Past its limit the queue marks it **⏰ overdue**
+and lists it first, at-risk before the rest. A ticket triaged P1 or P2 with no tracker
+activity for `stuck_after_days` is marked **🧊 stuck**.
+
+```json
+"queue": {"triage_within_hours": {"at_risk": 4, "default": 48, "by_priority": {"Highest": 8}},
+          "stuck_after_days": 7}
+```
+
+`by_priority` uses the tracker's own priority values. The shortest limit that applies
+wins. Without the section: 24 hours at-risk, 72 otherwise, 7 days.
+
+### `automation` (off by default)
+
+Automatic triage. When `enabled` is true, a scheduler or a tracker event runs
+`/bug-triage-agent:triage-auto <team>`, which triages new, changed and overdue bugs
+unattended and writes a review digest to `<reports_dir>/auto/`.
+
+```json
+"automation": {"enabled": false, "trigger": "schedule", "schedule": "0 * * * *",
+               "lookback_hours": 72, "max_per_run": 10, "retriage_changed": true,
+               "skip_labels": ["no-auto-triage"], "tracker_write": "none"}
+```
+
+| Key | Meaning |
+| --- | --- |
+| `trigger` | `schedule`: a scheduled task runs it on `schedule` (five-field cron). `event`: a tracker webhook or CI job runs it with the new ticket keys |
+| `lookback_hours` | Only bugs created in this window, plus any that are overdue |
+| `max_per_run` | Cap per run, 1 to 50. The rest wait for the next run |
+| `retriage_changed` | Re-triage a ticket updated since its last triage |
+| `skip_labels` | A ticket with one of these is never auto-triaged |
+| `tracker_write` | Always `none`. Automatic triage never writes to the tracker; a person posts from the digest |
+
+Set it up with `/bug-triage-agent:triage-config <team> automation`, which also offers to
+create the schedule. A run checks `enabled` first, so turning it off stops a scheduled
+task that is still in place.
+
+### `verification` (off by default)
+
+Checks that a workaround works before the report recommends it. The runner decides
+where:
+
+| Runner | Use when | Section |
+| --- | --- | --- |
+| `http` | You have a hosted preview or staging deployment | `http.base_url` (https), `allow_methods`, `headers_from_env` |
+| `docker` | You run the app locally in containers | `docker.start`, `docker.stop`, `docker.base_url` (localhost), `cwd`, `wait_seconds` |
+| `ci` | Your checks run in CI | `ci.workflow`, `ci.ref`, and `tool_bindings.verification.dispatch` |
+| `command` | You have your own test command | `command.run` with `{scenario}` for the scenario file; exit 0 passes |
+
+```json
+"verification": {"enabled": true, "runner": "docker", "environment": "local",
+  "docker": {"base_url": "http://localhost:3000", "start": "docker compose up -d",
+             "stop": "docker compose down", "allow_methods": ["GET"]}}
+```
+
+Guards that no scenario can override: `environment` must be `preview`, `staging` or
+`local`, never `production`; methods default to `GET`; a step can only reach the
+configured base URL; commands come from this config, never from a ticket; header values
+are read from environment variables named in `headers_from_env`, never stored.
+
+The triage writes `<TICKET>.scenario.json` from the ticket's reproduction steps and the
+workaround. Results: ✅ verified, ❌ did not work (the workaround then does not count as
+practical for the rubric), ⚠️ bug not reproduced (proves nothing), 🔴 error.
+
+### `calibration`
+
+`min_overrides` (default 3) and `min_rate` (default 0.3): how many overrides of the same
+kind, and what share of the runs they apply to, before `triage-log calibrate` suggests a
+change.
 
 ## Credentials
 

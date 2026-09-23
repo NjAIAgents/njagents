@@ -66,6 +66,9 @@ key exactly as it is:
 | `repo`, `vcs`, or the name of the user's code host or version-control product | Code in step 4 **and** the version-control adapters (`vcs_tag`, `vcs_pr`) in step 3, the two things a code host provides |
 | `routing` | Step 5 |
 | `output` | Step 6 |
+| `queue` | Step 6a |
+| `automation`, `auto` | Step 6b |
+| `verification`, `verify` | Step 6c |
 | `members`, `default` | Those questions in step 1 |
 
 Step 0 still runs first, to find the file. If the config exists only in the plugin,
@@ -210,6 +213,82 @@ tool returns no URL.
 - `output.run_trace`: default `file`. Offer `artifact` only after saying plainly that
   a trace contains customer names and account counts, and that `artifact` publishes it
   to a hosted page. Recommend `file` for any tracker with real customer tickets.
+
+## Step 6a: queue limits (optional)
+
+How long a bug may wait for triage before the queue flags it overdue and moves it to
+the top. Offer the defaults and let the user change them:
+
+- `queue.triage_within_hours.at_risk`: default 24
+- `queue.triage_within_hours.default`: default 72
+- `queue.triage_within_hours.by_priority`: optional, keyed by the tracker's own
+  priority values read in step 2, e.g. `{"<highest value>": 8}`
+- `queue.stuck_after_days`: a ticket triaged P1 or P2 with no tracker activity for this
+  long is flagged as stuck. Default 7.
+
+Skipped, the section is left out and the defaults apply.
+
+## Step 6b: automatic triage (optional, off by default)
+
+Ask whether the team wants bugs triaged automatically. Default **no**, which writes
+`automation.enabled: false` or leaves the section out. If yes, say plainly before
+writing anything:
+
+> Automatic triage runs without anyone watching. It writes reports and a review
+> digest into this folder and never writes to the tracker. A person still posts or
+> corrects each result.
+
+Then ask, one at a time:
+
+1. **Trigger.** `schedule` (a scheduled task runs it) or `event` (a tracker webhook or
+   CI job runs it with the new ticket keys).
+2. **Schedule**, for `schedule`: offer hourly (`0 * * * *`), every four hours on
+   weekdays (`0 */4 * * 1-5`), or a cron the user gives. Five fields.
+3. **Limits.** `max_per_run` (default 10), `lookback_hours` (default 72),
+   `retriage_changed` (default yes), `skip_labels` (default `no-auto-triage`).
+
+Write `tracker_write: "none"`. It is the only value allowed.
+
+After step 7 has written and validated the file:
+
+- `schedule`: if the host has a scheduled-task tool, offer to create a task that runs
+  `/bug-triage-agent:triage-auto <id>` on that cron in this working folder, and create
+  it only on a yes. Otherwise print the command for the user's own scheduler.
+- `event`: print the command a webhook handler or CI job runs for a new ticket, a
+  headless agent invocation of `/bug-triage-agent:triage-auto <id> <KEY>`, and say it
+  must run in a checkout of this folder so reports and the log land here.
+
+To switch it off later: `/bug-triage-agent:triage-config <id> automation` and answer
+no. A scheduled task left behind then stops on its own, because the run checks the
+config first.
+
+## Step 6c: workaround verification (optional, off by default)
+
+Ask whether triage should check that a workaround works before recommending it.
+Default **no**. If yes:
+
+1. **Where it runs** (`verification.runner`):
+
+   | Runner | For teams that | Asks |
+   | --- | --- | --- |
+   | `http` | Have a hosted preview or staging deployment | `http.base_url` (https) |
+   | `docker` | Run the app locally in containers | `docker.start`, `docker.stop` commands, `docker.base_url` on localhost, optional `cwd` and `wait_seconds` |
+   | `ci` | Run checks in their CI | `ci.workflow` and `ci.ref`; bind `tool_bindings.verification.dispatch` (and `status` if offered) to a tool found in this session that starts a workflow run |
+   | `command` | Have a test command of their own | `command.run`, where `{scenario}` becomes the scenario file path; exit 0 means it works |
+
+2. **Environment** (`verification.environment`): `preview`, `staging` or `local`.
+   **Never production.** If the only target the user has is production, write
+   verification as off and say why.
+3. **Methods** (`allow_methods`, for http and docker): default `GET` only. Add `POST`
+   or others only when the user confirms the target holds no real customer data.
+4. **Headers**, if the target needs auth: ask for the *name* of an environment
+   variable that holds each header value (`headers_from_env`). Never ask for, or write,
+   the value itself.
+
+Prove it where possible: for `http`, one GET of the base URL; for `docker` and
+`command`, show the commands and do not run them during setup. Run
+`python3 <plugin root>/scripts/verify_workaround.py check --team-config <path>` after
+writing; it must pass.
 
 ## Step 7: preview, write, validate
 

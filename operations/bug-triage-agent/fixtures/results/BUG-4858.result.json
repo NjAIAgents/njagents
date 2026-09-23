@@ -1,7 +1,7 @@
 {
   "team": "demo",
   "triaged_at": "2026-09-22 10:14 UTC",
-  "agent_version": "0.6.7",
+  "agent_version": "0.7.0",
   "ticket": "BUG-4858",
   "summary": "Amount column misaligned in the reporting export header",
   "sources": {
@@ -35,5 +35,45 @@
       "text": "BUG-4849 is open in reporting with the same failure mode: header offset by one after the amount column was added",
       "source": "tracker"
     }
-  ]
+  ],
+  "duplicate_check": {
+    "searched": 3,
+    "candidates": [
+      {
+        "key": "BUG-4849",
+        "summary": "Reporting CSV header offset after a column was added",
+        "status": "Open",
+        "score": 0.68,
+        "verdict": "duplicate",
+        "signals": [
+          "same symptom described (71% of phrasing)",
+          "same area: reporting",
+          "same release: 2026.09",
+          "similar title (33% of words)"
+        ]
+      },
+      {
+        "key": "BUG-4790",
+        "summary": "Amount column misaligned in the reporting export PDF",
+        "status": "Open",
+        "score": 0.17,
+        "verdict": "different",
+        "signals": [
+          "same area: reporting",
+          "similar title (71% of words)"
+        ]
+      },
+      {
+        "key": "BUG-4611",
+        "summary": "Export header labels in wrong language",
+        "status": "Fixed",
+        "score": 0.12,
+        "verdict": "different",
+        "signals": [
+          "same area: reporting",
+          "similar title (22% of words)"
+        ]
+      }
+    ]
+  }
 }

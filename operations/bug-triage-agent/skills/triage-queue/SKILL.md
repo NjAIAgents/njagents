@@ -52,8 +52,11 @@ Write it to a file in the working folder, e.g. `<working folder>/triage-reports/
         [--limit N] [--untriaged-only]
 
 Print its output **verbatim**. Do not re-sort, summarise or annotate the table: the
-order is the recommendation (untriaged first, at-risk first within that, then oldest),
-and the script produces it identically every time.
+order is the recommendation, and the script produces it identically every time:
+overdue first (a bug waiting longer than the team's `queue.triage_within_hours` limit,
+at-risk before the rest), then untriaged at-risk, then the other untriaged oldest
+first, then tickets triaged P1 or P2 that have not moved since (`queue.stuck_after_days`).
+Without a `queue` section the defaults apply: 24 hours at-risk, 72 otherwise, 7 days.
 
 It cross-references the audit log in `<working folder>/triage-logs/`, so a ticket
 shows as triaged only if this agent actually triaged it and logged the result. A

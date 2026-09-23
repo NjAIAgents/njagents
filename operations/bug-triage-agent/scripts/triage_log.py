@@ -18,6 +18,8 @@ import os
 import sys
 from collections import Counter
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # The log lives with the user, never inside the plugin: an installed plugin is
 # read-only, and even where it is writable an update replaces it and the history
@@ -80,6 +82,7 @@ def cmd_append(a):
         "unanswered": csv(a.unanswered),
         "source_errors": csv(a.source_errors),
         "flags": csv(a.flags),
+        "area": a.area,
         "human_override": None,
         "override_disposition": None,
         "override_priority": None,
@@ -112,6 +115,8 @@ def cmd_override(a):
             r["override_priority"] = a.priority or r["priority"]
             r["override_reason"] = a.reason
             r["override_ts"] = now()
+            if a.reviewer:
+                r["override_by"] = a.reviewer
             with open(LOG, "w") as f:
                 for x in rows:
                     f.write(json.dumps(x) + "\n")
@@ -230,6 +235,9 @@ def cmd_report(a):
     return 0
 
 
+from calibration import cmd_calibrate, cmd_dashboard  # noqa: E402
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -248,6 +256,7 @@ def main():
     a.add_argument("--unanswered", default="")
     a.add_argument("--source-errors", default="")
     a.add_argument("--flags", default="")
+    a.add_argument("--area", help="component or area, so calibration can see where overrides cluster")
     a.set_defaults(fn=cmd_append)
 
     o = sub.add_parser("override")
@@ -255,6 +264,7 @@ def main():
     o.add_argument("--disposition", choices=DISPOSITIONS)
     o.add_argument("--priority", choices=LEVELS)
     o.add_argument("--reason", required=True)
+    o.add_argument("--reviewer", help="who decided; optional, kept only in this local log")
     o.set_defaults(fn=cmd_override)
 
     ls = sub.add_parser("list")
@@ -267,6 +277,21 @@ def main():
     r = sub.add_parser("report")
     r.add_argument("--days", type=int, default=30)
     r.set_defaults(fn=cmd_report)
+
+    c = sub.add_parser("calibrate", help="suggest rubric or config changes from repeated overrides")
+    c.add_argument("--days", type=int, default=90)
+    c.add_argument("--team")
+    c.add_argument("--min-overrides", type=int, default=3)
+    c.add_argument("--min-rate", type=float, default=0.3)
+    c.set_defaults(fn=cmd_calibrate)
+
+    d = sub.add_parser("dashboard", help="write the accuracy dashboard as one HTML page with tabs")
+    d.add_argument("--days", type=int, default=90)
+    d.add_argument("--team")
+    d.add_argument("--out", required=True)
+    d.add_argument("--min-overrides", type=int, default=3)
+    d.add_argument("--min-rate", type=float, default=0.3)
+    d.set_defaults(fn=cmd_dashboard)
 
     args = ap.parse_args()
     global LOG

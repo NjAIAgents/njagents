@@ -377,13 +377,12 @@ def markdown(a, label, modes, reasons, available, cfg_path, origin, missing):
         lines += ["", "Tickets: " + ", ".join(f"`{t}`" for t in a.tickets)]
     if any(m == "fixture" for m in modes.values()):
         fx = [s for s in SOURCES if modes[s] == "fixture"]
-        lines += ["", "> [!WARNING]",
-                  f"> **Demo data.** {', '.join(fx)} on fixtures. Not live figures."]
+        lines += ["", "> ⚠️ " + f"**Demo data.** {', '.join(fx)} on fixtures. Not live figures."]
     note = plugin_copy_note(a, modes, origin)
     if note:
-        lines += ["", "> [!WARNING]", "> " + note]
+        lines += ["", "> ⚠️ " + note]
     if missing:
-        lines += ["", f"> [!CAUTION]", f"> No tracker fixture for {', '.join(missing)}. "
+        lines += ["", f"> 🛑 No tracker fixture for {', '.join(missing)}. "
                   "Those tickets cannot be triaged in fixture mode."]
     return "\n".join(lines)
 

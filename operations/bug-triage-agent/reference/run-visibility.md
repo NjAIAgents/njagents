@@ -193,6 +193,35 @@ https URL. Add `introduced_by.sha` when the changing commit is known, and a top-
 `links` list for evidence that has no other home, such as a log query or a deployment:
 `{"label": "Logs", "kind": "spike", "text": "…", "source": "metrics", "url": "https://…"}`.
 
+Fields the report, trace and brief use for their opening summary and data-age checks,
+all optional:
+
+| Field | Use |
+| --- | --- |
+| `deciding_factor` | One sentence: the reason that decided the verdict. Becomes the summary's **Why** |
+| `headline`, `do_now` | Override the computed verdict line or next action |
+| `sources.<s>.as_of` | When the source was read. Live data read more than 24h before triage is flagged |
+| `sources.<s>.data_from`, `retention_days` | Oldest data point used, and how long the source keeps data. Evidence within 2 days of ageing out is flagged, because it cannot be re-checked later |
+| `blast_radius` | `{"accounts": 1, "enterprise": 0, "url": "…"}` from the warehouse |
+| `locations[].snippet` | The offending line or two, shown under Evidence |
+| `fields_to_update` | Tracker fields to propose, e.g. `{"priority": "Critical"}` |
+| `route_note` | One line after the route for a non-defect |
+| `timeline` | Dated events from the sources: `[{"at": "2026-09-05 17:00 UTC", "kind": "deploy", "label": "2026.09", "url": "…"}]`. Kinds: `release`, `deploy`, `spike`, `first_error`, `ticket`, `triage`, `fix` |
+| `series` | The metrics counts behind the spike: `{"label": "…", "unit": "per 3h", "baseline": 36, "points": [["2026-09-03 00:00 UTC", 35], …]}`. Drawn as a chart in the trace and a sparkline in the report |
+| `duplicate_check` | Output of `scripts/dupes.py`: `{"searched": 4, "candidates": [{"key", "summary", "status", "score", "verdict", "signals", "url"}]}`. Verdicts `duplicate`, `recurrence`, `related`, `different`. A result with disposition `duplicate` must have a candidate scored `duplicate` |
+| `workaround.verified` | Written by `scripts/verify_workaround.py`: `{"status": "passed|failed|not_reproduced|error|pending", "runner", "environment", "target", "at", "steps", "url"}`. Never `production` |
+| `why_changed` | One sentence, when a re-triage changed the verdict: what made the difference |
+| `previous` | Optional embedded snapshot of the last triage. Normally the renderers read it from `<reports_dir>/history/`, where `scripts/history.py archive` keeps each earlier result |
+
+**Since the last triage** is computed, not written: disposition, priority,
+confidence, evidence, release, route, workaround state, the number of supporting
+sources and each source's mode, compared with the latest archived result for the
+ticket. Nothing appears on a first triage.
+
+**Supported by** is computed, not written: one entry per independent source whose
+finding supports the verdict. Code counts only for a fault signal
+(`error_swallowing`, `stub`, `suppressed_type_error`), never for a candidate file.
+
 ```json
 {
   "ticket": "BUG-4830", "summary": "…", "team": "demo",

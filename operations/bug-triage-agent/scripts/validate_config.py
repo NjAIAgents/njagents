@@ -45,6 +45,12 @@ def check_config(path):
     import links as _links
     for problem in _links.check(cfg):
         err(f"{name}: {problem}")
+    import auto_triage as _auto, verify_workaround as _ver
+    for problem in _auto.config_problems(cfg) + _ver.cfg_problems(cfg):
+        err(f"{name}: {problem}")
+    for k, v in ((cfg.get("queue") or {}).get("triage_within_hours") or {}).items():
+        if k != "by_priority" and not (isinstance(v, (int, float)) and v > 0):
+            err(f"{name}: queue.triage_within_hours.{k} must be a positive number of hours")
 
     for key in ("team", "tracker", "sources"):
         if key not in cfg:
@@ -331,6 +337,31 @@ def check_frontmatter():
                 err(f"{rel}: loads skills/{r}/SKILL.md, which does not exist")
 
 
+def check_logic():
+    """Guards that must hold whatever the config says. Cheap, deterministic, no network."""
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import dupes, verify_workaround as V, auto_triage as A
+    t = {"key": "X-1", "summary": "Export broken for reports", "component": "reporting",
+         "description": "The CSV export returns an empty file."}
+    look = {"key": "X-2", "summary": "Export broken for reports", "component": "reporting",
+            "description": "PDF export times out after 30 seconds on large accounts."}
+    if dupes.score(t, look)[1] == "duplicate":
+        err("dupes: a title-only match scored as duplicate")
+    same = {"key": "X-3", "summary": "Blank download", "component": "reporting", "status": "Open",
+            "description": "The CSV export returns an empty file since this morning."}
+    if dupes.score(t, same)[1] != "duplicate":
+        err("dupes: the same symptom in different words did not score as duplicate")
+    if not V.cfg_problems({"verification": {"enabled": True, "runner": "http", "environment": "production",
+                                            "http": {"base_url": "https://app.example.com"}}}):
+        err("verify_workaround: a production environment was accepted")
+    if V.http_step("https://app.example.com", {"method": "GET", "path": "https://evil.example"},
+                   {"GET"}, {}, 1)[0] is not None:
+        err("verify_workaround: a step escaped the configured base URL")
+    if not A.config_problems({"automation": {"enabled": True, "tracker_write": "comment"}}):
+        err("auto_triage: tracker writes were accepted for automatic triage")
+    print("  duplicate, verification and automation guards hold")
+
+
 def main():
     args = sys.argv[1:]
     print("Config:")
@@ -347,6 +378,8 @@ def main():
         check_config(t)
 
     check_manifests()
+    print("\nGuards:")
+    check_logic()
     print("\nFront matter:")
     check_frontmatter()
     print("\nFixtures:")
@@ -383,11 +416,33 @@ def main():
                     lvl = assess(r)["level"]
                     if f"evidence: {lvl}" not in brief:
                         err(f"{os.path.relpath(f, ROOT)}: fix brief front matter lacks the evidence verdict")
-                    if lvl != "strong" and "[!CAUTION]" not in brief:
+                    if lvl != "strong" and "🛑" not in brief:
                         err(f"{os.path.relpath(f, ROOT)}: {lvl} evidence but the fix brief carries no caution")
                 except Exception as e:  # noqa: BLE001
                     err(f"{os.path.relpath(f, ROOT)}: fix brief failed to render: {e}")
-        print(f"  {len(rs)} result files checked against the trace contract")
+            # The report is rendered from the same file. It must open with the summary,
+            # never give a non-defect a priority section, and repeat a weak verdict.
+            if not problems:
+                from render_report import render as render_report
+                try:
+                    rep = render_report(r)
+                    if "> **" not in rep.split("## Recommendation")[0]:
+                        err(f"{os.path.relpath(f, ROOT)}: report has no summary above Recommendation")
+                    if r.get("disposition") != "defect" and "## How the priority" in rep:
+                        err(f"{os.path.relpath(f, ROOT)}: non-defect report carries a priority section")
+                    if r.get("disposition") == "defect":
+                        from render_fix_brief import assess as _assess
+                        if _assess(r)["level"] != "strong" and "🛑" not in rep:
+                            err(f"{os.path.relpath(f, ROOT)}: evidence not strong but the report carries no caution")
+                    if r.get("timeline") and "## Timeline" not in rep:
+                        err(f"{os.path.relpath(f, ROOT)}: result has a timeline but the report does not show it")
+                    if r.get("previous") and "Since the last triage" not in rep:
+                        err(f"{os.path.relpath(f, ROOT)}: result has a previous triage but the report shows no change block")
+                    if r.get("duplicate_check") and "## Duplicate check" not in rep:
+                        err(f"{os.path.relpath(f, ROOT)}: result has a duplicate check but the report does not show it")
+                except Exception as e:  # noqa: BLE001
+                    err(f"{os.path.relpath(f, ROOT)}: report failed to render: {e}")
+        print(f"  {len(rs)} result files checked against the trace, brief and report contracts")
 
     explicit = bool(args) and args[0] != "--all"
 

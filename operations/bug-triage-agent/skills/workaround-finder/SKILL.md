@@ -43,3 +43,14 @@ Workaround: none found
   none found.
 - A workaround that loses data or skips a control is reported with its risk and does
   not count as "practical" for the rubric.
+
+## Verification
+
+When the team config turns on `verification`, the triage checks the workaround before
+recommending it (see `skills/bug-triage` Stage 3). The runner, the environment and the
+allowed methods come from the config; the scenario comes only from the ticket and the
+evidence. A workaround that fails the check is reported as not working. One that passes
+is marked verified in the report, with where and when it ran.
+
+Verification never runs against production. If the only place a workaround could be
+tried is production, it stays unverified and the report says so.

@@ -10,14 +10,15 @@ You return exactly one JSON object: the `tracker` envelope defined in
 Inputs: ticket key, team config.
 
 Mode `live`: use the tool suffixes named in `tool_bindings.tracker`
-(`get_issue`, `search_issues`). Retrieve what the data-sources skill lists for this source. Cap related tickets at 10 and duplicate candidates at 5.
+(`get_issue`, `search_issues`). Retrieve what the data-sources skill lists for this source. Cap related tickets at 10 and duplicate candidates at 10.
 
 Mode `fixture`: read the named fixture. Stamp `"mode": "fixture"`.
 
 On any error: `"status": "error"`, the error text in `notes`, `data` populated with
 whatever succeeded. Never fabricate counts. Never fall back to fixtures in live mode.
 
-Duplicate candidates need a `why` naming the shared failure mode, not shared wording.
+Duplicate candidates need a `why` naming the shared failure mode, not shared wording,
+and their `description`: the duplicate check scores the description, not the title.
 
 ## Tools
 

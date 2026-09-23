@@ -48,5 +48,14 @@ Run the readiness check for: the user's request
    them from here.
 7. Warn if any source is in `fixture` mode, and state that outputs will be banner-marked
    as demo data.
+8. Report the three optional behaviours, one line each, with how to change them:
+   - **Automatic triage:** on or off (`automation.enabled`), and the trigger and
+     schedule when on. Run `python3 <plugin root>/scripts/auto_triage.py plan --dry-run
+     --workdir <working folder> <id>` and report what the next run would pick up.
+   - **Workaround verification:** run `python3 <plugin root>/scripts/verify_workaround.py
+     check --team-config <config>` and report its line. For the `ci` runner, confirm the
+     `tool_bindings.verification` tools are present as in step 5. Never run a scenario
+     from here.
+   - **Queue limits:** the triage-within hours in force, from `queue` or the defaults.
 
 Never print credentials, tokens or connection strings. Report reachability only.

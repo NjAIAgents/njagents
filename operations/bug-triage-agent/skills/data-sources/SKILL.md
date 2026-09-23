@@ -84,8 +84,16 @@ related            issues in the project matching the summary's distinctive noun
                    per-ticket `get_issue` call on each resolved related ticket,
                    requesting the comment field. Do that for the resolved ones
                    only; unresolved tickets carry no resolution to read.
-duplicates         issues in the same component, created within 180 days, whose
-                   summary is close to this one                      (limit 5)
+duplicates         candidates for the duplicate check, found three ways and merged:
+                   issues in the same component created within 180 days whose
+                   summary shares distinctive nouns; issues anywhere in the project
+                   whose text contains this ticket's error message, endpoint or
+                   file names; and resolved issues matching those, so a recurrence
+                   of a fixed bug is seen.                             (limit 10)
+                   Return each with key, summary, status, resolution, component,
+                   created and its **description** (and any error text or stack in
+                   it). The description is what the duplicate check scores; a
+                   candidate without one can only ever be `related`.
 component_history  count of issues in the component resolved AS FIXED DEFECTS in the
                    last 90 days. Exclude works-as-designed, duplicate, won't do,
                    cannot reproduce, config or data, and feature-request closures.
@@ -132,7 +140,8 @@ rubric treats that as an unanswered question, not as an absent signal.
   "ticket": {"key":"", "summary":"", "description":"", "component":"", "priority":"",
              "labels":[], "reporter":"", "created":"", "fix_versions":[]},
   "related": [{"key":"", "summary":"", "status":"", "resolution":"", "resolved":""}],
-  "duplicates": [{"key":"", "summary":"", "similarity":"high|medium|low", "why":""}],
+  "duplicates": [{"key":"", "summary":"", "status":"", "resolution":"", "component":"",
+                  "created":"", "description":"", "similarity":"high|medium|low", "why":""}],
   "component_history": {"resolved_90d": 0, "open": 0},
   "sprint_collision": false
 }

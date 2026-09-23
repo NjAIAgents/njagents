@@ -16,6 +16,7 @@
 | Set up a team | `/bug-triage-agent:triage-config payments` | `/triage-config payments` | `@bug-triage-agent set up triage for team payments` |
 | Readiness check | `/bug-triage-agent:triage-doctor payments` | `/triage-doctor payments` | `@bug-triage-agent check the triage setup for payments` |
 | Log and accuracy | `/bug-triage-agent:triage-log accuracy` | `/triage-log accuracy` | `@bug-triage-agent show the triage log` |
+| Automatic triage (config must enable it) | `/bug-triage-agent:triage-auto demo-live` | `/triage-auto demo-live` | `@bug-triage-agent run automatic triage for demo-live` |
 | Record an override | `/bug-triage-agent:triage-review DEMO-8 voice_of_customer "reason"` | `/triage-review …` | `@bug-triage-agent record an override for DEMO-8: voice_of_customer, because …` |
 
 Where commands are not loaded (Codex, ChatGPT), every command has a skill behind it
@@ -45,6 +46,9 @@ loaded.
 /triage-log                                       recent decisions, newest first
 /triage-log DEMO-7                                one ticket's history
 /triage-log accuracy                              how often people agreed, per class
+/triage-log calibrate                             repeated overrides and what to change
+/triage-log dashboard                             accuracy page with tabs
+/triage-auto demo-live                            automatic triage, when the config turns it on
 ```
 
 ## Three outputs, not one
@@ -129,11 +133,43 @@ labels    -> component:approvals, severity:p2
 assignee  -> Approvals Team
 ```
 
+## What else the report shows
+
+| Section | When | What it tells you |
+| --- | --- | --- |
+| **Since the last triage** | The ticket was triaged before | What changed: priority, evidence, sources, workaround state, and why |
+| **Duplicate check** | Always, when candidates were found | Each candidate scored on error text, symptom, stack, endpoint, file, area and release. A title match alone is never a duplicate. `recurrence` means the same failure came back after a fix |
+| **Timeline** | A release, deploy or error rise has a timestamp | Deploy, error rise, ticket, triage in order with the gaps between them; a chart in the trace, a sparkline in the report |
+| **Workaround verified** | The team turned on verification | Whether the workaround worked in preview, staging or local, and where |
+
+## Automatic triage
+
+Off unless the team config turns it on. When on:
+
+```
+/bug-triage-agent:triage-auto demo-live
+```
+
+picks new, changed and overdue bugs (up to `max_per_run`), triages them without asking
+anything, and writes `triage-reports/auto/<date>-<team>.md`: one row per ticket with the
+verdict and what to do. **Nothing is written to the tracker.** Read the digest, post what
+you agree with, and record what you do not with `/triage-review`. A scheduled task runs
+the same command; so can a CI job or webhook handler with the new ticket keys.
+
 ## When you disagree
 
 Use `/triage-review`. It records your correction **without altering the original
 recommendation**, because the gap between the two is the entire measurement. Skipping
 this costs you the only feedback loop the system has.
+
+The loop closes with two commands:
+
+| Command | Shows |
+| --- | --- |
+| `/triage-log calibrate` | Repeated override patterns and the change each suggests: a disposition over-applied or missed, an escalation that keeps being lowered (with the config key to look at), overrides clustering in one area or on one reviewer |
+| `/triage-log dashboard` | `triage-reports/accuracy.html`, one page with tabs: overview, dispositions (agent against person), priority, weekly trend, calibration, runs |
+
+Both suggest; neither edits the rubric or a config.
 
 ## When it refuses
 

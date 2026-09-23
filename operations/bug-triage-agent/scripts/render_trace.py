@@ -23,6 +23,11 @@ import argparse, html, json, os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import links  # noqa: E402
+import summary as S  # noqa: E402
+import timeline as TL  # noqa: E402
+import history as H  # noqa: E402
+import dupes as D  # noqa: E402
+import verify_workaround as V  # noqa: E402
 
 SOURCES = ["tracker", "releases", "metrics", "warehouse", "code"]
 DISPOSITIONS = {"defect", "expected_behavior", "config_or_data", "duplicate",
@@ -68,6 +73,9 @@ def validate(r):
     for where, url in _urls(r):
         if not links.safe_url(url):
             p.append(f"{where}: url must be a plain https URL")
+    p += TL.validate(r)
+    p += D.validate(r)
+    p += V.validate(r)
     for i, st in enumerate(r.get("steps") or []):
         for key in ("level", "ghost"):
             if st.get(key) is not None and st[key] not in LEVELS:
@@ -173,7 +181,7 @@ def ladder_svg(steps):
 
 # ------------------------------------------------------------------ page
 
-CSS = """
+CSS = TL.CSS + """
 :root{--bg:#F3F5F4;--surface:#FFFFFF;--ink:#17201C;--muted:#56645E;--rule:#C9D2CE;
 --accent:#0B7A69;--accent-soft:#DCEFEA;--signal:#B4502A;--signal-soft:#F7E5DC;
 --p1:#C73A3A;--p2:#D2701C;--p3:#B08600;--p4:#2E6BC0}
@@ -202,6 +210,9 @@ border-block:1px solid var(--rule)}
 text-transform:uppercase;color:var(--muted)}
 .verdict dd{margin:2px 0 0;font-weight:600}
 .gap{color:var(--signal);font-weight:600}
+.answer{background:var(--accent-soft);border-left:4px solid var(--accent);padding:10px 14px;margin:14px 0;border-radius:4px}
+.answer p{margin:4px 0}
+.stale{background:var(--signal-soft);border-left:4px solid var(--signal);padding:8px 12px;margin:10px 0;border-radius:4px}
 ol.run{list-style:none;margin:0;padding:0;border-left:2px solid var(--rule)}
 ol.run li{position:relative;padding:8px 0 8px 18px}
 ol.run li::before{content:"";position:absolute;left:-7px;top:15px;width:12px;height:12px;
@@ -239,6 +250,9 @@ padding:10px 14px;margin:12px 0}
 .tip{border-left:3px solid var(--accent);background:var(--accent-soft);
 padding:10px 14px;border-radius:0 6px 6px 0}
 .muted{color:var(--muted)}
+.changed{border:1px solid var(--p4);border-radius:6px;padding:8px 14px;margin:10px 0}
+.changed ul{margin:4px 0 0;padding-left:20px}
+.ok{color:var(--accent);font-weight:600}
 footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--rule);
 font-size:12.5px;color:var(--muted)}
 """
@@ -321,6 +335,19 @@ def render(r):
 
     o.append(f'<h1>{head_mark}{links.a(t, r.get("ticket_url"))} · {esc(r["summary"])}</h1>')
 
+    summ = S.summary(r)
+    ans = [f'<p><strong>{esc(summ["verdict"])}</strong></p>']
+    if summ["why"]:
+        ans.append("<p><strong>Why:</strong> " + esc("; ".join(w.rstrip(".") for w in summ["why"])) + ".</p>")
+    if summ["do_now"]:
+        ans.append(f'<p><strong>Do now:</strong> {esc(summ["do_now"])}</p>')
+    o.append('<div class="answer">' + "".join(ans) + "</div>")
+    o.append(H.html_block(r, r.get("_previous") or r.get("previous")))
+    _, stale = S.freshness(r)
+    if stale:
+        o.append('<div class="stale"><strong>Stale data.</strong> ' + esc("; ".join(stale))
+                 + ". Re-check before acting.</div>")
+
     o.append('<dl class="verdict">')
     o.append(f'<div><dt>Disposition</dt><dd><code>{esc(r["disposition"])}</code></dd></div>')
     if defect:
@@ -334,6 +361,12 @@ def render(r):
         from render_fix_brief import assess  # local import: that module imports this one
         ev = assess(r)
         o.append(f'<div><dt>Evidence</dt><dd>{EVIDENCE_MARK[ev["level"]]} {esc(ev["level"])}</dd></div>')
+    corr = S.corroboration(r)
+    if corr:
+        n, live = S.corroboration_line(r)
+        o.append(f'<div><dt>Supported by</dt><dd>{n} of {live} sources: '
+                 + " · ".join(f'{esc(c["source"])} {links.a(c["label"], c["url"])}' for c in corr)
+                 + "</dd></div>")
     if r.get("route"):
         o.append(f'<div><dt>Route to</dt><dd>{esc(r["route"])}</dd></div>')
     o.append("</dl>")
@@ -388,17 +421,20 @@ def render(r):
                  f'seen. {esc(rel.get("basis", ""))} Correlation confidence: '
                  f'<strong>{esc(rel.get("confidence"))}</strong>.</p>')
 
+    o.append(TL.html_section(r))
     o.append(evidence_section(r))
+    o.append(D.html_section(r))
 
     wa = r.get("workaround")
     if wa:
         o.append("<h2>Workaround</h2>")
         o.append(f'<div class="tip"><strong>{esc(wa.get("text"))}</strong><br>'
                  f'Who can do this: {esc(wa.get("who"))} · Source: {esc(wa.get("source"))}'
-                 '</div>')
+                 + (f'<br>{V.html_line(wa)}' if V.html_line(wa) else "") + '</div>')
 
     o.append('<h2>Coverage</h2><div class="tbl"><table><thead><tr><th>Source</th>'
-             '<th>Mode</th><th>Result</th></tr></thead><tbody>')
+             '<th>Mode</th><th>Result</th><th>Data</th></tr></thead><tbody>')
+    ages = {f["source"]: f for f in S.freshness(r)[0]}
     for s in SOURCES:
         src = r["sources"][s]
         mode = src["mode"]
@@ -408,8 +444,10 @@ def render(r):
             res = "not needed, non-defect"
         else:
             res = src.get("note") or src.get("status", "ok")
+        f = ages.get(s) or {}
+        data = ("⚠ " if f.get("stale") else "") + (f.get("note") or (f"read {f['age']} before" if f.get("age") else ""))
         o.append(f'<tr><td>{s}</td><td>{MODE_MARK[mode]} {mode}</td>'
-                 f'<td>{esc(res)}</td></tr>')
+                 f'<td>{esc(res)}</td><td>{esc(data)}</td></tr>')
     o.append("</tbody></table></div>")
 
     un = r.get("unanswered") or []
@@ -445,6 +483,7 @@ def main():
         if a.team_config:
             with open(a.team_config, encoding="utf-8") as cf:
                 links.enrich(r, json.load(cf))
+        H.attach(path, r)
         problems = validate(r)
         if problems:
             print(f"{path}: refusing to render", file=sys.stderr)

@@ -132,5 +132,46 @@
     "pr": "https://github.com/{owner}/{repo}/pull/{number}",
     "ticket": "https://nishantnavjyot.atlassian.net/browse/{key}",
     "//": "Used only when a tool returns no URL. Code links pin to a commit when one is known."
+  },
+  "queue": {
+    "// ": "Triage within these hours or the queue flags the bug overdue and puts it first.",
+    "triage_within_hours": {
+      "at_risk": 4,
+      "default": 48,
+      "by_priority": {
+        "Highest": 8
+      }
+    },
+    "stuck_after_days": 7
+  },
+  "automation": {
+    "// ": "Automatic triage. Off. Turn on with /bug-triage-agent:triage-config demo-live automation. Never writes to the tracker.",
+    "enabled": false,
+    "trigger": "schedule",
+    "schedule": "0 * * * *",
+    "lookback_hours": 72,
+    "max_per_run": 10,
+    "retriage_changed": true,
+    "skip_labels": [
+      "no-auto-triage"
+    ],
+    "tracker_write": "none"
+  },
+  "verification": {
+    "// ": "Workaround check against the demo deployment. Off until enabled. The demo app is synthetic; a real team points this at preview or staging, never production.",
+    "enabled": false,
+    "runner": "http",
+    "environment": "preview",
+    "timeout_seconds": 60,
+    "http": {
+      "base_url": "https://njagents-demo-app.vercel.app",
+      "allow_methods": [
+        "GET"
+      ]
+    }
+  },
+  "calibration": {
+    "min_overrides": 3,
+    "min_rate": 0.3
   }
 }

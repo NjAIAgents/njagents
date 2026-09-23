@@ -13,11 +13,27 @@ An honest account of what is built and what is not.
   four worked results.
 - Deterministic renderers, so the model cannot drift or abbreviate them:
   `run_header.py` (header and team resolution), `render_trace.py` (HTML run trace),
-  `render_queue.py` (bug queue), `render_fix_brief.py` (fix brief with evidence
-  grading), `triage_log.py` (audit log, overrides, accuracy report).
+  `render_queue.py` (bug queue with overdue and stuck flags), `render_fix_brief.py`
+  (fix brief with evidence grading), `render_report.py` (the report), `timeline.py`,
+  `history.py` (what changed since the last triage), `dupes.py` (duplicate scoring),
+  `verify_workaround.py`, `auto_triage.py`, and `triage_log.py` with `calibration.py`
+  (audit log, overrides, accuracy report, calibration suggestions, dashboard).
 - `scripts/validate_config.py`: config validation, contract validation, read-only SQL
   enforcement, credential-shaped key detection, placeholder detection, result files,
   and command and skill front matter.
+
+## Added in 0.7.0
+
+| Change |
+| --- |
+| The report is rendered by script from the result file, like the trace and the fix brief, and opens with verdict, why and do now; "Supported by" lists each independent source with its link; stale or expiring data is flagged |
+| Timeline: deploy, error rise, ticket and triage with the gaps between them, drawn over the error counts in the trace and as a sparkline in the report |
+| Since the last triage: earlier results are archived to `history/`, and a re-run shows what changed and why |
+| Duplicate detection by failure mode: error text, symptom, stack, endpoint, file, area and release, scored by script; a title match alone is never a duplicate; a fixed candidate is a `recurrence` |
+| Queue: triage-within limits per team, overdue bugs first, triaged P1 and P2 with no movement flagged as stuck |
+| Automatic triage (`triage-auto`), off by default, set up in `triage-config`; never writes to the tracker, writes a review digest |
+| Workaround verification, off by default, with an http, docker, ci or command runner; never production |
+| Calibration suggestions from repeated overrides, and an accuracy dashboard with tabs |
 
 ## Added in 0.6.x
 

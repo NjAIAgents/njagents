@@ -345,6 +345,227 @@
           "type": "string"
         }
       }
+    },
+    "queue": {
+      "type": "object",
+      "description": "How long a bug may wait for triage before the queue flags it overdue and puts it first. Unset keys use the defaults.",
+      "properties": {
+        "triage_within_hours": {
+          "type": "object",
+          "properties": {
+            "at_risk": {
+              "type": "number",
+              "default": 24,
+              "description": "Hours for a ticket carrying an at-risk label."
+            },
+            "default": {
+              "type": "number",
+              "default": 72,
+              "description": "Hours for every other ticket."
+            },
+            "by_priority": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "number"
+              },
+              "description": "Hours by the tracker's own priority value, e.g. {\"Critical\": 8}. The shortest applicable limit wins."
+            }
+          }
+        },
+        "stuck_after_days": {
+          "type": "integer",
+          "default": 7,
+          "description": "A ticket triaged as P1 or P2 with no tracker activity for this many days is flagged as stuck."
+        }
+      }
+    },
+    "automation": {
+      "type": "object",
+      "description": "Automatic triage. Off by default. When on, a scheduler or a tracker event runs triage-auto, which triages new and changed bugs unattended and writes a review digest. It never writes to the tracker.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "trigger": {
+          "enum": [
+            "schedule",
+            "event"
+          ],
+          "default": "schedule",
+          "description": "schedule: a scheduled task runs it. event: a tracker webhook or CI job runs it with the new ticket keys."
+        },
+        "schedule": {
+          "type": "string",
+          "default": "0 * * * *",
+          "description": "Five-field cron, for trigger schedule."
+        },
+        "lookback_hours": {
+          "type": "integer",
+          "default": 72,
+          "description": "Only bugs created within this window are picked up, plus any that are overdue."
+        },
+        "max_per_run": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 1,
+          "maximum": 50
+        },
+        "retriage_changed": {
+          "type": "boolean",
+          "default": true,
+          "description": "Re-triage a ticket updated since its last triage."
+        },
+        "skip_labels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "no-auto-triage"
+          ]
+        },
+        "tracker_write": {
+          "enum": [
+            "none"
+          ],
+          "default": "none",
+          "description": "Automatic triage never writes to the tracker. Reserved so that a future opt-in is explicit."
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "description": "Checking that a workaround works before the report recommends it. Off by default. The runner decides where the check runs. Never production.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "runner": {
+          "enum": [
+            "http",
+            "docker",
+            "ci",
+            "command"
+          ],
+          "description": "http: a hosted preview or staging deployment. docker: a local container started and stopped by the commands below. ci: a workflow dispatched through tool_bindings.verification. command: a test command the team wrote."
+        },
+        "environment": {
+          "enum": [
+            "preview",
+            "staging",
+            "local"
+          ],
+          "description": "Where the runner points. production is refused."
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "default": 300
+        },
+        "http": {
+          "type": "object",
+          "properties": {
+            "base_url": {
+              "type": "string"
+            },
+            "allow_methods": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "GET"
+              ]
+            },
+            "headers_from_env": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "description": "Header name to the NAME of an environment variable holding its value. Values are never written here."
+            }
+          }
+        },
+        "docker": {
+          "type": "object",
+          "properties": {
+            "base_url": {
+              "type": "string",
+              "description": "On localhost."
+            },
+            "start": {
+              "type": "string",
+              "description": "e.g. docker compose up -d"
+            },
+            "stop": {
+              "type": "string"
+            },
+            "cwd": {
+              "type": "string"
+            },
+            "wait_seconds": {
+              "type": "integer",
+              "default": 5
+            },
+            "allow_methods": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "GET"
+              ]
+            },
+            "headers_from_env": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "ci": {
+          "type": "object",
+          "properties": {
+            "workflow": {
+              "type": "string"
+            },
+            "ref": {
+              "type": "string",
+              "default": "main"
+            }
+          }
+        },
+        "command": {
+          "type": "object",
+          "properties": {
+            "run": {
+              "type": "string",
+              "description": "{scenario} is replaced by the scenario file path. Exit 0 means the workaround works."
+            },
+            "cwd": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "calibration": {
+      "type": "object",
+      "description": "When the accuracy review suggests a rubric or config change.",
+      "properties": {
+        "min_overrides": {
+          "type": "integer",
+          "default": 3,
+          "description": "Overrides of the same kind needed before a suggestion is made."
+        },
+        "min_rate": {
+          "type": "number",
+          "default": 0.3,
+          "description": "Share of reviewed runs that must disagree the same way."
+        }
+      }
     }
   }
 }

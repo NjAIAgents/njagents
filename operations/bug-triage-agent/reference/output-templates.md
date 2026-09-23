@@ -47,13 +47,17 @@ column always disambiguates it.
 
 ### Callouts
 
+Callouts are quote blocks led by an icon, so they render the same in every markdown
+viewer. The `> [!WARNING]` alert syntax is not used: most viewers show it as a
+literal tag. Scripts produce them through `links.callout()`.
+
 | Callout | Used for, and only for |
 | --- | --- |
-| `> [!WARNING]` | Demo data banner. Any source on fixtures. |
-| `> [!CAUTION]` | A source in `error`, or **weak or moderate location evidence**. Placed above Recommendation. Both say the same thing: do not act on this blindly. |
-| `> [!IMPORTANT]` | A priority gap against the tracker's current value. |
-| `> [!TIP]` | The workaround. |
-| `> [!NOTE]` | The closing reminder that nothing was written to the tracker. |
+| `> ⚠️ …` | Demo data banner. Any source on fixtures. |
+| `> 🛑 …` | A source in `error`, or **weak or moderate location evidence**. Placed above Recommendation. Both say the same thing: do not act on this blindly. |
+| `> ❗ …` | A priority gap against the tracker's current value. |
+| `> 💡 …` | The workaround. |
+| `> ℹ️ …` | The closing reminder that nothing was written to the tracker. |
 
 One callout per purpose per report. A report where everything is highlighted has
 highlighted nothing.
@@ -74,6 +78,12 @@ Dispositions, escalation classes and field names stay in code spans, `defect`,
 the answer: the priority, the disposition, the route.
 
 ---
+
+Every surface opens with the same three lines, computed by `scripts/summary.py` from
+the result file: the **verdict**, **why** (the deciding factor), and **do now** (the
+workaround and who can do it, or the route). Then **Supported by**: the independent
+sources that back the verdict, each linked, as "N of M sources". Stale data gets a
+warning callout above everything.
 
 ## 1. Chat summary
 
@@ -114,14 +124,16 @@ Rules:
 - If any source is on fixtures, the message opens with the demo banner:
 
   ```markdown
-  > [!WARNING]
-  > **Demo data.** tracker, metrics are on fixtures. Not live figures.
+  > ⚠️ **Demo data.** tracker, metrics are on fixtures. Not live figures.
   ```
 
 ## 2. Report file
 
-Written to `output.reports_dir`, default `triage-reports/`, as `<TICKET>.md`.
-Overwritten on a re-run; the audit log keeps the history.
+Rendered by `scripts/render_report.py` from `<TICKET>.result.json`, never written by
+hand, to `output.reports_dir` (default `triage-reports/`) as `<TICKET>.md`. Overwritten
+on a re-run; the audit log keeps the history. The layout below is what the script
+produces, with the summary block after the title and a **Supported by** row and a
+**Data** column (age of each source's data) added.
 
 ````markdown
 # 🟠 P2 · BUG-4830 — Approval step fails silently for Northwind Co when submitted via API
@@ -141,8 +153,7 @@ Triaged 2026-09-21 14:22 UTC · team `demo` · agent 0.4.2
 
 **Deciding factor:** confirmed regression with error swallowing at the bug site.
 
-> [!IMPORTANT]
-> **Priority gap.** The tracker has this at "Minor". Recommended "Critical".
+> ❗ **Priority gap.** The tracker has this at "Minor". Recommended "Critical".
 
 ## Why this is a defect
 
@@ -175,8 +186,7 @@ both the release manifest and the candidate paths. Adapters: `tracker_fixversion
 
 ## Workaround
 
-> [!TIP]
-> **Re-submit the approval through the UI rather than the API.**
+> 💡 **Re-submit the approval through the UI rather than the API.**
 >
 > **Who can do this:** support · **Cost:** a few clicks · **Source:** BUG-4701 resolution notes
 > **Does not cover:** bulk approvals submitted by integration.
@@ -208,8 +218,7 @@ labels    → component:approvals, severity:p2
 assignee  → Approvals Team
 ```
 
-> [!NOTE]
-> Nothing has been written to the tracker. Confirm before posting.
+> ℹ️ Nothing has been written to the tracker. Confirm before posting.
 ````
 
 ### Report rules
@@ -218,13 +227,12 @@ assignee  → Approvals Team
   section. No priority section, no correlation section unless one was gathered.
 - **Unanswered** replaces **Coverage** rows where a source was `off`, and the report
   says which questions went unanswered and what they would have changed.
-- A source in `error` gets a `> [!CAUTION]` callout at the **top**, above
+- A source in `error` gets a `> 🛑` callout at the **top**, above
   Recommendation, naming the source and the error.
 - When the evidence is not strong, the callout reads, for example:
 
   ```markdown
-  > [!CAUTION]
-  > Evidence for where this bug lives is **weak**. Confirm the location before changing
+  > 🛑 Evidence for where this bug lives is **weak**. Confirm the location before changing
   > code. If it cannot be confirmed, report back rather than opening a pull request
   > against a guess.
   > - code search was off, so no file or line was checked for a fault signal
@@ -235,7 +243,7 @@ assignee  → Approvals Team
   `python3 <plugin root>/scripts/render_fix_brief.py --assess <result.json>` and add an
   `Evidence` row to the Recommendation table with its marker and level. When the level
   is not `strong`, place its `caution` text and `missing` list verbatim in a
-  `> [!CAUTION]` callout above Recommendation. Never soften, reword or omit it: the
+  `> 🛑` callout above Recommendation. Never soften, reword or omit it: the
   report, the trace and the fix brief must show the same verdict, and a fixer or
   reviewer reading any one of them must learn that the location is unconfirmed.
   Priority confidence and location evidence are separate: a confident P2 can still

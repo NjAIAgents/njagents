@@ -59,16 +59,22 @@ def short(text, limit=MAX_LABEL):
     return text if len(text) <= limit else text[: limit - 1] + "…"
 
 
+def _md_url(url):
+    """Parentheses end a markdown link early, and log-query URLs are full of them."""
+    url = safe_url(url)
+    return url.replace("(", "%28").replace(")", "%29") if url else None
+
+
 def md(label, url):
     label = short(label).replace("[", "(").replace("]", ")")
-    url = safe_url(url)
+    url = _md_url(url)
     return f"[{label}]({url})" if url else label
 
 
 def md_code(label, url):
     """A code-formatted label that is also a link: [`File.ts:89`](url)."""
     label = short(label).replace("`", "'")
-    url = safe_url(url)
+    url = _md_url(url)
     return f"[`{label}`]({url})" if url else f"`{label}`"
 
 
@@ -79,6 +85,19 @@ def a(label, url, code=False):
     url = safe_url(url)
     return (f'<a href="{html.escape(url, quote=True)}" target="_blank" rel="noopener">{text}</a>'
             if url else text)
+
+
+# Callouts that render the same in every markdown viewer. The `> [!WARNING]` alert
+# syntax shows as a literal tag in most viewers, so it is not used.
+CALLOUT = {"warning": "⚠️", "caution": "🛑", "important": "❗", "note": "ℹ️", "tip": "💡"}
+
+
+def callout(kind, first, *more):
+    """A quote block led by an icon: callout("warning", "**Stale data.** …", "- detail")."""
+    lines = [f"> {CALLOUT[kind]} {first}"]
+    for m in more:
+        lines.append(f"> {m}" if m else ">")
+    return lines
 
 
 def location_label(loc):

@@ -1,6 +1,6 @@
 ---
 name: bug-triage
-description: "Triage a bug ticket end to end. Disposition first, then release correlation, workaround discovery and priority scoring, with an audit log entry. Use when the user asks to triage a ticket, prioritize bugs, analyse a tracker bug, or asks what priority a bug should be. Triggers include \"triage ABC-1234\", \"priorizá estos bugs\", \"qué prioridad tiene\", \"is this a bug or expected behavior\", \"which release broke this\". A bare ticket key is a request to triage it. A bare word routes to its skill without asking - queue to triage-queue, log to triage-history, doctor to triage-readiness, config to triage-config, review to triage-override."
+description: "Triage a bug ticket end to end. Disposition first, then release correlation, workaround discovery and priority scoring, with an audit log entry. Use when the user asks to triage a ticket, prioritize bugs, analyse a tracker bug, or asks what priority a bug should be. Triggers include \"triage ABC-1234\", \"priorizá estos bugs\", \"qué prioridad tiene\", \"is this a bug or expected behavior\", \"which release broke this\". A bare ticket key is a request to triage it. A bare word routes to its skill without asking - queue to triage-queue, log to triage-history, doctor to triage-readiness, config to triage-config, review to triage-override, auto to triage-auto."
 ---
 
 # Bug triage
@@ -23,6 +23,7 @@ skill instead on such a client.
 | `/triage-log` | `triage-history` |
 | `/triage-review` | `triage-override` |
 | `/release-impact` | `release-correlation` |
+| `/triage-auto` | `triage-auto` |
 
 ## Setup
 
@@ -176,7 +177,15 @@ Skip nothing here. If `tracker` is unavailable, stop: without it there is no tri
 
 ## Stage 2: disposition
 
-Run `skills/triage-disposition` against the Stage 1 envelopes.
+Run `skills/triage-disposition` against the Stage 1 envelopes. Its duplicate check is
+scored by script, not by eye: write the tracker envelope to
+`<working folder>/<reports_dir>/<TICKET>.tracker.json` and run
+
+    python3 <plugin root>/scripts/dupes.py --tracker <that file> --links-config <resolved team config>
+
+Put its output in the result file as `duplicate_check`. Call a ticket `duplicate` only
+when a candidate scored `duplicate`; a `recurrence` is the same failure coming back
+after a fix, which is a defect with a prior fix, not a duplicate to close.
 
 If the result is anything other than `defect`, emit the disposition output with the
 release context already gathered, route per the taxonomy, log, and stop. No priority
@@ -221,6 +230,26 @@ for a source that was `off`: no agent was spawned for it.
 Run `skills/release-correlation` and `skills/workaround-finder` across everything
 gathered in Stages 1 and 3.
 
+**Workaround verification**, only when the team config has `verification.enabled:
+true` and a workaround was found. Write `<reports_dir>/<TICKET>.scenario.json` from the
+ticket's reproduction steps and the workaround (shape in `scripts/verify_workaround.py`),
+using only paths and values the ticket or the evidence states. Then:
+
+    python3 <plugin root>/scripts/verify_workaround.py run --team-config <resolved team config> \
+        --scenario <scenario file> --result <result file, once written in Stage 5>
+
+For the `ci` runner, dispatch the workflow through `tool_bindings.verification.dispatch`
+in a subagent, wait for its outcome, and record it with `verify_workaround.py record`.
+A workaround that fails verification is reported as not working, and does not count as
+practical for the rubric. `not_reproduced` proves nothing either way: say so. When
+verification is off, say nothing about it.
+
+**Timeline.** From the envelopes already gathered, keep the events with timestamps: the
+release or deploy, the error rise and first error from metrics, the ticket's creation.
+Record them as `timeline`, and the metrics envelope's bucketed counts as `series`
+(shapes in `reference/run-visibility.md`). Only what a source returned; never
+interpolate a point or an event.
+
 ## Stage 4: classify
 
 
@@ -237,18 +266,36 @@ switched off.
 
 ## Stage 5: output and log
 
-These surfaces, all defined in [`reference/output-templates.md`](../../reference/output-templates.md):
+These surfaces, all defined in [`reference/output-templates.md`](../../reference/output-templates.md).
+**If a result file for this ticket already exists, archive it first,** so the report
+can say what changed since the last triage:
 
-1. **Chat summary.** Always. Lead with the answer, one line of arithmetic, a pointer
-   to the report. Ten seconds to read.
-2. **Report file.** Written to `<working folder>/<output.reports_dir>/<TICKET>.md`
-   when `output.write_report` allows. Never inside the plugin, which is read-only once
-   installed. Say where you wrote it.
+    python3 <plugin root>/scripts/history.py archive <working folder>/<reports_dir>/<TICKET>.result.json
+
+When the verdict changed, set `why_changed` in the new result to one sentence saying
+what made the difference (a source that came online, new evidence, an override).
+
+**Write the result file first:** `<working folder>/<reports_dir>/<TICKET>.result.json`,
+in the shape defined in [`reference/run-visibility.md`](../../reference/run-visibility.md).
+The report, the trace and the fix brief are all rendered from it by scripts, so they
+agree. Record for each source when it was read (`as_of`), and for metrics the oldest
+data point used (`data_from`) and how long the source keeps data (`retention_days`),
+so stale evidence is flagged. Set `deciding_factor` to the one reason that decided the
+verdict, in a sentence.
+
+1. **Chat summary.** Always. Start with the same three lines the report opens with
+   (verdict, why, do now), then the "Supported by" line with its links, one line of
+   arithmetic, and a pointer to the report. Ten seconds to read.
+2. **Report file.** When `output.write_report` allows, render it:
+
+       python3 <plugin root>/scripts/render_report.py --out <working folder>/<reports_dir> \
+           --team-config <resolved team config> <working folder>/<reports_dir>/<TICKET>.result.json
+
+   **Never hand-write the report.** It is written to `<reports_dir>/<TICKET>.md`, never
+   inside the plugin. Say where you wrote it.
 3. **Tracker comment.** Generated as plain text. Never posted without explicit
    per-ticket confirmation in the conversation.
-4. **Run trace.** Unless `output.run_trace` is `never`, write the structured result to
-   `<working folder>/<reports_dir>/<TICKET>.result.json` in the shape defined in
-   [`reference/run-visibility.md`](../../reference/run-visibility.md), then run:
+4. **Run trace.** Unless `output.run_trace` is `never`, render it from the result file:
 
        python3 <plugin root>/scripts/render_trace.py --out <working folder>/<reports_dir> \
            --team-config <resolved team config> <working folder>/<reports_dir>/<TICKET>.result.json
@@ -292,7 +339,11 @@ Then append the audit record:
         --log <working folder>/triage-logs/triage-log.jsonl \
         append --ticket <KEY> --team <team> \
         --disposition <d> [--priority <P>] --confidence <c> --modes <src=mode,...> \
-        [--escalations ...] [--unanswered ...] [--source-errors ...] [--flags ...]
+        [--escalations ...] [--unanswered ...] [--source-errors ...] [--flags ...] \
+        [--area <component>]
+
+Pass `--area` whenever the ticket has a component: calibration uses it to see whether
+overrides cluster in one area.
 
 `append` refuses a non-defect carrying a priority. If it refuses, the pipeline made a
 mistake: a disposition other than `defect` must never have reached scoring.

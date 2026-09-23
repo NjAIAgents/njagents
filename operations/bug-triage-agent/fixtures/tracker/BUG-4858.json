@@ -9,7 +9,7 @@
     "ticket": {
       "key": "BUG-4858",
       "summary": "Amount column misaligned in the reporting export header",
-      "description": "CSV export header row shifted one column right for the amount field. Values are correct, header labels are off by one. Repro: export any report, open in a spreadsheet.",
+      "description": "CSV export header row shifted one column right for the amount field. Values are correct, header labels are off by one. Repro: export any report, open in a spreadsheet. Started with 2026.09.",
       "component": "reporting",
       "priority": "Major",
       "labels": [],
@@ -23,7 +23,29 @@
         "key": "BUG-4849",
         "summary": "Reporting CSV header offset after a column was added",
         "similarity": "high",
-        "why": "Same failure mode: header row offset by one after the amount column was added in v2026.09."
+        "why": "Same failure mode: header row offset by one after the amount column was added in v2026.09.",
+        "status": "Open",
+        "component": "reporting",
+        "description": "Since 2026.09 the CSV export header row is shifted one column right for the amount field. Values are correct, header labels are off by one. Seen in ReportExportService.ts after the amount column was added."
+      },
+      {
+        "key": "BUG-4790",
+        "summary": "Amount column misaligned in the reporting export PDF",
+        "similarity": "medium",
+        "why": "Similar title; the PDF renderer wraps long amounts. Different failure.",
+        "status": "Open",
+        "component": "reporting",
+        "description": "PDF export wraps amounts longer than nine digits onto a second line, so the table looks misaligned. Only in PDF, CSV is fine. PdfTableRenderer.ts sets a fixed column width."
+      },
+      {
+        "key": "BUG-4611",
+        "summary": "Export header labels in wrong language",
+        "similarity": "low",
+        "why": "Same area, different failure.",
+        "status": "Done",
+        "resolution": "Fixed",
+        "component": "reporting",
+        "description": "Header labels ignore the account locale and always render in English."
       }
     ],
     "component_history": {

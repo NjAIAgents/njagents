@@ -33,6 +33,7 @@ each rule is defined**, so you never have to guess which file wins.
 | [Extending](docs/07-extending.md) | Where a change belongs, adding sources and adapters |
 | [Glossary](docs/08-glossary.md) | Terms that mean something specific here |
 | [Examples](docs/09-examples.md) | Worked runs to copy, with expected output |
+| [Changelog](CHANGELOG.md) | What changed in every release |
 
 ## Quick start
 

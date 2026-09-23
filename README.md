@@ -183,6 +183,8 @@ One shared rubric governs every team; a team owns exactly one configuration file
 for worked examples you can run, and
 `operations/bug-triage-agent/STATUS.md` for an honest account of what is built, what
 has been exercised, and what does not exist yet.
+[`operations/bug-triage-agent/CHANGELOG.md`](operations/bug-triage-agent/CHANGELOG.md)
+summarises every release.
 
 ## Repository structure
 
@@ -200,6 +202,7 @@ njagents/
     └── bug-triage-agent/
         ├── README.md
         ├── STATUS.md
+        ├── CHANGELOG.md
         ├── docs/                  full documentation, 01 to 09
         ├── plugin.json            Agent Plugins manifest (Codex, ChatGPT)
         ├── .claude-plugin/        Claude Code and Cowork manifest

@@ -29,6 +29,10 @@ demo and production have diverged and the contract is no longer enforced.
 
 ## Packaging
 
+Every release adds an entry to [`CHANGELOG.md`](../CHANGELOG.md): the version, the
+date, a one-line summary, then Added, Changed and Fixed. The validator fails when the
+manifest version has no entry.
+
 ```bash
 cd <repo root>
 ./package-plugin.sh operations/bug-triage-agent

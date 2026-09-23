@@ -1,6 +1,7 @@
 # Status
 
-An honest account of what is built and what is not.
+An honest account of what is built and what is not. Release notes for every version
+are in [CHANGELOG.md](CHANGELOG.md).
 
 ## Built and verified
 

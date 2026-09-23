@@ -270,6 +270,16 @@ def check_manifests():
             err(".codex-plugin/plugin.json: no 'skills' path, so Codex and ChatGPT load no skills")
         elif not os.path.isdir(os.path.join(ROOT, sk)):
             err(f".codex-plugin/plugin.json: skills path {sk} does not exist")
+    # Every release carries a changelog entry, so the version a user installs says what changed.
+    versions = {v for _, v in seen.values() if v}
+    cl = os.path.join(ROOT, "CHANGELOG.md")
+    if not os.path.exists(cl):
+        err("CHANGELOG.md is missing")
+    else:
+        text = open(cl, encoding="utf-8").read()
+        for v in versions:
+            if not re.search(rf"^## {re.escape(v)} ", text, re.M):
+                err(f"CHANGELOG.md has no entry for {v}, the version in the manifests")
     root_mf = os.path.join(ROOT, "plugin.json")
     if os.path.exists(root_mf):
         d = json.load(open(root_mf))

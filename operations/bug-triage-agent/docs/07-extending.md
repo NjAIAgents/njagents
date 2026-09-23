@@ -9,6 +9,9 @@ Ask what kind of thing you are changing. This decides everything.
 | A team's project key, tables, repos, routing | `teams/<team>.json` | That team |
 | Which sources a team runs | `teams/<team>.json` | That team |
 | Release adapters and their order | `teams/<team>.json` | That team |
+| Queue limits, automation, verification runner | `teams/<team>.json` | That team |
+| Duplicate scoring weights and thresholds | `scripts/dupes.py`, with a guard in `validate_config.py` | Shared-core owner |
+| A new report section | The result field in `reference/run-visibility.md`, then the renderers | Shared-core owner |
 | A new disposition, or changed evidence rules | `reference/disposition-taxonomy.md` | Shared-core owner |
 | Priority criteria, escalation classes, caps | `reference/priority-rubric.md` | Shared-core owner |
 | Output format | `reference/output-templates.md` | Shared-core owner |

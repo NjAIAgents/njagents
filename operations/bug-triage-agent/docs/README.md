@@ -33,13 +33,16 @@ bug: file it or delete it.
 | Per-component procedure | the matching `skills/*/SKILL.md` |
 | What a team config may contain | [`teams/team-config.schema.json`](../teams/team-config.schema.json) |
 | What is built, unexercised, or missing | [`STATUS.md`](../STATUS.md) |
+| What changed in each release | [`CHANGELOG.md`](../CHANGELOG.md) |
+| The shape of a result file, and every field a renderer reads | [`reference/run-visibility.md`](../reference/run-visibility.md) |
 | Principles governing the whole repository | [`.specify/memory/constitution.md`](../../../.specify/memory/constitution.md) |
 
 ## A caution before you rely on any of this
 
 Most of this plugin is instructions an agent follows at runtime, not code that
-executes deterministically. The header, trace, queue, fix brief and log are rendered by
-scripts and are deterministic; the judgment is not. It has been run on the recorded
+executes deterministically. The header, report, trace, queue, fix brief, digest, log
+and dashboard are rendered by scripts and are deterministic, as are duplicate scoring
+and workaround verification; the judgment is not. It has been run on the recorded
 fixtures and a live Jira demo, which is not the same as production use.
 [`STATUS.md`](../STATUS.md) separates what is verified from what is merely written.
 Read it before promising anything to anyone.

@@ -131,9 +131,18 @@ Rules:
 
 Rendered by `scripts/render_report.py` from `<TICKET>.result.json`, never written by
 hand, to `output.reports_dir` (default `triage-reports/`) as `<TICKET>.md`. Overwritten
-on a re-run; the audit log keeps the history. The layout below is what the script
-produces, with the summary block after the title and a **Supported by** row and a
-**Data** column (age of each source's data) added.
+on a re-run; the earlier result is archived to `history/` first and the audit log keeps
+the history. The layout below is what the script produces, with these additions, each
+shown only when its data exists:
+
+- the summary block (verdict, why, do now) right after the title
+- **Since the last triage**, after the summary, on a re-triaged ticket
+- a **Supported by** row in Recommendation
+- **Duplicate check**, after the disposition evidence
+- **Timeline**, after release correlation: a sparkline over the error counts with
+  numbered event markers, and a table of events with the gaps between them
+- a verification line in the Workaround callout, when the team verifies workarounds
+- a **Data** column in Coverage (age of each source's data)
 
 ````markdown
 # 🟠 P2 · BUG-4830 — Approval step fails silently for Northwind Co when submitted via API
@@ -248,6 +257,10 @@ assignee  → Approvals Team
   reviewer reading any one of them must learn that the location is unconfirmed.
   Priority confidence and location evidence are separate: a confident P2 can still
   have weak evidence about which file to change.
+- A disposition of `duplicate` requires a candidate the duplicate check scored
+  `duplicate`. A title match is never enough.
+- A workaround that failed verification is stated as not working. `not_reproduced`
+  is stated as proving nothing.
 - Never include a section with nothing in it. Omit it.
 
 ## 3. Tracker comment

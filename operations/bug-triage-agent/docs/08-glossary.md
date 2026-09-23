@@ -24,6 +24,16 @@ Terms that mean something specific here.
 | **Unanswered question** | A classification question whose source was off or errored. Lowers confidence; never raises priority |
 | **Zero-setup tier** | Running with the tracker and releases only. The adoption path, not a degraded mode |
 | **Shared core** | `skills/` and `reference/`. Versioned, never forked, and never names a product or customer |
-| **Team config** | The single file a team owns under `teams/` |
+| **Team config** | The single file a team owns, in its own repo under `triage-teams/` |
 | **Override** | A human correcting a recommendation, recorded without altering the original. The gap between them is the measurement |
+| **Recurrence** | A duplicate candidate with the same failure that was already fixed. The ticket stays a defect, and that fix becomes a prior fix, rather than being closed as a duplicate |
+| **Duplicate check** | Scoring each candidate on error text, symptom, stack, endpoint, file, area and release. A title match alone never makes a duplicate |
+| **Result file** | `<TICKET>.result.json`, the one record of a triage. The report, trace, fix brief and digest are rendered from it by scripts |
+| **Since the last triage** | The block that opens a re-triaged ticket's report: what changed in verdict, evidence, sources and workaround, compared with the archived earlier result |
+| **Timeline** | Dated events from the sources (deploy, error rise, ticket, triage) with the gaps between them, drawn over the error counts |
+| **Overdue** | An untriaged bug older than the team's triage-within limit. Listed first in the queue |
+| **Stuck** | A ticket triaged P1 or P2 with no tracker activity for `stuck_after_days` |
+| **Automatic triage** | Unattended triage on a schedule or tracker event. Off by default; never writes to the tracker; produces a review digest |
+| **Workaround verification** | Running the ticket's reproduction and the workaround against preview, staging or local before recommending it. Off by default; never production |
+| **Calibration** | Turning repeated overrides into suggested rubric or config changes. It suggests; a person decides |
 | **Calibration set** | Real tickets with the disposition an expert gave, used to measure agreement per class |

@@ -73,7 +73,7 @@ Five runs is five runs.
 
 | Missing | Why it matters |
 | --- | --- |
-| Event trigger | The agent runs when a person types a command. The requirement is that it acts when a ticket is submitted. Needs real code. |
+| Live event trigger | Since 0.7.0, `/triage-auto` runs on a schedule or a tracker event, off by default. It has run on fixtures only; no webhook or scheduled task has driven it against the live demo yet. |
 | Validated taxonomy | The shipped disposition taxonomy is a construction, not any organization's actual judgment. Replace it via interviews plus a changelog-derived benchmark. |
 | Live warehouse | Tracker, releases (GitHub), metrics (Grafana Loki, Vercel) and code (GitHub) are bound live for the demo. The warehouse has only run on fixtures. |
 
@@ -94,10 +94,10 @@ core and exist in one copy.
 
 | Component | Claude (Cowork, Claude Code) | Cursor | Codex / ChatGPT |
 | --- | --- | --- | --- |
-| `skills/` (11), one behind every command | yes | yes | yes |
+| `skills/` (12), one behind every command | yes | yes | yes |
 | `reference/`, `teams/`, `fixtures/` | yes | yes | yes |
 | MCP servers | yes | yes | yes |
-| `commands/` (7) | yes | yes | **no** |
+| `commands/` (8) | yes | yes | **no** |
 | `agents/` (4) | yes | yes | **no** |
 | **Installed and run** | **yes** | **yes** (2026-09-22, queue on the demo team) | Installed; skills load since 0.6.4. A regular ChatGPT chat cannot run them (no tool, no shell). A Codex task with a folder is untested |
 
@@ -145,8 +145,9 @@ as unconfigured. Only the tracker entry is needed for the zero-setup tier.
 
 Demo: runs on fixtures and on a live Jira project, with recorded expectations, a
 queue, fix briefs and an audit log.
-Production: still roughly half. The event trigger does not exist, the taxonomy is
-unvalidated, and only the tracker has run against a live source.
+Production: still roughly half. Automatic triage and workaround verification exist
+but have run only on fixtures and local tests, the taxonomy is unvalidated, and the
+warehouse has never run against a live source.
 
 ## Do not
 

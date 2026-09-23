@@ -54,6 +54,13 @@ workaround verification and a calibration loop.
   match never scores as a duplicate, production verification is refused, and automatic
   triage cannot write to the tracker.
 
+### Documentation
+- The architecture diagram shows duplicate scoring, workaround verification, the result
+  file as the single source for every output, history, and automatic triage. A new
+  feedback-loop diagram covers queue, triage, review, calibration and dashboard.
+- Overview, glossary, extending guide, documentation index, output templates and status
+  are updated for 0.7.0.
+
 ## 0.6.7 · 2026-09-23
 
 **Summary:** every piece of evidence links to its source, behind a short label.

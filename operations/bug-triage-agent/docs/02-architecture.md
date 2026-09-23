@@ -7,45 +7,80 @@ This page explains the shape and the reasoning behind it.
 
 ```mermaid
 flowchart TD
-  CMD["/triage TICKET --team id"] --> SET["Setup<br/>run_header.py prints every source and its mode"]
-  CFG[("teams/ID.json<br/>modes · bindings · SQL")] -. reads .-> SET
+  CMD["/triage TICKET"] --> SET
+  SCH["Scheduler or tracker event<br/>(automation.enabled, off by default)"] --> AUTO["/triage-auto<br/>auto_triage.py plan: new, changed, overdue"]
+  AUTO --> SET["Setup<br/>run_header.py prints every source and its mode"]
+  CFG[("triage-teams/ID.json<br/>modes · bindings · queue ·<br/>automation · verification")] -. reads .-> SET
   SET --> G0{"Stage 0<br/>information gate"}
   G0 -- "missing repro, component or error" --> X0["Return to reporter"]
   G0 -- complete --> S1["Stage 1 · base enrichment, always<br/>enrich-tracker + release adapters"]
   TR[("Tracker connector<br/>the one required source")] -. reads .-> S1
   S1 -- "tracker absent" --> X1["Stop: no tracker, no triage"]
-  S1 -- envelopes --> D{"Stage 2<br/>disposition: is it a defect?"}
+  S1 -- envelopes --> DUP["dupes.py<br/>score candidates by failure mode"]
+  DUP --> D{"Stage 2<br/>disposition: is it a defect?"}
   D -- "no: expected_behavior · config_or_data ·<br/>duplicate · voice_of_customer" --> ND["Route and log<br/>no priority, Stage 3 never runs"]
   D -- "yes: defect" --> F(("parallel"))
-  F --> M["enrich-metrics<br/>spike vs rolling median"]
+  F --> M["enrich-metrics<br/>spike, deploys, error series"]
   F --> W["enrich-warehouse<br/>accounts via team SQL"]
   F --> K["enrich-code<br/>swallowed errors, stubs"]
   M --> J(("join"))
   W --> J
   K --> J
   J --> RW["release-correlation · workaround-finder"]
+  RW --> VER["verify_workaround.py<br/>http · docker · ci · command<br/>never production"]
   RW -- evidence --> S4["Stage 4 · classify<br/>10 questions → base<br/>+1 per class, at most +2<br/>at-risk P2 floor · never P1 by escalation"]
+  VER -. "failed: workaround not practical" .-> S4
   RB[("priority-rubric.md<br/>shared, never forked")] -. rules .-> S4
-  S4 --> OUT["Stage 5 · output + log"]
-  ND --> OUT
-  OUT --> O1["chat summary"]
-  OUT --> O2["report .md"]
-  OUT --> O3["run trace<br/>render_trace.py"]
-  OUT -. "only after a person says yes" .-> O4["tracker comment"]
-  OUT --> O5["audit log<br/>triage_log.py refuses a scored non-defect"]
+  S4 --> RES["Stage 5 · TICKET.result.json<br/>the one source of truth"]
+  ND --> RES
+  HIST[("history/<br/>earlier results")] -. "since the last triage" .-> RES
+  RES --> O2["report .md<br/>render_report.py"]
+  RES --> O3["run trace .html<br/>render_trace.py, timeline chart"]
+  RES --> O6["fix brief .md<br/>defects only"]
+  RES --> O1["chat summary"]
+  RES --> O5["audit log<br/>triage_log.py refuses a scored non-defect"]
+  RES -. "only after a person says yes,<br/>never from /triage-auto" .-> O4["tracker comment"]
+  RES -. "automatic runs" .-> DIG["review digest<br/>triage-reports/auto/"]
 
   classDef gate fill:#DCEFEA,stroke:#0B7A69,stroke-width:2px,color:#17201C
   classDef stop fill:#F7E5DC,stroke:#B4502A,color:#17201C
   classDef cond stroke-dasharray:5 4
   class D,G0 gate
   class X0,X1,ND,O4 stop
-  class M,W,K cond
+  class M,W,K,VER,AUTO,SCH cond
 ```
 
-Dashed enrichment boxes run only when their source is not `off`; each `live` source
-gets its own subagent, and `fixture` sources are read directly. The disposition
-diamond is the design: a non-defect leaves with no priority, and the audit log refuses
-to record one that carries a priority.
+Dashed boxes are conditional. Enrichment runs only when its source is not `off`; each
+`live` source gets its own subagent, and `fixture` sources are read directly.
+Verification and automatic triage run only when the team config turns them on. The
+disposition diamond is the design: a non-defect leaves with no priority, and the audit
+log refuses to record one that carries a priority.
+
+Every output after Stage 5 is rendered by a script from the one result file, so the
+report, the trace, the fix brief and the digest cannot disagree. Before a re-run writes
+a new result, `history.py` archives the old one, and the report opens with what changed.
+
+## The feedback loop
+
+```mermaid
+flowchart LR
+  Q["/queue<br/>overdue first, stuck flagged"] --> T["/triage or /triage-auto"]
+  T --> LOG[("triage-logs/<br/>triage-log.jsonl")]
+  T --> P["Person reads report or digest"]
+  P -- "agrees or corrects" --> REV["/triage-review<br/>override with reason"]
+  REV --> LOG
+  LOG --> CAL["/triage-log calibrate<br/>repeated override patterns"]
+  LOG --> DASH["/triage-log dashboard<br/>accuracy page with tabs"]
+  CAL -. "suggests, never edits" .-> CHG["Team config change<br/>via /triage-config"]
+  CAL -. "suggests, never edits" .-> RUB["Rubric or taxonomy change<br/>reviewed like code"]
+  CHG --> T
+  RUB --> T
+  LOG -. "last triage per ticket" .-> Q
+```
+
+The gap between what the agent recommended and what a person decided is the only
+measurement the system has. The loop turns that gap into proposed changes, and a person
+decides which to make.
 
 ### Why the stages sit in that order
 
@@ -134,15 +169,16 @@ per-ticket confirmation before anything is written.
 
 | Directory | Holds | Loaded by |
 | --- | --- | --- |
-| `skills/` | Orchestrator, five component skills, triage-config setup, and the queue | all three clients |
+| `skills/` | Orchestrator, five component skills, triage-config setup, the queue, the log and override skills, readiness, and automatic triage | all three clients |
 | `reference/` | Taxonomy, rubric, output templates, run visibility, calibration guide | read by the skills |
 | `agents/` | One enrichment subagent per source, `tools: ["*"]` | Claude, Cursor |
-| `commands/` | Thin wrappers: triage, queue, triage-log, triage-config, release-impact, doctor, review | Claude, Cursor |
+| `commands/` | Thin wrappers: triage, queue, triage-log, triage-config, release-impact, doctor, review, triage-auto | Claude, Cursor |
 | `teams/` | Shipped demo configs, schema and example. A team's own config lives in its repo under `triage-teams/`, found first | read by the skills |
 | `fixtures/` | Recorded envelopes, and worked result files under `results/` | demo mode, tests |
-| `scripts/` | `run_header.py` header, `render_trace.py` trace, `render_queue.py` queue, `triage_log.py` audit, `validate_config.py` build gate | runtime, CI, packaging |
+| `scripts/` | Header (`run_header.py`); renderers for the report, trace, fix brief and queue; shared `summary.py`, `links.py`, `timeline.py`, `history.py`; `dupes.py` duplicate scoring; `verify_workaround.py`; `auto_triage.py`; `triage_log.py` with `calibration.py`; `validate_config.py` build gate | runtime, CI, packaging |
 | `logs/` | Unused at runtime. The audit log lives in the working folder, `triage-logs/`, because an installed plugin is read-only | none |
 
-The header and the trace are rendered by code, not written by the model. Both were
-first model-written, and a real run showed the header abbreviated and the traces not
-produced at all.
+The header, the report, the trace, the fix brief, the queue and the digest are all
+rendered by code, not written by the model. The header and the trace were first
+model-written, and a real run showed the header abbreviated and the traces not produced
+at all; the report followed in 0.7.0 for the same reason.

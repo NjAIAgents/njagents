@@ -30,7 +30,14 @@ Given a bug ticket, in order:
    does not unblock a customer.
 5. **Scores priority** for defects only, showing its arithmetic.
 6. **Logs the recommendation** so the gap between it and the human's final call can be
-   measured.
+   measured, and suggests rubric or config changes when the same correction keeps
+   recurring.
+
+Around that, it keeps a queue with overdue bugs first, detects duplicates by failure
+mode rather than by title, shows what changed since a ticket's last triage, and draws
+the regression timeline. Two capabilities are opt-in per team and off by default:
+automatic triage on a schedule or tracker event, and checking a workaround in preview,
+staging or local before recommending it.
 
 ## Four design decisions, and why
 
@@ -55,7 +62,10 @@ wrongly closing a real bug costs more than wrongly scoring a non-bug.
 ## What it deliberately does not do
 
 - **Write to the tracker on its own.** Output is paste-ready text and a field
-  checklist. Posting needs per-ticket confirmation.
+  checklist. Posting needs per-ticket confirmation. Automatic triage writes a review
+  digest instead and never posts.
+- **Touch production to test a workaround.** Verification runs only against preview,
+  staging or local.
 - **Replace incident management.** It detects a P1 signal and emits an escalation
   block. Your incident process takes it from there.
 - **Fix bugs.** No code generation, no auto-fix pull requests.

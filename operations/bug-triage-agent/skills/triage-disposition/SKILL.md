@@ -14,7 +14,9 @@ file is the procedure.
    happened. If you cannot write that sentence from the ticket, the disposition is
    `insufficient_information`.
 
-2. **Find the intended behaviour.** Search, in order:
+2. **Find the intended behaviour.** Read the kept comments first (see
+   `skills/bug-triage` Stage 2): a staff comment saying "by design" or "config on their
+   side" is evidence to weigh, and a later comment that retracts it wins. Then search, in order:
    - prior tickets in the same component closed as works-as-designed (`tracker` source,
      JQL on resolution and component)
    - release notes for the component

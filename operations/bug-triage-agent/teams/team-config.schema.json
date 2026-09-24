@@ -566,6 +566,36 @@
           "description": "Share of reviewed runs that must disagree the same way."
         }
       }
+    },
+    "comments": {
+      "type": "object",
+      "description": "How the triaged ticket's own comment thread is filtered before the model reads it. Bots, chasers, status echoes, repeats and quoted email tails are dropped by script; the rest is read and each comment used is quoted.",
+      "properties": {
+        "bot_authors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Author names that are automation in this tracker, in addition to names matching bot, automation, CI or noreply."
+        },
+        "staff": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Addresses or '*@domain' of staff, whose comments are always kept. Used only when the tracker does not say who is staff."
+        },
+        "max_fetch": {
+          "type": "integer",
+          "default": 50,
+          "description": "Newest comments fetched per ticket."
+        },
+        "max_kept": {
+          "type": "integer",
+          "default": 20,
+          "description": "Most comments passed to the model after filtering; the newest are kept."
+        }
+      }
     }
   }
 }

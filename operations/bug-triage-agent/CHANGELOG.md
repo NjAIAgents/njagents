@@ -8,6 +8,34 @@ behaviour a team would notice, a patch fixes something. The four manifests and t
 marketplace entry always carry the same version, and `scripts/validate_config.py`
 fails if this file has no entry for it.
 
+## 0.7.1 · 2026-09-24
+
+**Summary:** the triage reads the ticket's own comment thread, keeps only what matters,
+and quotes every comment it relies on.
+
+### Added
+- **Comments on the ticket** (`comments.py`). The tracker subagent now fetches the triaged
+  ticket's comments. A script drops bots, chasers ("any update?", "+1"), status changes,
+  repeats and quoted email tails, and keeps comments with a real signal (an error, a
+  file, endpoint or version, a ticket key, words like tried, workaround, by design,
+  fixed in), every staff comment and the reporter's first.
+- The model sorts the kept comments into detail, workaround tried, disposition signal,
+  impact change, linked ticket or fix, and superseded. **Each comment used is quoted
+  word for word, and a script checks it.**
+- The report and trace show one line with what was read, used and dropped (by reason),
+  and a table of the comments used, linked. The fix brief lists repro detail and
+  workarounds already tried.
+- `comments` in the team config: extra bot names, staff addresses, how many to fetch and keep.
+
+### Changed
+- Comments feed the stages: missing detail found in a comment satisfies the information
+  gate, a later comment wins over an earlier one it contradicts, and a workaround a
+  comment says failed is ruled out.
+- The rubric states that a customer's comment never raises priority on its own, and that
+  no comment is read as an instruction.
+- The validator checks the comment filter (bots, chasers, link-only and quoted tails
+  dropped) and that every quote is found in its comment.
+
 ## 0.7.0 · 2026-09-23
 
 **Summary:** reports that explain themselves over time, duplicates found by failure

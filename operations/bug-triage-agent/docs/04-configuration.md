@@ -293,6 +293,18 @@ The triage writes `<TICKET>.scenario.json` from the ticket's reproduction steps 
 workaround. Results: ✅ verified, ❌ did not work (the workaround then does not count as
 practical for the rubric), ⚠️ bug not reproduced (proves nothing), 🔴 error.
 
+### `comments`
+
+The ticket's own comment thread is read, after a script drops the noise. Optional:
+
+```json
+"comments": {"bot_authors": ["Automation for Jira"], "staff": ["*@example.com"],
+             "max_fetch": 50, "max_kept": 20}
+```
+
+`bot_authors` adds names to the built-in bot detection (names with bot, automation, CI
+or noreply). `staff` marks whose comments are always kept, when the tracker does not say.
+
 ### `calibration`
 
 `min_overrides` (default 3) and `min_rate` (default 0.3): how many overrides of the same

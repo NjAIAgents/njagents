@@ -173,5 +173,12 @@
   "calibration": {
     "min_overrides": 3,
     "min_rate": 0.3
+  },
+  "comments": {
+    "bot_authors": [
+      "Automation for Jira"
+    ],
+    "max_fetch": 50,
+    "max_kept": 20
   }
 }

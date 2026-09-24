@@ -21,6 +21,7 @@ import summary as S  # noqa: E402
 import timeline as TL  # noqa: E402
 import history as H  # noqa: E402
 import dupes as D  # noqa: E402
+import comments as CM  # noqa: E402
 import verify_workaround as V  # noqa: E402
 from render_trace import validate  # noqa: E402
 from render_fix_brief import assess  # noqa: E402
@@ -104,6 +105,7 @@ def render(r):
     if r.get("alternative"):
         o += [r["alternative"], ""]
     o += D.md(r)
+    o += CM.md(r)
 
     if not defect:
         if r.get("route"):

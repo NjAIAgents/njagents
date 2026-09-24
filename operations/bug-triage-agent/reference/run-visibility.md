@@ -210,6 +210,7 @@ all optional:
 | `series` | The metrics counts behind the spike: `{"label": "…", "unit": "per 3h", "baseline": 36, "points": [["2026-09-03 00:00 UTC", 35], …]}`. Drawn as a chart in the trace and a sparkline in the report |
 | `duplicate_check` | Output of `scripts/dupes.py`: `{"searched": 4, "candidates": [{"key", "summary", "status", "score", "verdict", "signals", "url"}]}`. Verdicts `duplicate`, `recurrence`, `related`, `different`. A result with disposition `duplicate` must have a candidate scored `duplicate` |
 | `workaround.verified` | Written by `scripts/verify_workaround.py`: `{"status": "passed|failed|not_reproduced|error|pending", "runner", "environment", "target", "at", "steps", "url"}`. Never `production` |
+| `comment_review` | The ticket's own comments: `{"read": 10, "used": [{"id", "author_type", "created", "url", "category", "quote"}], "not_used": {"bot": 1, "chaser": 2, "status": 1, "repeat": 0, "no_signal": 1, "not_relevant": 0}}`. Categories: `detail`, `workaround_tried`, `disposition`, `impact`, `link`, `superseded`. Every quote must appear word for word in its comment (`scripts/comments.py check`) |
 | `why_changed` | One sentence, when a re-triage changed the verdict: what made the difference |
 | `previous` | Optional embedded snapshot of the last triage. Normally the renderers read it from `<reports_dir>/history/`, where `scripts/history.py archive` keeps each earlier result |
 

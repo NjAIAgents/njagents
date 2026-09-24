@@ -138,6 +138,7 @@ assignee  -> Approvals Team
 | Section | When | What it tells you |
 | --- | --- | --- |
 | **Since the last triage** | The ticket was triaged before | What changed: priority, evidence, sources, workaround state, and why |
+| **Comments on the ticket** | The ticket has comments | What was read, used and dropped (bots, chasers, status changes, off topic), and each comment used, quoted with its link |
 | **Duplicate check** | Always, when candidates were found | Each candidate scored on error text, symptom, stack, endpoint, file, area and release. A title match alone is never a duplicate. `recurrence` means the same failure came back after a fix |
 | **Timeline** | A release, deploy or error rise has a timestamp | Deploy, error rise, ticket, triage in order with the gaps between them; a chart in the trace, a sparkline in the report |
 | **Workaround verified** | The team turned on verification | Whether the workaround worked in preview, staging or local, and where |

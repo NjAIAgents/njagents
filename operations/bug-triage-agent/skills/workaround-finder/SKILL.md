@@ -15,7 +15,10 @@ workaround exists also feeds the priority rubric, but that is secondary.
 2. **Docs and release notes** for an alternative path to the same outcome.
 3. **The code path**, when `code` is live. An alternative entry point, a feature flag,
    or a parameter that bypasses the failing branch.
-4. **The ticket itself.** Reporters often describe what they tried.
+4. **The ticket itself and its comments.** Reporters often describe what they tried.
+   A comment saying a workaround did not work rules it out; one saying something did
+   work (for example "approving through the web UI works") is a candidate, quoted with
+   its link.
 
 ## Output
 

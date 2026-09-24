@@ -180,6 +180,13 @@ def render(r):
           ["No reproduction steps in the ticket. Establish one before changing code."])
     o.append("")
 
+    cr = [u for u in (r.get("comment_review") or {}).get("used") or []
+          if u.get("category") in ("detail", "workaround_tried")]
+    if cr:
+        o += ["From the ticket's comments:", ""]
+        o += [f"- {'Tried already' if u['category'] == 'workaround_tried' else 'Detail'}: “{u['quote']}”" for u in cr]
+        o.append("")
+
     o += ["## Where to look", ""]
     if locs:
         o += ["| # | Location | Signal | Evidence | From |", "| --- | --- | --- | --- | --- |"]

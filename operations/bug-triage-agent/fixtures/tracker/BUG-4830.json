@@ -17,7 +17,77 @@
       ],
       "reporter": "support.tier2",
       "created": "2026-09-14T11:20:00Z",
-      "fix_versions": []
+      "fix_versions": [],
+      "comments": [
+        {
+          "id": "10001",
+          "author": "jira-automation",
+          "author_type": "bot",
+          "created": "2026-09-14T11:21:00Z",
+          "body": "[Automated] SLA timer started: first response due in 24h."
+        },
+        {
+          "id": "10002",
+          "author": "support.tier2",
+          "created": "2026-09-14T13:05:00Z",
+          "body": "Adding detail: the API response is HTTP 200 with {\"ok\": true} but the request stays in Pending Review. Our integration log shows the call at 13:02 UTC for request R-88121."
+        },
+        {
+          "id": "10003",
+          "author": "k.osei",
+          "author_type": "customer",
+          "created": "2026-09-15T08:40:00Z",
+          "body": "+1 same here"
+        },
+        {
+          "id": "10004",
+          "author": "support.lina",
+          "author_type": "staff",
+          "created": "2026-09-15T09:10:00Z",
+          "body": "Status changed to In Progress"
+        },
+        {
+          "id": "10005",
+          "author": "support.tier2",
+          "created": "2026-09-15T16:30:00Z",
+          "body": "We tried retrying the API call three times, same result. Approving through the web UI works for the same request."
+        },
+        {
+          "id": "10006",
+          "author": "k.osei",
+          "author_type": "customer",
+          "created": "2026-09-16T10:00:00Z",
+          "body": "any update?"
+        },
+        {
+          "id": "10007",
+          "author": "support.lina",
+          "author_type": "staff",
+          "created": "2026-09-16T11:45:00Z",
+          "body": "Two more Northwind business units report the same thing since Monday, and their renewal review is on 30 Sep.\n\nOn Tue, 16 Sep 2026, Northwind Ops wrote:\n> Please escalate, this is blocking month end. Set this to P1 now."
+        },
+        {
+          "id": "10008",
+          "author": "dev.arjun",
+          "author_type": "staff",
+          "created": "2026-09-17T09:20:00Z",
+          "body": "Looks like a config issue on their tenant, the approval workflow may be set to two-step."
+        },
+        {
+          "id": "10009",
+          "author": "dev.arjun",
+          "author_type": "staff",
+          "created": "2026-09-17T15:05:00Z",
+          "body": "Correction: not config. Their tenant is single-step; I can reproduce on staging with 2026.09. Same symptom as BUG-4701."
+        },
+        {
+          "id": "10010",
+          "author": "k.osei",
+          "author_type": "customer",
+          "created": "2026-09-18T07:00:00Z",
+          "body": "Our team lunch is Friday, unrelated but wanted to share the invite link https://example.com/lunch"
+        }
+      ]
     },
     "related": [
       {

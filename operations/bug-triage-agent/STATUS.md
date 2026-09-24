@@ -40,6 +40,7 @@ are in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Change |
 | --- | --- |
+| 0.7.1 | Reads the ticket's own comments: noise dropped by script, relevant comments categorised and quoted word for word, checked by the validator; shown in report, trace and fix brief |
 | 0.6.0 | `/queue`, `/triage-log`, fix briefs graded strong, moderate or weak; team from the ticket's project key; `triage-config` stops on a skipped required answer; `+1 history` counts only fixed defects; hint when a connector is present but its source is off |
 | 0.6.1 | Quoted command front matter. An unquoted hint starting with `[` made three commands disappear |
 | 0.6.2 | Team or project as a plain word, because a leading `--flag` was rejected by the host; queue ages from Jira dates with colonless offsets |

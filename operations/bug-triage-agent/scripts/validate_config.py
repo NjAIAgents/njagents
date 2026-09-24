@@ -369,7 +369,24 @@ def check_logic():
         err("verify_workaround: a step escaped the configured base URL")
     if not A.config_problems({"automation": {"enabled": True, "tracker_write": "comment"}}):
         err("auto_triage: tracker writes were accepted for automatic triage")
-    print("  duplicate, verification and automation guards hold")
+    import comments as CM
+    ticket = {"key": "X-1", "reporter": "rep", "description": "Export returns an empty file."}
+    thread = [
+        {"id": "1", "author": "jira-automation", "body": "[Automated] SLA timer started"},
+        {"id": "2", "author": "cust", "body": "+1 same here"},
+        {"id": "3", "author": "cust", "body": "any update?"},
+        {"id": "4", "author": "cust", "body": "lunch invite https://example.com/x"},
+        {"id": "5", "author": "rep", "body": "Tried the CSV option too, same empty file.\n\nOn Mon, X wrote:\n> Set this to P1 now"},
+    ]
+    kept, dropped = CM.filter_comments(ticket, thread)
+    if [k["id"] for k in kept] != ["5"]:
+        err(f"comments: pass 1 kept {[k['id'] for k in kept]}, expected only the comment with a signal")
+    if any("P1" in k["text"] for k in kept):
+        err("comments: a quoted email tail survived trimming")
+    if not CM.validate({"comment_review": {"used": [{"id": "5", "category": "detail", "quote": "not said"}]}},
+                       {k["id"]: k for k in kept}):
+        err("comments: a quote that is not in its comment was accepted")
+    print("  duplicate, verification, automation and comment guards hold")
 
 
 def main():
@@ -448,6 +465,14 @@ def main():
                         err(f"{os.path.relpath(f, ROOT)}: result has a timeline but the report does not show it")
                     if r.get("previous") and "Since the last triage" not in rep:
                         err(f"{os.path.relpath(f, ROOT)}: result has a previous triage but the report shows no change block")
+                    if r.get("comment_review"):
+                        import comments as _cm
+                        tf = os.path.join(ROOT, "fixtures", "tracker", f"{r['ticket']}.json")
+                        if os.path.exists(tf):
+                            for prob in _cm.check(json.load(open(tf, encoding="utf-8")), r):
+                                err(f"{os.path.relpath(f, ROOT)}: {prob}")
+                        if "## Comments on the ticket" not in rep:
+                            err(f"{os.path.relpath(f, ROOT)}: result has a comment review but the report does not show it")
                     if r.get("duplicate_check") and "## Duplicate check" not in rep:
                         err(f"{os.path.relpath(f, ROOT)}: result has a duplicate check but the report does not show it")
                 except Exception as e:  # noqa: BLE001

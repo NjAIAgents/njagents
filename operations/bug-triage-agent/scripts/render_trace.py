@@ -27,6 +27,7 @@ import summary as S  # noqa: E402
 import timeline as TL  # noqa: E402
 import history as H  # noqa: E402
 import dupes as D  # noqa: E402
+import comments as CM  # noqa: E402
 import verify_workaround as V  # noqa: E402
 
 SOURCES = ["tracker", "releases", "metrics", "warehouse", "code"]
@@ -75,6 +76,7 @@ def validate(r):
             p.append(f"{where}: url must be a plain https URL")
     p += TL.validate(r)
     p += D.validate(r)
+    p += CM.validate(r)
     p += V.validate(r)
     for i, st in enumerate(r.get("steps") or []):
         for key in ("level", "ghost"):
@@ -424,6 +426,7 @@ def render(r):
     o.append(TL.html_section(r))
     o.append(evidence_section(r))
     o.append(D.html_section(r))
+    o.append(CM.html_section(r))
 
     wa = r.get("workaround")
     if wa:

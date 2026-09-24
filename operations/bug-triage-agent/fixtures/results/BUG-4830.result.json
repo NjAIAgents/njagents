@@ -1,7 +1,7 @@
 {
   "team": "demo",
   "triaged_at": "2026-09-22 10:14 UTC",
-  "agent_version": "0.7.0",
+  "agent_version": "0.7.1",
   "ticket": "BUG-4830",
   "summary": "Approval step fails silently for Northwind Co when submitted via API",
   "sources": {
@@ -569,5 +569,52 @@
         ]
       }
     ]
+  },
+  "comment_review": {
+    "read": 10,
+    "used": [
+      {
+        "id": "10002",
+        "author_type": "reporter",
+        "created": "2026-09-14T13:05:00Z",
+        "category": "detail",
+        "quote": "the API response is HTTP 200 with {\"ok\": true} but the request stays in Pending Review"
+      },
+      {
+        "id": "10005",
+        "author_type": "reporter",
+        "created": "2026-09-15T16:30:00Z",
+        "category": "workaround_tried",
+        "quote": "We tried retrying the API call three times, same result. Approving through the web UI works for the same request."
+      },
+      {
+        "id": "10007",
+        "author_type": "staff",
+        "created": "2026-09-16T11:45:00Z",
+        "category": "impact",
+        "quote": "Two more Northwind business units report the same thing since Monday, and their renewal review is on 30 Sep."
+      },
+      {
+        "id": "10009",
+        "author_type": "staff",
+        "created": "2026-09-17T15:05:00Z",
+        "category": "disposition",
+        "quote": "Correction: not config. Their tenant is single-step; I can reproduce on staging with 2026.09. Same symptom as BUG-4701."
+      },
+      {
+        "id": "10008",
+        "author_type": "staff",
+        "created": "2026-09-17T09:20:00Z",
+        "category": "superseded",
+        "quote": "Looks like a config issue on their tenant",
+        "superseded_by": "10009"
+      }
+    ],
+    "not_used": {
+      "bot": 1,
+      "chaser": 2,
+      "status": 1,
+      "no_signal": 1
+    }
   }
 }

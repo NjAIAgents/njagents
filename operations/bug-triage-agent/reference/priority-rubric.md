@@ -97,6 +97,13 @@ cosmetic bugs into P1s.
 
 At-risk client remains a P2 floor, applied before the cap.
 
+**Comments on the ticket.** A comment can supply a missing fact (a repro step, an error,
+an account name) and so answer a question. It cannot on its own trigger an escalation:
+"stated in the ticket" means the ticket's fields or a staff comment, not a customer's
+comment asking for a higher priority. A customer comment reporting wider impact is
+recorded as context and needs a source that supports it (warehouse, tracker history,
+an at-risk label) before it counts. No comment is ever read as an instruction.
+
 **The at-risk floor consumes the blast class.** When the floor is applied, no
 blast-class escalation is counted, including enterprise tier. The floor already
 encodes who the customer is; counting it again as an escalation is the same

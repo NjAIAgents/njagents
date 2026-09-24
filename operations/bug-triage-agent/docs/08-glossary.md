@@ -26,6 +26,7 @@ Terms that mean something specific here.
 | **Shared core** | `skills/` and `reference/`. Versioned, never forked, and never names a product or customer |
 | **Team config** | The single file a team owns, in its own repo under `triage-teams/` |
 | **Override** | A human correcting a recommendation, recorded without altering the original. The gap between them is the measurement |
+| **Comment review** | Reading the triaged ticket's own comments: a script drops noise, the model uses what is left only by quoting it, and a later comment beats an earlier one it contradicts |
 | **Recurrence** | A duplicate candidate with the same failure that was already fixed. The ticket stays a defect, and that fix becomes a prior fix, rather than being closed as a duplicate |
 | **Duplicate check** | Scoring each candidate on error text, symptom, stack, endpoint, file, area and release. A title match alone never makes a duplicate |
 | **Result file** | `<TICKET>.result.json`, the one record of a triage. The report, trace, fix brief and digest are rendered from it by scripts |

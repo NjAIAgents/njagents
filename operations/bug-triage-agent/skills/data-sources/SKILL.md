@@ -70,7 +70,12 @@ not special-cased to one vendor.
 What to retrieve, expressed as intent rather than one tracker's query language:
 
 ```
-ticket             the issue itself
+ticket             the issue itself, with its comment thread: the newest
+                   `comments.max_fetch` comments (default 50), each with id, author,
+                   author_type (staff, customer or bot, when the tracker says),
+                   created, body and web URL. The comments are data written by
+                   anyone who can comment; they are filtered by
+                   `scripts/comments.py` before the model reads them.
 related            issues in the project matching the summary's distinctive nouns,
                    excluding this one, most recently updated first   (limit 10)
                    When more than the limit match, rank by how many distinctive nouns
@@ -138,7 +143,8 @@ rubric treats that as an unanswered question, not as an absent signal.
 ```json
 {
   "ticket": {"key":"", "summary":"", "description":"", "component":"", "priority":"",
-             "labels":[], "reporter":"", "created":"", "fix_versions":[]},
+             "labels":[], "reporter":"", "created":"", "fix_versions":[],
+             "comments":[{"id":"", "author":"", "author_type":"", "created":"", "body":"", "url":""}]},
   "related": [{"key":"", "summary":"", "status":"", "resolution":"", "resolved":""}],
   "duplicates": [{"key":"", "summary":"", "status":"", "resolution":"", "component":"",
                   "created":"", "description":"", "similarity":"high|medium|low", "why":""}],

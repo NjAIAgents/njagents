@@ -25,6 +25,12 @@ with high confidence can still have weak evidence about which file to change.
 import argparse, json, os, re, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import effort as EF  # noqa: E402
+import risks as RK  # noqa: E402
+import human_gate as HG  # noqa: E402
+import next_action as NA  # noqa: E402
+import counterevidence as CE  # noqa: E402
+import sla as SL  # noqa: E402
 import links  # noqa: E402
 import summary as S  # noqa: E402
 
@@ -55,7 +61,17 @@ def assess(r):
         elif sig == "prior_fix_file":
             s["prior"] = True
 
+    # A merged fix that names this ticket is the strongest location evidence there is:
+    # it says where the fault was, in the change that removed it.
+    fs = r.get("fix_status") or {}
+    fix_files = {f.rsplit("/", 1)[-1] for f in (fs.get("commit") or {}).get("files") or []} \
+        if fs.get("confidence") == "strong" else set()
+    for p, s in by_file.items():
+        s["fix"] = p.rsplit("/", 1)[-1] in fix_files
+
     def grade(s):
+        if s.get("fix"):
+            return 3
         if s["code"] and s["line"] and (s["release"] or s["prior"]):
             return 3                                   # strong
         if s["code"] or (s["release"] and s["prior"]):
@@ -68,6 +84,8 @@ def assess(r):
     code_hit = any(s["code"] for s in by_file.values())
 
     reasons, missing = [], []
+    if top.get("fix"):
+        reasons.append(f"a merged fix naming this ticket changed {best_path}")
     if top.get("code"):
         reasons.append(f"code search found a fault signal in {best_path}")
     if top.get("release"):
@@ -79,11 +97,11 @@ def assess(r):
 
     if code_mode == "off":
         missing.append("code search was off, so no file or line was checked for a fault signal")
-    elif not code_hit:
+    elif not code_hit and not top.get("fix"):
         missing.append("code search ran and found no fault signal at any candidate location")
     if not with_file:
         missing.append("no candidate file was identified; only the component or area is known")
-    if with_file and not (top.get("release") or top.get("prior")):
+    if with_file and not (top.get("release") or top.get("prior") or top.get("fix")):
         missing.append("no release or prior fix ties the candidate file to this failure")
     if best == 1 and best_path and (top.get("release") or top.get("prior")):
         link = "a release record" if top.get("release") else "a prior fix"
@@ -91,6 +109,8 @@ def assess(r):
                        "not by a fault found in the code")
     if r.get("confidence") == "low":
         missing.append("priority confidence is low")
+    if code_mode == "off":   # with no code read, "only a release ties it" says the same thing again
+        missing = [m for m in missing if not m.startswith("the only link to")]
     # Unanswered rubric questions (blast radius, enterprise tier) say nothing about where
     # the fault is, so they are listed under "Not checked", not in the location verdict.
 
@@ -118,8 +138,12 @@ def yq(v):
         return "null"
     if isinstance(v, bool):
         return "true" if v else "false"
+    if isinstance(v, (int, float)):
+        return str(v)
     s = str(v)
-    return json.dumps(s, ensure_ascii=False) if re.search(r"[:#\-\[\]{}&*!|>'\"%@`,]|^\s|\s$", s) else s
+    # Quote anything YAML would read as another type: 2026.09 is a version, not a float.
+    typed = re.fullmatch(r"[-+]?(\d[\d_]*(\.\d*)?([eE][-+]?\d+)?|\.\d+)|true|false|yes|no|on|off|null|~", s, re.I)
+    return json.dumps(s, ensure_ascii=False) if typed or re.search(r"[:#\-\[\]{}&*!|>'\"%@`,]|^\s|\s$", s) else s
 
 
 def render(r):
@@ -127,13 +151,23 @@ def render(r):
     t = r["ticket"]
     repo = r.get("repo") or {}
     locs = r.get("locations") or []
-    files = [f"{l['path']}:{l['line']}" if l.get("line") else l["path"] for l in locs if l.get("path")]
+    with_line = {l["path"] for l in locs if l.get("path") and l.get("line")}
+    files = list(dict.fromkeys(f"{l['path']}:{l['line']}" if l.get("line") else l["path"] for l in locs
+                               if l.get("path") and (l.get("line") or l["path"] not in with_line)))
     branch = f"fix/{t.lower()}-{slug(r.get('summary'))}"
     repro = r.get("repro") or {}
     hyp = r.get("hypothesis") or {}
 
+    import fix_status as FX
+    fault = next((l for l in locs if l.get("path") and l.get("line")
+                  and l.get("signal") not in ("release_touched", None)), None)
+    acc = r.get("acceptance") or ["A test that reproduces the failure above, failing before the change",
+                                  "The same test passing after the change",
+                                  "The existing test suite passing"]
     fm = ["---",
+          "brief_version: 2",
           f"ticket: {yq(t)}",
+          f"ticket_url: {yq(r.get('ticket_url'))}",
           f"title: {yq(r.get('summary'))}",
           f"team: {yq(r.get('team'))}",
           f"repo: {yq(repo.get('name'))}",
@@ -143,9 +177,33 @@ def render(r):
           f"priority_confidence: {yq(r.get('confidence'))}",
           f"evidence: {ev['level']}",
           f"location_confirmed: {yq(ev['level'] == 'strong')}",
+          f"reproduction: {yq(EF.reproduction(r)['status'])}",
+          f"complexity: {yq((EF.complexity(r) or {}).get('level'))}",
+          f"human_review_required: {yq(HG.required(r))}",
+          f"next_action: {yq(NA.get(r)['action'])}",
+          f"fix_due: {yq(((r.get('sla') or {}).get('due')))}",
+          "risks:" + ("" if RK.get(r) else " []")]
+    fm += [f"  - {x['type']}" for x in RK.get(r)]
+    fm += [
           "candidate_files:" + ("" if files else " []")]
     fm += [f"  - {yq(f)}" for f in files]
-    fm += [f"route_to: {yq(r.get('route'))}",
+    # What a fix agent acts on, parseable without reading the prose below.
+    fm += ["fault:" + (" null" if not fault else "")]
+    if fault:
+        fm += [f"  file: {yq(fault['path'])}", f"  line: {fault['line']}",
+               f"  signal: {yq(fault.get('signal'))}", f"  url: {yq(fault.get('url'))}"]
+    fm += [f"introduced_by: {yq((r.get('introduced_by') or {}).get('release'))}",
+           f"fix_status: {yq((r.get('fix_status') or {}).get('state') or 'none')}",
+           f"already_fixed: {yq(FX.is_fixed(r))}",
+           "hypothesis:" + (" null" if not hyp.get("statement") else "")]
+    if hyp.get("statement"):
+        fm += [f"  statement: {yq(hyp['statement'])}", f"  confirm_by: {yq(hyp.get('confirm_by'))}",
+               f"  refute_by: {yq(hyp.get('refute_by'))}"]
+    alts = CE.alternatives(r)
+    fm += ["alternatives:" + ("" if alts else " []")]
+    fm += [f"  - {yq(a.get('statement'))}" for a in alts]
+    fm += ["acceptance:"] + [f"  - {yq(a)}" for a in acc]
+    fm += [f"route_to: {yq(NA.clean_route(r.get('route')) or None)}",
            f"generated_by: {yq('bug-triage-agent ' + str(r.get('agent_version', '')))}",
            "---", ""]
 
@@ -156,6 +214,15 @@ def render(r):
             o.append(f"> - {m}")
         o.append("")
 
+    o += HG.brief_callout(r)
+    if FX.is_fixed(r):
+        c = r["fix_status"].get("commit") or {}
+        o += links.callout("important", f"**{FX.headline(r)}.** {links.md_code(c.get('sha', '')[:10], c.get('url'))} "
+                           f"“{c.get('message', '')}”. Do not start a new fix. " + {
+                               "fixed_on_main": "Verify that commit covers this ticket, then release or backport it.",
+                               "released": "Verify that commit covers this ticket and that the release is deployed "
+                                           "where the customer runs.",
+                               "deployed": "Verify with the customer that it is resolved."}[r["fix_status"]["state"]]) + [""]
     corr = S.corroboration(r)
     if corr:
         o += ["**Supported by:** " + " · ".join(f"{c['source']} {links.md(c['label'], c['url'])}" for c in corr), ""]
@@ -174,7 +241,7 @@ def render(r):
         o += ["Expected and actual behaviour were not separable from the ticket text. "
               "Read the ticket before starting.", ""]
 
-    o += ["## Reproduce", ""]
+    o += ["## Reproduce", "", f"**Status:** {EF.repro_cell(r)}", ""]
     steps = repro.get("steps") or []
     o += ([f"{i}. {s}" for i, s in enumerate(steps, 1)] if steps else
           ["No reproduction steps in the ticket. Establish one before changing code."])
@@ -187,6 +254,9 @@ def render(r):
         o += [f"- {'Tried already' if u['category'] == 'workaround_tried' else 'Detail'}: “{u['quote']}”" for u in cr]
         o.append("")
 
+    cx = EF.complexity_cell(r)
+    if cx:
+        o += [f"**Fix complexity:** {cx}", ""]
     o += ["## Where to look", ""]
     if locs:
         o += ["| # | Location | Signal | Evidence | From |", "| --- | --- | --- | --- | --- |"]
@@ -220,22 +290,35 @@ def render(r):
         o += ["", "A regression of an earlier fix usually means that fix's test did not "
                   "cover this path. Check it.", ""]
 
+    rs = RK.get(r)
+    if rs:
+        o += ["## Risks to test against", ""]
+        o += [f"- {RK.ICON[x['type']]} **{RK.LABEL[x['type']]}** ({x['level']}): {x['why']}. " + {
+            "security": "Add a test that the fix does not widen access.",
+            "payment": "Check amounts and balances before and after, and that nothing is charged twice.",
+            "data_integrity": "Check records already written wrong; a code fix alone may not repair them.",
+            "compliance": "Keep the audit trail intact.",
+            "availability": "Test under the failing load, not only the happy path.",
+            "silent_failure": "The failure must now surface as an error the caller sees.",
+            "customer_communication": "Check nothing is sent twice or left unsent after the fix.",
+            "performance": "Measure before and after."}[x["type"]] for x in rs]
+        o.append("")
     o += ["## Hypothesis to test", ""]
     if hyp.get("statement"):
         o += [f"**{hyp['statement']}**", "",
               f"- Confirmed if: {hyp.get('confirm_by', 'not stated')}",
-              f"- Refuted if: {hyp.get('refute_by', 'not stated')}", "",
-              "This is a hypothesis. If the test refutes it, stop and report what you found "
-              "instead of fixing somewhere else.", ""]
+              f"- Refuted if: {hyp.get('refute_by', 'not stated')}", ""]
+        o += CE.brief_md(r)
+        o += [("These are hypotheses. If every one is refuted, stop and report what you found "
+               "instead of fixing somewhere else.") if CE.alternatives(r) else
+              ("This is a hypothesis. If the test refutes it, stop and report what you found "
+               "instead of fixing somewhere else."), ""]
     else:
         o += ["No cause was hypothesised. Diagnose before fixing.", ""]
 
     o += ["## Definition of done", ""]
-    acc = r.get("acceptance") or []
-    if not acc:
-        acc = ["A test that reproduces the failure above, failing before the change",
-               "The same test passing after the change",
-               "The existing test suite passing"]
+    acc = list(acc)
+    if not r.get("acceptance"):
         wa = r.get("workaround") or {}
         if wa.get("text"):
             acc.append(f"The path the workaround relies on still works: {wa['text']}")
@@ -283,7 +366,11 @@ def main():
             r = json.load(f)
         if a.team_config:
             with open(a.team_config, encoding="utf-8") as cf:
-                links.enrich(r, json.load(cf))
+                _cfg = json.load(cf)
+                links.enrich(r, _cfg)
+                RK.fill(r, _cfg)
+                HG.fill(r, _cfg)
+                SL.fill(r, _cfg)
         problems = validate_result(r)
         if problems:
             print(f"{path}: invalid result: " + "; ".join(problems), file=sys.stderr)

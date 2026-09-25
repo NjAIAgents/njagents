@@ -10,6 +10,7 @@ Three things live here so the report, the trace and the fix brief can never disa
 All three read only the result file. None of them calls a tool or invents a value:
 a field that is absent produces no line, never a placeholder.
 """
+import re
 from datetime import datetime, timezone
 
 SOURCES = ("tracker", "releases", "metrics", "warehouse", "code")
@@ -31,8 +32,12 @@ def summary(r):
     `do_now` in the result override the computed text when the triage set them."""
     defect = r.get("disposition") == "defect"
     rel = (r.get("introduced_by") or {}).get("release") or (r.get("release") or {}).get("version")
+    import fix_status as FS
+    fixed = defect and FS.is_fixed(r)
     if r.get("headline"):
         verdict = r["headline"]
+    elif fixed:
+        verdict = f"{FS.headline(r)} · {r.get('priority')} while still live"
     elif defect:
         kind = f"regression in {rel}" if _regression(r) and rel else "defect"
         verdict = f"{r.get('priority')} {kind}"
@@ -43,27 +48,62 @@ def summary(r):
     # the two strongest corroborating claims.
     if r.get("deciding_factor"):
         why = [r["deciding_factor"]]
+    elif not defect:   # the reason a ticket is not a defect is its disposition evidence, not a release
+        why = [e.get("text") for e in (r.get("disposition_evidence") or [])[:1] if e.get("text")]
     else:
-        why = [c["claim"] for c in corroboration(r)[:2]]
+        # A merged fix is already the verdict; do not repeat it as the reason.
+        why = [c["claim"] for c in corroboration(r) if not (fixed and c["claim"].startswith("fix merged"))][:2]
     if not why:
         why = [e.get("text") for e in (r.get("disposition_evidence") or [])[:2] if e.get("text")]
 
     wa = r.get("workaround") or {}
     if r.get("do_now"):
         do_now = r["do_now"]
+    elif fixed:
+        do_now = FS.do_now(r)
     elif defect and wa.get("text"):
         do_now = wa["text"].rstrip(".") + "." + (f" Who: {wa['who']}." if wa.get("who") else "")
     elif r.get("route"):
         # A route is either a destination ("Approvals Team", "PRODUCT") or an action
         # ("link to BUG-4849 and close"). Only a destination reads as "Route to X".
-        route = r["route"].strip()
-        do_now = f"Route to {route}" if route[:1].isupper() else route[:1].upper() + route[1:]
+        import next_action as NA
+        route = NA.clean_route(r["route"])
+        if NA.is_team(route):
+            do_now = f"Route to {route}."
+        elif route.split()[0].lower() in NA.VERBS:
+            do_now = route[:1].upper() + route[1:].rstrip(".") + "."
+        else:   # a destination plus an instruction: say the action first
+            do_now = f"{NA.ACTIONS[NA.decide(r)['action']]}: {route.rstrip('.')}."
     else:
         do_now = None
     return {"verdict": verdict, "why": why, "do_now": do_now}
 
 
 # ------------------------------------------------------------ corroboration
+
+def _factor(note):
+    m = re.search(r"(\d+(?:\.\d+)?)\s*[x×]", note or "")
+    return f"{m.group(1)}×" if m else None
+
+
+def _rise(note, f):
+    """'4.3x baseline from 2026-09-19; baseline window 62h' -> 'errors rose 4.3× from 2026-09-19'."""
+    if not f:
+        return note
+    m = re.search(r"(?:from|since|after)\s+(\d{4}-\d{2}-\d{2})", note or "")
+    return f"errors rose {f}" + (f" from {m.group(1)}" if m else "")
+
+
+def why_line(claims):
+    """Join the claims into one readable sentence instead of a semicolon list."""
+    cs = [c.rstrip(".") for c in claims if c]
+    if not cs:
+        return ""
+    def low(c):   # lowercase a leading word, never a key or acronym such as DEMO-6 or API
+        return c[:1].lower() + c[1:] if len(c) > 1 and c[1:2].islower() else c
+    cs = [c[:1].upper() + c[1:] if i == 0 else low(c) for i, c in enumerate(cs)]
+    return (cs[0] if len(cs) == 1 else ", and ".join(cs)) + "."
+
 
 def corroboration(r):
     """One entry per independent source that supports the verdict.
@@ -78,34 +118,46 @@ def corroboration(r):
             where = loc.get("path", "").rsplit("/", 1)[-1] + (f":{loc['line']}" if loc.get("line") else "")
             found["code"] = {"source": "code", "claim": f"{sig.replace('_', ' ')} at {where}",
                              "label": where, "url": loc.get("url")}
-        if sig == "release_touched" and "releases" not in found:
+        rel_conf = (r.get("release") or {}).get("confidence")
+        # A release supports the verdict only when its correlation is medium or high. An
+        # `introduced_by` written against a low correlation does not override that.
+        if sig == "release_touched" and "releases" not in found and rel_conf in ("high", "medium", None):
             rel = (r.get("introduced_by") or {}).get("release") or (r.get("release") or {}).get("version")
             name = loc.get("path", "").rsplit("/", 1)[-1]
             found["releases"] = {"source": "releases",
                                  "claim": f"{rel} changed {name}" if rel else f"a release changed {name}",
                                  "label": rel or name,
                                  "url": (r.get("release") or {}).get("url") or loc.get("url")}
+    fs = r.get("fix_status") or {}
+    if "releases" not in found and fs.get("confidence") in ("strong", "moderate") and fs.get("commit"):
+        c = fs["commit"]
+        found["releases"] = {"source": "releases", "claim": f"fix merged in {c.get('pr') or c['sha'][:10]}",
+                             "label": c.get("pr") or c["sha"][:10], "url": c.get("url")}
     rel = r.get("release") or {}
     if "releases" not in found and rel.get("version") and rel.get("confidence") in ("high", "medium"):
         found["releases"] = {"source": "releases", "claim": f"{rel['version']} correlates "
                              f"({rel['confidence']} confidence)", "label": rel["version"], "url": rel.get("url")}
+    m = (r.get("sources") or {}).get("metrics") or {}
     for x in r.get("links") or []:
         if x.get("source") == "metrics" and "metrics" not in found:
-            found["metrics"] = {"source": "metrics", "claim": x.get("text") or x.get("label"),
-                                "label": x.get("label"), "url": x.get("url")}
-    m = (r.get("sources") or {}).get("metrics") or {}
+            f = _factor(x.get("text") or x.get("label") or m.get("note"))
+            found["metrics"] = {"source": "metrics", "claim": _rise(x.get("text") or x.get("label"), f),
+                                "label": f"{f} baseline" if f else x.get("label"), "url": x.get("url")}
     if "metrics" not in found and m.get("mode") in ("live", "fixture") and m.get("note") and _regression(r):
-        found["metrics"] = {"source": "metrics", "claim": m["note"],
-                            "label": m["note"] if len(m["note"]) <= 24 else m["note"][:23] + "…", "url": None}
+        f = _factor(m["note"])
+        found["metrics"] = {"source": "metrics", "claim": _rise(m["note"], f),
+                            "label": f"{f} baseline" if f else (m["note"] if len(m["note"]) <= 24 else m["note"][:23] + "…"),
+                            "url": None}
     for p in r.get("prior_fixes") or []:
         if "tracker" not in found:
-            found["tracker"] = {"source": "tracker", "claim": f"same failure fixed before in {p.get('key')}",
+            found["tracker"] = {"source": "tracker", "claim": f"the same failure was fixed before in {p.get('key')}",
                                 "label": p.get("key"), "url": p.get("url")}
     if "tracker" not in found:
         for e in r.get("disposition_evidence") or []:
             if e.get("source") == "tracker":
+                keys = re.findall(r"\b[A-Z][A-Z0-9]+-\d+\b", e.get("text") or "")
                 found["tracker"] = {"source": "tracker", "claim": e.get("text"),
-                                    "label": e.get("label") or "tracker", "url": e.get("url")}
+                                    "label": e.get("label") or (keys[0] if keys else "ticket"), "url": e.get("url")}
                 break
     b = r.get("blast_radius") or {}
     if b.get("accounts") is not None:

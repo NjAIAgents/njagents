@@ -1,0 +1,98 @@
+{
+  "team": "demo",
+  "triaged_at": "2026-09-22 10:20 UTC",
+  "agent_version": "0.7.1",
+  "ticket": "BUG-4872",
+  "component": "approvals",
+  "summary": "Bulk approve reports success for requests it silently skipped",
+  "ticket_created": "2026-09-10T14:30:00Z",
+  "sources": {
+    "tracker": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "releases": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "metrics": {
+      "mode": "fixture",
+      "status": "ok",
+      "note": "no spike of its own"
+    },
+    "warehouse": {
+      "mode": "fixture",
+      "status": "ok",
+      "note": "1 account"
+    },
+    "code": {
+      "mode": "fixture",
+      "status": "ok",
+      "note": "error swallowing at :131"
+    }
+  },
+  "disposition": "defect",
+  "priority": "P3",
+  "tracker_priority": "Major",
+  "current_priority": "Major",
+  "confidence": "medium",
+  "confidence_basis": "Code signal at the bug site; one account seen; no metrics of its own.",
+  "route": "Approvals Team",
+  "disposition_evidence": [
+    {
+      "text": "Bulk approve returns 200 with every id listed as approved, but three stay in Pending Review",
+      "source": "ticket description"
+    }
+  ],
+  "steps": [
+    {
+      "step": "Base",
+      "level": "P3",
+      "because": "A customer workaround exists: approve the skipped requests one by one"
+    },
+    {
+      "step": "Final",
+      "level": "P3",
+      "because": "No escalation applies; code signal already counted for a sibling ticket is not double counted here"
+    }
+  ],
+  "workaround": {
+    "text": "Approve the skipped requests one at a time in the UI.",
+    "who": "support, and customers can be told",
+    "source": "ticket description"
+  },
+  "repo": {
+    "name": "approvals-api",
+    "base_branch": "main"
+  },
+  "repro": {
+    "steps": [
+      "Select 10 requests in Pending Review",
+      "Call the bulk approve endpoint",
+      "Read the requests back"
+    ],
+    "expected": "All 10 approved, or an error naming the ones that failed",
+    "actual": "The response lists all 10 as approved; 3 remain in Pending Review"
+  },
+  "locations": [
+    {
+      "path": "approvals-api/src/approvals/ApprovalReviewService.ts",
+      "line": 131,
+      "signal": "error_swallowing",
+      "evidence": "bulk path catches the commit error per item and still adds the id to the approved list",
+      "source": "code"
+    }
+  ],
+  "hypothesis": {
+    "statement": "The bulk path catches each failed commit and still reports the item as approved.",
+    "confirm_by": "A test that fails one commit in a bulk call gets that id reported as failed",
+    "refute_by": "The failed id is already reported as failed",
+    "alternatives": [
+      {
+        "statement": "The skipped requests were locked by another reviewer and the bulk path treats a lock as success.",
+        "confirm_by": "The skipped ids were open in another session at the time",
+        "why_less_likely": "the code at :131 catches the commit error itself, before any lock check"
+      }
+    ]
+  }
+}

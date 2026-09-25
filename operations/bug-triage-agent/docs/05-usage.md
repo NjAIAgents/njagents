@@ -56,12 +56,26 @@ loaded.
 | Surface | When | Where |
 | --- | --- | --- |
 | Chat summary | always | in the conversation |
-| Report file | per `output.write_report` | `triage-reports/<TICKET>.md` |
+| HTML report | per `output.write_report` | `triage-reports/<TICKET>-report.html` |
+| Markdown report | only with `output.report_format` `md` or `both`, or when you ask for it in a run | `triage-reports/<TICKET>.md` |
+| Fix brief | every defect, in every mode | `triage-reports/<TICKET>.fix-brief.md` |
+| Batch page | after a batch | `triage-reports/batch-<date>.html` and `clusters.json`; `batch-<date>.md` only with `md` or `both`, or `--markdown` |
+| Queue page | `render_queue.py --html` | `triage-reports/queue-<team>.html` |
 | Tracker comment | generated, never posted | shown for you to paste |
 
-The report is the one to share. It carries the evidence, the priority arithmetic step
-by step, the release correlation with its confidence, and a coverage table. The chat
-summary is deliberately thin so you can scan a batch.
+The HTML report is the default and the one to share. Ask for markdown ("triage DEMO-7,
+markdown too") when you want to paste the report into a PR, a chat thread or a repo, or
+feed it to another agent; the HTML header then links it. Set `output.report_format` to
+`both` to get it every run. With `agent`, only the result file and the fix brief are
+written, for a pipeline that hands defects to a fix agent.
+
+The report carries the evidence, the priority arithmetic step by step, the release
+correlation with its confidence, and a coverage table. The chat summary is deliberately
+thin so you can scan a batch. A sample: [the DEMO-7 HTML report](examples/report-sample.html).
+
+The queue page and the batch page share the report's look. The queue page has tiles, the
+next command to copy, and a table with priority chips and flags that links each ticket
+to its HTML report when one exists. The batch page ranks the batch and lists the groups.
 
 The tracker comment is plain text rather than markdown, because trackers render their
 own markup and a pasted markdown table becomes a wall of pipes.
@@ -125,7 +139,8 @@ raise priority.
 ## What to do with the result
 
 The agent produces text. **You apply it.** Nothing is written to the tracker without
-per-ticket confirmation, and the field updates come as a checklist:
+per-ticket confirmation. The HTML report shows the field updates in its "Set in tracker ·
+on your yes" box; the markdown report lists them under "Fields to update":
 
 ```
 priority  -> Critical
@@ -140,7 +155,7 @@ assignee  -> Approvals Team
 | **Since the last triage** | The ticket was triaged before | What changed: priority, evidence, sources, workaround state, and why |
 | **Comments on the ticket** | The ticket has comments | What was read, used and dropped (bots, chasers, status changes, off topic), and each comment used, quoted with its link |
 | **Duplicate check** | Always, when candidates were found | Each candidate scored on error text, symptom, stack, endpoint, file, area and release. A title match alone is never a duplicate. `recurrence` means the same failure came back after a fix |
-| **Timeline** | A release, deploy or error rise has a timestamp | Deploy, error rise, ticket, triage in order with the gaps between them; a chart in the trace, a sparkline in the report |
+| **Timeline** | A release, deploy or error rise has a timestamp | Deploy, error rise, ticket, triage in order with the gaps between them; a timeline track and an error chart in the HTML report, a sparkline in the markdown report |
 | **Workaround verified** | The team turned on verification | Whether the workaround worked in preview, staging or local, and where |
 
 ## Automatic triage
@@ -152,7 +167,7 @@ Off unless the team config turns it on. When on:
 ```
 
 picks new, changed and overdue bugs (up to `max_per_run`), triages them without asking
-anything, and writes `triage-reports/auto/<date>-<team>.md`: one row per ticket with the
+anything, and writes `triage-reports/auto/<date>-<team>.html` (a page in the report's look; `.md` only for `report_format` `md` or `both`): one row per ticket with the
 verdict and what to do. **Nothing is written to the tracker.** Read the digest, post what
 you agree with, and record what you do not with `/triage-review`. A scheduled task runs
 the same command; so can a CI job or webhook handler with the new ticket keys.

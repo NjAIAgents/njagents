@@ -26,10 +26,12 @@
   },
   "sources": {
     "tracker": {
-      "mode": "live"
+      "mode": "live",
+      "provider": "Jira"
     },
     "releases": {
-      "mode": "live"
+      "mode": "live",
+      "provider": "GitHub"
     },
     "metrics": {
       "mode": "live",
@@ -45,15 +47,18 @@
         "team_id": "team_gv3LiIqkK68PwP23Kn2z0VB9",
         "project_id": "prj_TpuVwpDxUy2Qigydiasxtm4iNyp2",
         "//": "Production deployments carry the release as meta.githubCommitRef (2026.08, 2026.09). Runtime logs per deployment: 'approval commit failed' on 2026.08, 'approval not committed' on 2026.09."
-      }
+      },
+      "provider": "Grafana Loki · Vercel"
     },
     "warehouse": {
       "mode": "off",
-      "//": "Warehouse not provisioned yet, Neon planned. Blast radius will be reported as unknown."
+      "//": "Warehouse not provisioned yet, Neon planned. Blast radius will be reported as unknown.",
+      "provider": "Neon, not provisioned"
     },
     "code": {
       "mode": "live",
-      "//": "Search first; when search returns nothing, the file-read fallback reads files under key_paths (GitHub code search did not return repo-scoped results for this repo on 2026-09-23, file reads do)."
+      "//": "Search first; when search returns nothing, the file-read fallback reads files under key_paths (GitHub code search did not return repo-scoped results for this repo on 2026-09-23, file reads do).",
+      "provider": "GitHub"
     }
   },
   "tool_bindings": {
@@ -131,7 +136,8 @@
     "release": "https://github.com/{owner}/{repo}/releases/tag/{version}",
     "pr": "https://github.com/{owner}/{repo}/pull/{number}",
     "ticket": "https://nishantnavjyot.atlassian.net/browse/{key}",
-    "//": "Used only when a tool returns no URL. Code links pin to a commit when one is known."
+    "//": "Used only when a tool returns no URL. Code links pin to a commit when one is known.",
+    "log_query": "https://fondlizard977.grafana.net/explore?schemaVersion=1&orgId=1&panes=%7B%22a%22%3A%7B%22datasource%22%3A%22grafanacloud-logs%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22expr%22%3A%22{query}%22%2C%22queryType%22%3A%22range%22%2C%22datasource%22%3A%7B%22type%22%3A%22loki%22%2C%22uid%22%3A%22grafanacloud-logs%22%7D%2C%22editorMode%22%3A%22code%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22{from}%22%2C%22to%22%3A%22{to}%22%7D%7D%7D"
   },
   "queue": {
     "// ": "Triage within these hours or the queue flags the bug overdue and puts it first.",
@@ -180,5 +186,14 @@
     ],
     "max_fetch": 50,
     "max_kept": 20
+  },
+  "human_review": {
+    "enabled": false,
+    "risk_types": [
+      "security",
+      "payment"
+    ],
+    "min_level": "reported",
+    "reviewers": []
   }
 }

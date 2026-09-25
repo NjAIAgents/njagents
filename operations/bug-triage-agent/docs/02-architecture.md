@@ -34,20 +34,29 @@ flowchart TD
   S4 --> RES["Stage 5 · TICKET.result.json<br/>the one source of truth"]
   ND --> RES
   HIST[("history/<br/>earlier results")] -. "since the last triage" .-> RES
-  RES --> O2["report .md<br/>render_report.py"]
-  RES --> O3["run trace .html<br/>render_trace.py, timeline chart"]
-  RES --> O6["fix brief .md<br/>defects only"]
+  RES --> O3["HTML report, the default<br/>TICKET-report.html<br/>render_trace.py + report_html.py"]
+  RES -. "report_format md or both,<br/>or asked for in the run" .-> O2["markdown report<br/>TICKET.md · render_report.py"]
+  RES --> O6["fix brief .md<br/>every defect, every mode<br/>render_fix_brief.py"]
   RES --> O1["chat summary"]
+  RES --> PG["queue and batch pages<br/>queue-TEAM.html · batch-DATE.html<br/>pages_html.py"]
+  THM[("assets/report-theme.css<br/>html_theme.py inlines it")] -. look .-> O3
+  THM -. look .-> PG
   RES --> O5["audit log<br/>triage_log.py refuses a scored non-defect"]
   RES -. "only after a person says yes,<br/>never from /triage-auto" .-> O4["tracker comment"]
-  RES -. "automatic runs" .-> DIG["review digest<br/>triage-reports/auto/"]
+  RES -. "automatic runs" .-> DIG["review page<br/>auto/DATE-TEAM.html<br/>auto_triage.py digest"]
+  O6 --> IDX["handoff index<br/>briefs.json: ready · held<br/>brief_index.py"]
+  O5 -. "reviews release a hold" .-> IDX
+  IDX --> FIX["fix agent<br/>picks up ready briefs only"]
+  THM -. look .-> DIG
+  PCHK["page_check.py<br/>structure · links · query URLs"] -. "validator gate" .-> O3
+  DOC["/triage-doctor · /triage-config<br/>check and write the team config"] -. sets up .-> CFG
 
   classDef gate fill:#DCEFEA,stroke:#0B7A69,stroke-width:2px,color:#17201C
   classDef stop fill:#F7E5DC,stroke:#B4502A,color:#17201C
   classDef cond stroke-dasharray:5 4
   class D,G0 gate
   class X0,X1,ND,O4 stop
-  class M,W,K,VER,AUTO,SCH cond
+  class M,W,K,VER,AUTO,SCH,O2,PCHK cond
 ```
 
 Dashed boxes are conditional. Enrichment runs only when its source is not `off`; each
@@ -57,8 +66,32 @@ disposition diamond is the design: a non-defect leaves with no priority, and the
 log refuses to record one that carries a priority.
 
 Every output after Stage 5 is rendered by a script from the one result file, so the
-report, the trace, the fix brief and the digest cannot disagree. Before a re-run writes
-a new result, `history.py` archives the old one, and the report opens with what changed.
+HTML report, the markdown report, the fix brief and the digest cannot disagree. The HTML
+report is the default; `output.report_format` decides whether a markdown report is also
+written (`md`, `both`), or only the result file and the fix brief (`agent`). Every HTML
+page inlines `assets/report-theme.css`, so each one is a single file that opens anywhere.
+Before a re-run writes a new result, `history.py` archives the old one, and the report
+opens with what changed.
+
+A fix agent never reads the reports folder directly. After every run `brief_index.py`
+writes `briefs.json`: the briefs that are `ready`, and the ones `held` because a person
+must decide, a fix already exists, or the location evidence is weak. A review recorded
+with `/triage-review` releases a human-review hold on the next run. `page_check.py`
+runs in the validator on every page, so a broken tag or an old-shape query link fails
+the build instead of reaching a reader.
+
+## Commands
+
+| Command | Group | What it does |
+| --- | --- | --- |
+| `/triage-config` | Set up | Writes or updates a team config by asking a few questions |
+| `/triage-doctor` | Set up | Checks the config and that every source is reachable |
+| `/triage` | Run | Triages one ticket or a batch, end to end |
+| `/triage-auto` | Run | Unattended triage of new, changed and overdue bugs, when the config turns it on |
+| `/release-impact` | Run | Which recent release most likely touched a bug's area |
+| `/queue` | Review | Open bugs, what still needs triage, overdue and stuck ones |
+| `/triage-log` | Review | Recent decisions, accuracy, calibration, dashboard |
+| `/triage-review` | Review | Records a person's override, which the agent learns from |
 
 ## The feedback loop
 
@@ -175,10 +208,11 @@ per-ticket confirmation before anything is written.
 | `commands/` | Thin wrappers: triage, queue, triage-log, triage-config, release-impact, doctor, review, triage-auto | Claude, Cursor |
 | `teams/` | Shipped demo configs, schema and example. A team's own config lives in its repo under `triage-teams/`, found first | read by the skills |
 | `fixtures/` | Recorded envelopes, and worked result files under `results/` | demo mode, tests |
-| `scripts/` | Header (`run_header.py`); renderers for the report, trace, fix brief and queue; shared `summary.py`, `links.py`, `timeline.py`, `history.py`; `dupes.py` duplicate scoring; `verify_workaround.py`; `auto_triage.py`; `triage_log.py` with `calibration.py`; `validate_config.py` build gate | runtime, CI, packaging |
+| `assets/` | `report-theme.css`, the stylesheet every HTML page inlines | `html_theme.py` |
+| `scripts/` | Header (`run_header.py`); renderers for the HTML report (`render_trace.py`, `report_html.py`), markdown report, fix brief, queue, and queue and batch pages (`pages_html.py`); `html_theme.py` for the look; shared `summary.py`, `links.py`, `timeline.py`, `history.py`; `dupes.py` duplicate scoring; `verify_workaround.py`; `auto_triage.py`; `triage_log.py` with `calibration.py`; `validate_config.py` build gate | runtime, CI, packaging |
 | `logs/` | Unused at runtime. The audit log lives in the working folder, `triage-logs/`, because an installed plugin is read-only | none |
 
-The header, the report, the trace, the fix brief, the queue and the digest are all
+The header, the reports, the fix brief, the queue, the batch page and the digest are all
 rendered by code, not written by the model. The header and the trace were first
 model-written, and a real run showed the header abbreviated and the traces not produced
 at all; the report followed in 0.7.0 for the same reason.

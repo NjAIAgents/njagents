@@ -18,6 +18,12 @@ release-correlation skill using both sources.
 Report the baseline value and the ratio, not just a boolean. A reviewer needs the
 numbers.
 
+For every query you ran, add an entry to `queries`: the exact query text with its
+placeholders filled, and the `from` and `to` of the window it covered, as ISO times.
+The report rebuilds its link to the metrics tool from these. Do not assemble a link
+yourself, and do not rely on a deep-link tool's URL alone: some return an older shape
+that opens an empty query.
+
 ## Tools
 
 `tools: ["*"]`, deliberately, and this is a downgrade from what the file used to claim.

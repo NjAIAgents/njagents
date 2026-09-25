@@ -131,6 +131,25 @@ Step-by-step runs with expected output: [`docs/09-examples.md`](docs/09-examples
 /triage-review DEMO-8 voice_of_customer "held balance release is by design"
 ```
 
+## Outputs
+
+Each triage writes into `triage-reports/` in your folder:
+
+| File | When |
+| --- | --- |
+| `<TICKET>-report.html` | By default. The report, one self-contained page |
+| `<TICKET>.md` | Only when `output.report_format` is `md` or `both`, when `output.run_trace` is `never`, or when you ask for markdown in that run |
+| `<TICKET>.fix-brief.md` | For every defect, in every mode. Its front matter (`brief_version: 2`) is for a fix agent |
+| `queue-<team>.html` | `render_queue.py --html` |
+| `batch-<date>.html` | After a batch, with `clusters.json`. `batch-<date>.md` only when the format is `md` or `both`, or with `--markdown` |
+
+`output.report_format: agent` writes only the result file and the fix brief, for a
+pipeline that hands defects to a fix agent. `output.theme` sets the accent colour; the
+rest of the look is in `assets/report-theme.css`.
+
+Samples: [the DEMO-7 HTML report](docs/examples/report-sample.html) and
+[a fix brief](docs/examples/fix-brief-sample.md).
+
 ## Layout
 
 ```
@@ -153,11 +172,15 @@ agents/                       parallel enrichment, one per source
 reference/                    SHARED: rubric, taxonomy, calibration, output templates
 teams/                        the two demo configs, schema, example
 fixtures/                     recorded envelopes and worked results: rubric test data, validated in CI
-scripts/                      run_header, render_trace, render_queue, triage_log, validate_config
+assets/report-theme.css       the stylesheet every HTML page inlines
+scripts/                      run_header, render_trace, report_html, html_theme, pages_html, page_check, brief_index, render_report,
+                              render_fix_brief, render_queue, clusters, links, triage_log, validate_config, and the
+                              stage helpers (see STATUS.md)
+docs/examples/                a sample HTML report and fix brief
 
 In your own folder, never in the plugin:
 triage-teams/<team>.json      the only file a team edits
-triage-reports/               reports and run traces
+triage-reports/               HTML reports, fix briefs, queue and batch pages
 triage-logs/triage-log.jsonl  every recommendation and every human override
 ```
 

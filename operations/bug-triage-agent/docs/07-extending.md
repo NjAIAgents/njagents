@@ -15,11 +15,29 @@ Ask what kind of thing you are changing. This decides everything.
 | A new disposition, or changed evidence rules | `reference/disposition-taxonomy.md` | Shared-core owner |
 | Priority criteria, escalation classes, caps | `reference/priority-rubric.md` | Shared-core owner |
 | Output format | `reference/output-templates.md` | Shared-core owner |
+| A team's accent colour | `output.theme` in `teams/<team>.json` | That team |
+| The look of every HTML page | `assets/report-theme.css` | Shared-core owner |
 | Stage ordering | `skills/bug-triage/SKILL.md` | Shared-core owner |
 | A new source type | Contract in `skills/data-sources/`, plus an agent and validator shape | Shared-core owner |
 
 The line: **if it names a product, schema, repository or customer, it is team
 config.** If it is judgment, it is shared and changes once for everyone.
+
+## Changing the look of the pages
+
+Every HTML page comes from a script and shares one stylesheet:
+
+| Page | Written by |
+| --- | --- |
+| `<TICKET>-report.html` | `render_trace.py`, which calls `report_html.py` |
+| `queue-<team>.html` | `render_queue.py --html`, through `pages_html.py` |
+| `batch-<date>.html` | `clusters.py`, through `pages_html.py` |
+
+`html_theme.py` reads `assets/report-theme.css` and inlines it, so each page stays one
+self-contained file. To change the look for everyone, edit the CSS file and re-render.
+To change only a team's accent colour, set `output.theme` {`accent`, `accent_dark`} in
+its config; the validator checks both are `#RRGGBB`. Change what a page shows in
+`report_html.py` or `pages_html.py`, never in the stylesheet.
 
 ## Adding a release adapter
 

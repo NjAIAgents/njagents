@@ -263,6 +263,20 @@ A workaround that fails verification is reported as not working, and does not co
 practical for the rubric. `not_reproduced` proves nothing either way: say so. When
 verification is off, say nothing about it.
 
+**Is it already fixed?** Once `locations` are known, ask the releases source for the fix
+search (`commits_since`, see `skills/data-sources`), then:
+
+    python3 <plugin root>/scripts/fix_status.py --result <result file> \
+        --releases <releases envelope> --tracker <tracker envelope>
+
+Put its output in the result as `fix_status`. A fix is claimed only when a commit names
+the ticket (strong) or touches a located file after the ticket was filed and shares its
+error or symptom (moderate); a commit that only touches the file is listed as related,
+never claimed. When a fix is claimed, still assign the priority (it is the priority
+while the bug is live for this customer), but the next action is getting the fix to the
+customer: release it, confirm the release is deployed, or confirm with the customer.
+Add `already_fixed` to `--flags` in the audit log so the queue shows it.
+
 **Timeline.** From the envelopes already gathered, keep the events with timestamps: the
 release or deploy, the error rise and first error from metrics, the ticket's creation.
 Record them as `timeline`, and the metrics envelope's bucketed counts as `series`
@@ -296,25 +310,42 @@ what made the difference (a source that came online, new evidence, an override).
 
 **Write the result file first:** `<working folder>/<reports_dir>/<TICKET>.result.json`,
 in the shape defined in [`reference/run-visibility.md`](../../reference/run-visibility.md).
-The report, the trace and the fix brief are all rendered from it by scripts, so they
-agree. Record for each source when it was read (`as_of`), and for metrics the oldest
+The HTML report, the markdown report when one is written, and the fix brief are all
+rendered from it by scripts, so they agree. Record for each source when it was read (`as_of`), and for metrics the oldest
 data point used (`data_from`) and how long the source keeps data (`retention_days`),
 so stale evidence is flagged. Set `deciding_factor` to the one reason that decided the
 verdict, in a sentence.
 
 1. **Chat summary.** Always. Start with the same three lines the report opens with
-   (verdict, why, do now), then the "Supported by" line with its links, one line of
-   arithmetic, and a pointer to the report. Ten seconds to read.
-2. **Report file.** When `output.write_report` allows, render it:
+   (verdict, why, next), then the "Supported by" line with its links, one line of
+   arithmetic, and a pointer to the HTML report. Ten seconds to read.
+2. **Markdown report: only when asked.** The HTML report (step 4) is the report by
+   default. Write `<TICKET>.md` only when `output.report_format` is `md` or `both`,
+   when `output.run_trace` is `never`, or when the user asks for markdown in this run
+   ("as markdown", "md too", "also the .md"). A request in one run does not change the
+   config; say that `report_format` is the setting if they want it every time. When
+   `output.write_report` allows and one of those holds, render it:
 
        python3 <plugin root>/scripts/render_report.py --out <working folder>/<reports_dir> \
            --team-config <resolved team config> <working folder>/<reports_dir>/<TICKET>.result.json
 
    **Never hand-write the report.** It is written to `<reports_dir>/<TICKET>.md`, never
-   inside the plugin. Say where you wrote it.
+   inside the plugin. Say where you wrote it. When you wrote it for a one-run request,
+   pass `--markdown` to `render_trace.py` in step 4 so the HTML header links it.
 3. **Tracker comment.** Generated as plain text. Never posted without explicit
-   per-ticket confirmation in the conversation.
-4. **Run trace.** Unless `output.run_trace` is `never`, render it from the result file:
+   per-ticket confirmation in the conversation. When the result has
+   `human_review.required` (the team turned `human_review` on and a chosen risk was
+   tagged), say so first, and post only after a person named in `reviewers` (or any
+   person, if none are listed) confirms by name; record `human_review` in the audit
+   log's `--flags`, and the confirmation with `triage_log.py override` when they change
+   anything.
+   **Agent mode.** When `output.report_format` is `agent`, skip steps 2 and 4: write
+   only the result file and, for defects, the fix brief (step 5), which is what a fix
+   agent consumes. The chat summary points at the brief. A non-defect in agent mode
+   gets the result file and the chat summary only.
+4. **HTML report, with the run trace. The default report.** Unless `output.run_trace`
+   is `never` or `output.report_format` is `md` or `agent`, and when `output.write_report` allows,
+   render it from the result file (it writes `<TICKET>-report.html`):
 
        python3 <plugin root>/scripts/render_trace.py --out <working folder>/<reports_dir> \
            --team-config <resolved team config> <working folder>/<reports_dir>/<TICKET>.result.json
@@ -322,12 +353,16 @@ verdict, in a sentence.
    **Evidence links.** Put the URL a tool returned beside each piece of evidence in the
    result (`url` on `locations`, `disposition_evidence`, `prior_fixes`, `release`;
    `sha` on `introduced_by`; a top-level `links` list of `{label, kind, text, source,
-   url}` for things like a log query or a deployment). Take URLs only from tool
+   url}` for things like a log query or a deployment). A log or metrics query link also
+   carries the exact `query` it ran and its window (`from`, `to`, ISO times), so the
+   config's `links.log_query` template can rebuild a link that opens with the data:
+   copy each entry of the metrics envelope's `queries` into `links` with `kind: "log
+   query"`, keeping `query`, `from` and `to`. Take URLs only from tool
    results: a ticket's web URL, a commit's or release's html URL, a deployment's page,
    a log store's deep link. `--team-config` fills the rest from the config's `links`
    templates. Never construct or guess a URL yourself.
 
-   **Never hand-write the trace HTML.** The script renders it identically every run and
+   **Never hand-write the HTML report.** The script renders it identically every run and
    refuses a non-defect that carries a priority. If it refuses, the result file is
    wrong: fix the result, not the script. With `artifact`, publish the rendered file
    where the client can publish; otherwise keep the file and say so. Default is `file`,
@@ -343,7 +378,11 @@ verdict, in a sentence.
            --team-config <resolved team config> <working folder>/<reports_dir>/<TICKET>.result.json
 
    It writes `<TICKET>.fix-brief.md`, a hand-off a coding agent can act on, and refuses
-   a non-defect. Fill `locations` only with what the run actually found, each with its
+   a non-defect. Written in every `report_format`. Its YAML front matter
+   (`brief_version: 2`) carries what the agent acts on without reading the prose: the
+   `fault` file and line, `hypothesis` with `confirm_by` and `refute_by`,
+   `alternatives`, `acceptance`, `fix_status`, `already_fixed`, `human_review_required`
+   and the branch to create. Fill `locations` only with what the run actually found, each with its
    `signal` and `source`: a file seen in a release record but not in code search is
    `release_touched`, never `error_swallowing`. The evidence verdict is computed from
    these, so an inflated location becomes an inflated verdict. `repo.base_branch` comes
@@ -367,8 +406,67 @@ overrides cluster in one area.
 `append` refuses a non-defect carrying a priority. If it refuses, the pipeline made a
 mistake: a disposition other than `defect` must never have reached scoring.
 
+Last, refresh the handoff index, once per run (once for a whole batch):
+
+    python3 <plugin root>/scripts/brief_index.py --reports <working folder>/<reports_dir> \
+        --team-config <resolved team config> --log <working folder>/triage-logs/triage-log.jsonl
+
+It writes `<reports_dir>/briefs.json`: the briefs a fix agent may pick up (`ready`, in
+priority and fix-by order) and the ones that wait (`held`, with a reason:
+`human_review`, `already_fixed`, `locate_first`, `no_brief`). A fix agent reads this
+list, never the folder. Say how many are ready and held in the chat summary.
+
 ## Batch mode
 
 Several ticket IDs: run each through the full pipeline, then emit one ranked table
 ordered by priority then by deciding factor. Non-defects are listed in a separate
 section with their disposition, not ranked among the defects.
+
+Every defect's report also states **reproduction** and **fix complexity**, computed by
+`scripts/effort.py` from the result (the renderers call it). Record `reproduction` with
+status `reproduced` or `not_reproduced` only when something was actually run, with `how`;
+otherwise leave it to the script. Set `data_repair: true` when a code fix alone will not
+repair records already written wrong. Neither value moves the priority.
+
+**Argue against yourself before you finish.** Record in `contradictions` anything
+that points away from the verdict (an earlier comment, a missing signal, a timing that
+does not fit), with `against` (disposition, priority or hypothesis) and, when it does
+not change the verdict, `addressed` saying why. Leave one open rather than explaining
+it away. In `hypothesis.alternatives` give the other causes still in play, each with
+how to confirm it and why it is less likely; at least one is required when location
+evidence is weak. `scripts/counterevidence.py` adds contradictions it finds by rule,
+and rendering refuses high confidence with an open contradiction against the
+disposition or priority.
+
+Record `ticket_created` from the tracker, and `timeline` events (deploy, spike, ticket)
+with their dates whenever a source gives them; when you write none, the renderers
+derive them from the release, metrics note and ticket date. When the team sets `sla.fix_within`, the
+renderers add a **fix-by date** from it (`scripts/sla.py`); it never changes priority.
+
+Every triage, defect or not, gets one **next action** from a fixed set
+(`scripts/next_action.py`, called by the renderers): await_review, confirm_resolved,
+deploy_fix, release_fix, fix_now, locate_first, schedule_fix, request_info,
+close_duplicate, explain_behavior, correct_config, route_to_product, with `also`
+naming a workaround to send or apply meanwhile. Do not invent another action; put any
+nuance in `do_now`. The tracker comment opens with the action's words.
+
+Each defect is also tagged with **named risks** by `scripts/risks.py` (the renderers call
+it with the team config). A risk is *evidenced* only by a code signal, *reported* when the
+ticket or a used comment says it, and *suspected* when only the hypothesis mentions it.
+Do not raise priority because of a risk tag; apply the rubric as written.
+
+Then group the defects that probably share a cause, so one fix can close several:
+
+    python3 "$PLUGIN_ROOT/scripts/clusters.py" --out <reports> --tracker-dir <tracker envelopes> \
+        --team-config <config> --annotate <reports>/*.result.json
+
+It writes `clusters.json` and, by default, `batch-<stamp>.html`: the ranked table with a
+group column, then the groups, in the report's look. It writes `batch-<stamp>.md` only
+when `output.report_format` is `md` or `both`, or with `--markdown` when the user asked
+for markdown in this run. In agent mode it writes only `clusters.json`. With `--annotate`
+it adds `clusters` to each member's result, so re-render the members' reports. A group is
+**supported by evidence** when at least two members have evidence at the same file (a
+fault signal, a release or prior fix that changed it, or a merged fix), and **proposed**
+when they only share a candidate path or a release and area. A group never raises a
+member's priority; its priority is the highest of its members. Nothing is linked in the
+tracker.

@@ -192,6 +192,16 @@ A relative path resolves beside the team config first, then inside the plugin, t
 same rule as fixture paths. A team keeping its config in its own repo keeps its
 release file there too.
 
+**Fix search** (with `vcs_tag` or `vcs_pr`, once the triage has candidate files)
+: commits on the default branch since the ticket was created, or since the release that
+introduced the bug if earlier, that either name the ticket key in their message or
+touch a candidate file. Return each as `{sha, message, date, files, pr, url}` in
+`commits_since`, with `commits_since_from` set to the date searched from. Add the commit
+shas each release contains as `releases[].commits`, and deploys with the commits they
+shipped as `deploys[]` (`{version, environment, at, commits, url}`) when the metrics
+source records deploys. `scripts/fix_status.py` grades them; the model does not decide
+whether a commit is the fix.
+
 Merge rule: match releases across adapters on the normalized version string. Conflicting
 release dates are a note, not an error, and the earliest date wins.
 
@@ -199,8 +209,12 @@ release dates are a note, not an error, and the earliest date wins.
 {
   "releases": [
     {"version": "", "released_on": "", "components": [], "issue_keys": [],
-     "files_touched": [], "notes_url": null, "sources": ["tracker_fixversion"]}
+     "files_touched": [], "notes_url": null, "sources": ["tracker_fixversion"],
+     "commits": []}
   ],
+  "commits_since": [{"sha": "", "message": "", "date": "", "files": [], "pr": "", "url": ""}],
+  "commits_since_from": "",
+  "deploys": [{"version": "", "environment": "", "at": "", "commits": [], "url": ""}],
   "lookback_days": 60,
   "adapters_run": ["tracker_fixversion", "wiki_release_notes"],
   "adapters_failed": []
@@ -233,9 +247,17 @@ one deployment and absent on the previous one is regression evidence.
   "current": {"value": 0, "ratio_to_baseline": 0.0},
   "spike": {"detected": false, "first_seen": null},
   "deploys_in_window": [{"version":"", "at":"", "service":""}],
-  "sample_errors": []
+  "sample_errors": [],
+  "queries": [{"name": "error_rate", "query": "", "from": "", "to": "", "url": null}]
 }
 ```
+
+`queries` records every query that produced a number above: the exact query text as
+run (placeholders filled), and the window it covered (`from`, `to`, ISO times). Keep
+`url` only when a tool returned one. The orchestrator copies each into the result's
+`links` with its `query`, `from` and `to`, so the team's `links.log_query` template
+can rebuild a link that opens on the same data. A query without its text and window
+cannot be linked reliably.
 
 Baseline uses `regression.baseline_method` over `regression.baseline_days`, defaulting
 to a rolling median, not the prior day.

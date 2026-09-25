@@ -20,6 +20,17 @@ It checks, and fails on:
 - the three manifests agreeing on name and version
 - `${VAR}` in an MCP url, which no client expands
 - `mcp.json` and `.mcp.json` differing
+- `links` templates, including `log_query`, that do not fill with sample values
+- an `output.theme` key other than `accent` and `accent_dark`, or a colour that is not
+  `#RRGGBB`
+- a rendered fix brief whose front matter does not parse as YAML or loses its types
+- a rendered page (every HTML report, and the batch, automatic-run and queue pages) with
+  a tag closed out of order or left open, no utf-8 declaration, an empty, http or
+  javascript link, a new-tab link without `rel="noopener"`, an in-page link to a
+  missing id, or a metrics-tool link in the old shape (`scripts/page_check.py`)
+
+It also warns on a result's query link that lacks `query`, `from` or `to`, since its
+URL cannot be rebuilt from `links.log_query`.
 
 It warns on a lookback under two release cycles, a deploy window under one cycle, and
 a baseline under five days.

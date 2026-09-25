@@ -13,15 +13,23 @@ are in [CHANGELOG.md](CHANGELOG.md).
 - 14 fixtures, each a complete envelope validated against the live source contract, and
   four worked results.
 - Deterministic renderers, so the model cannot drift or abbreviate them:
-  `run_header.py` (header and team resolution), `render_trace.py` (HTML run trace),
-  `render_queue.py` (bug queue with overdue and stuck flags), `render_fix_brief.py`
-  (fix brief with evidence grading), `render_report.py` (the report), `timeline.py`,
+  `run_header.py` (header and team resolution), `render_trace.py` with `report_html.py`
+  (the HTML report, the default), `html_theme.py` (inlines `assets/report-theme.css`
+  and applies `output.theme`), `pages_html.py` (queue, batch and automatic-run pages), `brief_index.py` (the handoff index, briefs.json), `page_check.py` (page structure and link checks),
+  `render_queue.py` (bug queue with overdue and stuck flags; `--html` writes the queue
+  page), `render_fix_brief.py` (fix brief with evidence grading and `brief_version: 2`
+  front matter), `render_report.py` (the markdown report, opt-in), `clusters.py`
+  (groups in a batch, and the batch page), `links.py` (evidence links, including the
+  `log_query` template), `timeline.py`, `story.py`, `summary.py`,
   `history.py` (what changed since the last triage), `dupes.py` (duplicate scoring),
+  `comments.py`, `counterevidence.py`, `effort.py`, `fix_status.py`, `human_gate.py`,
+  `next_action.py`, `risks.py`, `sla.py`,
   `verify_workaround.py`, `auto_triage.py`, and `triage_log.py` with `calibration.py`
   (audit log, overrides, accuracy report, calibration suggestions, dashboard).
 - `scripts/validate_config.py`: config validation, contract validation, read-only SQL
   enforcement, credential-shaped key detection, placeholder detection, result files,
-  and command and skill front matter.
+  command and skill front matter, `output.theme` colours, and fix brief front matter
+  that parses and keeps its types.
 
 ## Added in 0.7.0
 
@@ -40,6 +48,7 @@ are in [CHANGELOG.md](CHANGELOG.md).
 
 | Version | Change |
 | --- | --- |
+| 0.8.0 | HTML report is the default (markdown on request, agent mode for fix pipelines); story, risks, reproduction, fix complexity, groups, counter-evidence, SLA, human review, fixed set of next actions; already-fixed check; fix brief front matter v2 and briefs.json handoff index; queue, batch and automatic-run pages; theme file; working metrics query links; page checks in the validator |
 | 0.7.1 | Reads the ticket's own comments: noise dropped by script, relevant comments categorised and quoted word for word, checked by the validator; shown in report, trace and fix brief |
 | 0.6.0 | `/queue`, `/triage-log`, fix briefs graded strong, moderate or weak; team from the ticket's project key; `triage-config` stops on a skipped required answer; `+1 history` counts only fixed defects; hint when a connector is present but its source is off |
 | 0.6.1 | Quoted command front matter. An unquoted hint starting with `[` made three commands disappear |

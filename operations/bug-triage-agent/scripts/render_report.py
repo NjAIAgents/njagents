@@ -22,6 +22,15 @@ import timeline as TL  # noqa: E402
 import history as H  # noqa: E402
 import dupes as D  # noqa: E402
 import comments as CM  # noqa: E402
+import fix_status as FX  # noqa: E402
+import clusters as CL  # noqa: E402
+import effort as EF  # noqa: E402
+import risks as RK  # noqa: E402
+import human_gate as HG  # noqa: E402
+import next_action as NA  # noqa: E402
+import counterevidence as CE  # noqa: E402
+import sla as SL  # noqa: E402
+import story as ST  # noqa: E402
 import verify_workaround as V  # noqa: E402
 from render_trace import validate  # noqa: E402
 from render_fix_brief import assess  # noqa: E402
@@ -34,6 +43,75 @@ METER = {"high": "●●●", "medium": "●●○", "low": "●○○"}
 
 def cell(v):
     return ("" if v is None else str(v)).replace("|", "/").replace("\n", " ")
+
+
+def labels(r, fixed, gap):
+    """Short labels a reader scans before the table: what kind of ticket this is and what
+    is unusual about it. Built only from data that is set."""
+    t = []
+    if r.get("disposition") == "defect":
+        t.append("regression" if S._regression(r) else "defect")
+        if fixed:
+            t.append("already fixed")
+    else:
+        t.append(r["disposition"].replace("_", " "))
+    relo = r.get("release") or {}
+    rel = relo.get("version") if relo.get("confidence") in ("high", "medium", None) and relo.get("version") else None
+    if rel:
+        t.append(f"since {rel}")
+    if r.get("component"):
+        t.append(r["component"])
+    if gap:
+        t.append("priority gap")
+    sl = r.get("sla") or {}
+    if sl.get("state") in ("breached", "due_soon"):
+        t.append("overdue" if sl["state"] == "breached" else "due soon")
+    if HG.required(r):
+        t.append("needs a person")
+    if r.get("clusters"):
+        t.append("in a group")
+    w = r.get("workaround") or {}
+    if w.get("text"):
+        t.append("customer workaround" if NA.customer_can_apply(w) else "internal workaround")
+    return t
+
+
+def lead_bold(text):
+    """Bold the instruction itself, up to the first clause break, leaving the who and why plain."""
+    import re
+    m = re.match(r"(.+?)([;:.] |$)", text)
+    return f"**{m.group(1)}**{text[len(m.group(1)):]}" if m else text
+
+
+HEAD = {"Timeline": "⏱", "Why this is": "🧭", "Against this": "⚖️", "Duplicate check": "🔁", "Comments": "💬",
+        "How the priority": "🧮", "Workaround": "💡", "Evidence": "🔎", "Coverage": "📡", "Fields to update": "✏️",
+        "Risks": "🛡", "Fix status": "🔧"}
+
+
+def mark_headings(lines):
+    out = []
+    for ln in lines:
+        if ln.startswith("## "):
+            k = next((v for key, v in HEAD.items() if ln[3:].startswith(key)), None)
+            ln = f"## {k} {ln[3:]}" if k else ln
+        out.append(ln)
+    return out
+
+
+def timeline_block(r):
+    """The timeline (chart when there is a series, always the event table) with the release
+    correlation as its first line. Placed right after the story: it is the story, drawn."""
+    rel = r.get("release") or {}
+    intro = r.get("introduced_by") or {}
+    rel_line = []
+    if rel:
+        rel_line = [f"**Release:** {links.md(rel.get('version'), rel.get('url'))}, correlation "
+                    f"**{rel.get('confidence', '?')}**. {rel.get('basis', '')}"
+                    + (f" Likely introduced by {links.md(intro['pr'], intro.get('pr_url'))}." if intro.get("pr") else ""), ""]
+    tl = TL.md(r)
+    if tl:
+        return tl[:2] + rel_line + tl[2:]
+    return (["## Release", ""] + rel_line) if rel_line else []
 
 
 def render(r):
@@ -58,42 +136,68 @@ def render(r):
         o += links.callout("warning", "**Stale data.** " + "; ".join(stale)
                            + ". Re-check before acting; the evidence may not be reproducible later.") + [""]
 
+    fixed = defect and FX.is_fixed(r)
+    cur, tp = r.get("current_priority"), r.get("tracker_priority")
+    gap = bool(defect and tp and cur and cur != tp)
+
+    # Masthead: ticket, then one line of the facts a reader scans for.
     head = f"{PRIO.get(r.get('priority'), '')} {r.get('priority')} · " if defect else "⚪ "
     o += [f"# {head}{links.md(t, r.get('ticket_url'))} · {r.get('summary', '')}", ""]
-    o += [f"Triaged {r.get('triaged_at', '')} · team `{r.get('team', '')}` · agent {r.get('agent_version', '')}", ""]
+    o += [f"*Triaged {r.get('triaged_at', '')} · team `{r.get('team', '')}` · agent {r.get('agent_version', '')}*", ""]
+    tags = labels(r, fixed, gap)
+    if tags:
+        o += [" ".join(f"`{t}`" for t in tags), ""]
+    o += HG.md(r)
 
     # The answer, in three lines. Most readers stop here.
-    o += [f"> **{summ['verdict']}**"]
+    o += [f"> ### {summ['verdict']}"]
     if summ["why"]:
-        o += [">", "> **Why:** " + "; ".join(w.rstrip(".") for w in summ["why"]) + "."]
-    if summ["do_now"]:
-        o += [">", f"> **Do now:** {summ['do_now']}"]
+        o += [">", "> **Why** · " + S.why_line(summ["why"])]
+    o += [">", f"> **Next** · {NA.answer_line(r, summ['do_now'])}"]
     o.append("")
-    o += H.md(r, r.get("_previous") or r.get("previous"))
+    o += ST.md(r)
 
-    o += ["## Recommendation", "", "| | |", "| --- | --- |",
-          f"| **Disposition** | `{r.get('disposition')}` |"]
+    # At a glance: two-column key facts, no section heading needed.
+    rows = [("Disposition", f"`{r.get('disposition')}`")]
     if defect:
-        tp = f" → tracker \"{r['tracker_priority']}\"" if r.get("tracker_priority") else ""
-        o.append(f"| **Priority** | **{PRIO.get(r['priority'], '')} {r['priority']}**{tp} |")
-    o.append(f"| **Confidence** | {METER.get(r.get('confidence'), '')} {r.get('confidence', '')} |")
-    if ev:
-        o.append(f"| **Evidence** | {EVID[ev['level']]} {ev['level']} |")
+        rows.append(("Priority", f"**{PRIO.get(r['priority'], '')} {r['priority']}**"
+                     + (f" · ❗ tracker has \"{cur}\", set it to \"{tp}\"" if gap else f" → tracker \"{tp}\"" if tp else "")))
+        if SL.cell(r) and not fixed:
+            rows.append(("Fix due", cell(SL.cell(r))))
+    rows.append(("Confidence", f"{METER.get(r.get('confidence'), '')} {r.get('confidence', '')}"))
     if corr:
         n, live = S.corroboration_line(r)
-        o.append(f"| **Supported by** | {n} of {live} sources: "
-                 + " · ".join(f"{c['source']} {links.md(c['label'], c['url'])}" for c in corr) + " |")
-    if r.get("route"):
-        o.append(f"| **Route to** | **{cell(r['route'])}** |")
+        lead = f"{EVID[ev['level']]} {ev['level']} evidence · " if ev else ""
+        rows.append(("Supported by", f"{lead}{n} of {live} sources: "
+                     + " · ".join(f"{c['source']} {links.md(c['label'], c['url'])}" for c in corr)))
+    elif ev:
+        rows.append(("Evidence", f"{EVID[ev['level']]} {ev['level']}"))
+    if defect and not fixed:
+        rp = r.get("reproduction") or EF.reproduction(r)
+        if rp["status"] != "not_attempted":
+            rows.append(("Reproduction", cell(EF.repro_cell(r, brief=True))))
+        cx = EF.complexity_cell(r)
+        if cx:
+            rows.append(("Fix complexity", cell(cx)))
+        rs = RK.get(r)
+        if rs:
+            rows.append(("Risks", " · ".join(f"{RK.ICON[x['type']]} {RK.LABEL[x['type']]} ({x['level']})" for x in rs)))
+    if NA.is_team(r.get("route")):
+        rows.append(("Route to", f"**{cell(NA.clean_route(r['route']))}**"))
     if defect:
-        o.append(f"| **Fix brief** | [{t}.fix-brief.md]({t}.fix-brief.md) |")
-    o.append("")
+        rows.append(("Fix brief", f"[{t}.fix-brief.md]({t}.fix-brief.md)"))
+    o += ["| | |", "| --- | --- |"] + [f"| **{k}** | {v} |" for k, v in rows] + [""]
+    if r.get("confidence_basis"):
+        b = r["confidence_basis"].strip()
+        o += [f"*Confidence is {r.get('confidence', '')} because {b[:1].lower() + b[1:]}*", ""]
+
+    o += H.md(r, r.get("_previous") or r.get("previous"))
+    o += FX.md(r)
+    if defect:
+        o += timeline_block(r)
+    o += CL.md_membership(r)
     if r.get("deciding_factor"):
         o += [f"**Deciding factor:** {r['deciding_factor']}", ""]
-    cur = r.get("current_priority")
-    if defect and cur and r.get("tracker_priority") and cur != r["tracker_priority"]:
-        o += links.callout("important", f"**Priority gap.** The tracker has this at \"{cur}\". "
-                           f"Recommended \"{r['tracker_priority']}\".") + [""]
 
     dev = r.get("disposition_evidence") or []
     if dev:
@@ -104,14 +208,15 @@ def render(r):
         o.append("")
     if r.get("alternative"):
         o += [r["alternative"], ""]
+    o += CE.md(r)
     o += D.md(r)
     o += CM.md(r)
 
     if not defect:
-        if r.get("route"):
-            o += ["## Route", "", f"**{r['route']}**" + (f". {r['route_note']}" if r.get("route_note") else ""), ""]
+        if r.get("route_note"):
+            o += [r["route_note"], ""]
         o += links.callout("note", "Nothing has been written to the tracker. Confirm before posting.")
-        return "\n".join(o) + "\n"
+        return "\n".join(mark_headings(o)) + "\n"
 
     steps = r.get("steps") or []
     if steps:
@@ -121,16 +226,6 @@ def render(r):
             o.append(f"| `{cell(s.get('step'))}` | {lvl} | {cell(s.get('because'))} |")
         o.append("")
 
-    rel = r.get("release") or {}
-    if rel:
-        o += ["## Release correlation", "",
-              f"**{links.md(rel.get('version'), rel.get('url'))}**, shipped {rel.get('shipped', '?')}"
-              + (f", {rel['gap_days']} days before first seen" if rel.get("gap_days") is not None else "")
-              + f". {rel.get('basis', '')} **Correlation confidence: {rel.get('confidence', '?')}.**", ""]
-        intro = r.get("introduced_by") or {}
-        if intro.get("pr"):
-            o += [f"Likely introduced by {links.md(intro['pr'], intro.get('pr_url'))}.", ""]
-    o += TL.md(r)
 
     wa = r.get("workaround") or {}
     if wa.get("text"):
@@ -158,16 +253,18 @@ def render(r):
             if l.get("snippet"):
                 o += ["```", f"{links.location_label(l)}", l["snippet"], "```", ""]
 
-    o += ["## Coverage", "", "| Source | Mode | Result | Data |", "| --- | --- | --- | --- |"]
+    # What each source found is already in the evidence above; here only whether it answered.
     ages = {f["source"]: f for f in fresh}
+    parts = []
     for s in S.SOURCES:
         src = srcs.get(s) or {}
         mode = src.get("mode", "off")
-        res = "not queried" if mode == "off" else cell(src.get("note") or src.get("status", "ok"))
+        st = "not queried" if mode == "off" else src.get("status", "ok")
         f = ages.get(s) or {}
-        data = ("⚠ " if f.get("stale") else "") + (f.get("note") or (f"read {f['age']} before" if f.get("age") else ""))
-        o.append(f"| {s} | {MODE.get(mode, '')} {mode} | {res} | {cell(data)} |")
-    o.append("")
+        stale_ = " ⚠ stale" if f.get("stale") else ""
+        mark = {"ok": "🟢", "unavailable": "⚪", "error": "🔴", "not queried": "⚫"}.get(st, "🟡")
+        parts.append(f"{mark} {s} {st}{stale_}")
+    o += ["## Coverage", "", " · ".join(parts), ""]
     un = r.get("unanswered") or []
     o += (["**Unanswered** (a source was off; each lowers confidence, none raises severity):", ""]
           + [f"- {u}" for u in un] + [""]) if un else ["All ten classification questions answered.", ""]
@@ -181,7 +278,7 @@ def render(r):
         w = max(len(k) for k in upd)
         o += ["## Fields to update", "", "```"] + [f"{k.ljust(w)}  → {v}" for k, v in upd.items()] + ["```", ""]
     o += links.callout("note", "Nothing has been written to the tracker. Confirm before posting.")
-    return "\n".join(o) + "\n"
+    return "\n".join(mark_headings(o)) + "\n"
 
 
 def main():
@@ -196,7 +293,12 @@ def main():
             r = json.load(f)
         if a.team_config:
             with open(a.team_config, encoding="utf-8") as cf:
-                links.enrich(r, json.load(cf))
+                _cfg = json.load(cf)
+                links.enrich(r, _cfg)
+                RK.fill(r, _cfg)
+                HG.fill(r, _cfg)
+                SL.fill(r, _cfg)
+                r["_providers"] = {k: v.get("provider") for k, v in (_cfg.get("sources") or {}).items() if isinstance(v, dict) and v.get("provider")}
         H.attach(path, r)
         problems = validate(r)
         if problems:

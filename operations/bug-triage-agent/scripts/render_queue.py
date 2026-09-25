@@ -153,6 +153,8 @@ def main():
     ap.add_argument("--log", help="audit log; default <workdir>/triage-logs/triage-log.jsonl")
     ap.add_argument("--limit", type=int, default=25)
     ap.add_argument("--untriaged-only", action="store_true")
+    ap.add_argument("--html", action="store_true",
+                    help="also write <workdir>/<reports_dir>/queue-<team>.html, in the report's look")
     ap.add_argument("target", nargs="*", help="a team id or a project key, e.g. demo-live or DEMO")
     a = ap.parse_args()
 
@@ -233,6 +235,16 @@ def main():
             last += " · reviewed"
         if r["changed"]:
             last += " · changed since triage"
+        if rec and rec.get("disposition") == "defect" and rec.get("priority"):
+            import sla as SL
+            s = SL.compute({"disposition": "defect", "priority": rec["priority"], "ticket_created": i.get("created"),
+                            "triaged_at": rec.get("ts")}, cfg, now=datetime.now(timezone.utc))
+            if s and s.get("state") in ("breached", "due_soon"):
+                last += f" · {SL.ICON[s['state']]} fix {s['delta']}"
+        if rec and "human_review" in (rec.get("flags") or []) and not rec.get("human_override"):
+            last += " · 👤 needs a person"
+        if rec and "already_fixed" in (rec.get("flags") or []):
+            last += " · ✅ fix merged"
         if r["stuck"]:
             last += f" · 🧊 no movement in {r['since']}d"
         out.append(f"| {i['key']} | {summ} | {area(i, prefix)} | {i.get('priority') or '—'} "
@@ -260,8 +272,26 @@ def main():
         out.append("Everything open has been triaged and nothing changed since.")
     out.append("")
     out.append(f"Audit log: `{log_path}`" + ("" if os.path.exists(log_path) else " (none yet)"))
+    if a.html:
+        out.append(f"Queue page: `{write_html(a, cfg, shown, rows, tid, how, q, names, log_path, mode)}`")
     print("\n".join(out))
     return 0
+
+
+def write_html(a, cfg, shown, rows, tid, how, q, names, log_path, mode):
+    import pages_html as P
+    reports_abs = os.path.join(a.workdir, (cfg.get("output") or {}).get("reports_dir", "triage-reports"))
+    os.makedirs(reports_abs, exist_ok=True)
+    policy = (f"triage within {_dur(q['at_risk'])} at-risk, {_dur(q['default'])} otherwise"
+              + "".join(f", {_dur(h)} for {p}" for p, h in q["by_priority"].items()))
+    page = P.queue(shown, project=(cfg.get("tracker") or {}).get("project_key", "?"), team=tid, how=how,
+                   policy_line=policy, names=names, cfg=cfg, log_path=log_path, reports_abs=reports_abs,
+                   limit_note=f"showing {len(shown)} of {len(rows)}" if len(shown) < len(rows) else "",
+                   demo=mode == "fixture")
+    dest = os.path.join(reports_abs, f"queue-{tid}.html")
+    with open(dest, "w", encoding="utf-8") as f:
+        f.write(page)
+    return dest
 
 
 if __name__ == "__main__":

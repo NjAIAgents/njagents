@@ -1,0 +1,112 @@
+{
+  "team": "demo",
+  "triaged_at": "2026-09-22 10:14 UTC",
+  "agent_version": "0.7.1",
+  "ticket": "BUG-4866",
+  "summary": "Approval reminder emails sent twice to reviewers since 2026.09",
+  "ticket_created": "2026-09-17T10:05:00Z",
+  "sources": {
+    "tracker": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "releases": {
+      "mode": "fixture",
+      "status": "ok"
+    },
+    "metrics": {
+      "mode": "fixture",
+      "status": "ok",
+      "note": "no error spike; duplicate sends are not errors"
+    },
+    "warehouse": {
+      "mode": "fixture",
+      "status": "ok",
+      "note": "reviewers only; no customer data changed"
+    },
+    "code": {
+      "mode": "fixture",
+      "status": "ok",
+      "note": "candidate: ReminderService.ts"
+    }
+  },
+  "disposition": "defect",
+  "priority": "P4",
+  "tracker_priority": "Minor",
+  "current_priority": "Minor",
+  "confidence": "medium",
+  "confidence_basis": "Cosmetic duplicate email, no data change; the fix is already released.",
+  "route": "Approvals Team",
+  "disposition_evidence": [
+    {
+      "text": "Two identical reminders for one pending approval; the design sends one",
+      "source": "ticket description"
+    }
+  ],
+  "steps": [
+    {
+      "step": "Base",
+      "level": "P4",
+      "because": "Cosmetic: a duplicate notification, no data or workflow impact"
+    },
+    {
+      "step": "Final",
+      "level": "P4",
+      "because": "No escalation applies"
+    }
+  ],
+  "workaround": {
+    "text": "Reviewers can ignore the second email; the approval is recorded once.",
+    "who": "support, and customers can be told",
+    "source": "ticket description"
+  },
+  "repo": {
+    "name": "approvals-api",
+    "base_branch": "main"
+  },
+  "repro": {
+    "steps": [
+      "Leave a request in Pending Review past the reminder window",
+      "Watch the reviewer's inbox"
+    ],
+    "expected": "One reminder email",
+    "actual": "Two identical reminder emails a few minutes apart"
+  },
+  "locations": [
+    {
+      "path": "approvals-api/src/notifications/ReminderService.ts",
+      "signal": "candidate",
+      "evidence": "sends the approval reminders; code search found no fault signal",
+      "source": "code"
+    }
+  ],
+  "hypothesis": {
+    "statement": "The mail job retries after a timeout and the reminder is sent again without a once-per-request guard.",
+    "confirm_by": "A test that times out the first send gets one reminder, not two",
+    "refute_by": "Two reminders arrive without any retry",
+    "alternatives": [
+      {
+        "statement": "Two scheduler instances both pick up the reminder after the 2026.09 deploy.",
+        "confirm_by": "Both reminders carry different job ids from different hosts",
+        "why_less_likely": "the two emails are minutes apart, which matches the retry delay, not two schedulers"
+      }
+    ]
+  },
+  "fix_status": {
+    "state": "released",
+    "searched": "3 commit(s) on the default branch since 2026-09-01",
+    "confidence": "strong",
+    "why": "message names BUG-4866",
+    "commit": {
+      "sha": "c58e1d7a93b24f06e8d1a5c7b9f3e2d4a6c8b0e1",
+      "message": "Send approval reminders once per request when the mail job retries (BUG-4866)",
+      "date": "2026-09-18T16:20:00Z",
+      "pr": "#4449",
+      "files": [
+        "approvals-api/src/notifications/ReminderService.ts",
+        "approvals-api/test/notifications/ReminderService.test.ts"
+      ]
+    },
+    "in_release": "2026.09.1"
+  }
+}

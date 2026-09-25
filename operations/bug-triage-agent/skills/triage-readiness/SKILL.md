@@ -56,6 +56,9 @@ Run the readiness check for: the user's request
      check --team-config <config>` and report its line. For the `ci` runner, confirm the
      `tool_bindings.verification` tools are present as in step 5. Never run a scenario
      from here.
+   - **SLA:** the fix-within time per priority from `sla`, or "no SLA set".
+   - **Human review:** on or off (`human_review.enabled`); when on, the risk types,
+     `min_level` and reviewers.
    - **Queue limits:** the triage-within hours in force, from `queue` or the defaults.
 
 Never print credentials, tokens or connection strings. Report reachability only.

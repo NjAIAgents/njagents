@@ -1,0 +1,28 @@
+{
+  "source": "tracker",
+  "mode": "fixture",
+  "status": "ok",
+  "as_of": "2026-09-21T09:00:00Z",
+  "latency_ms": 0,
+  "notes": [],
+  "data": {
+    "ticket": {
+      "key": "BUG-4866",
+      "summary": "Approval reminder emails sent twice to reviewers since 2026.09",
+      "description": "Reviewers get two identical reminder emails for the same pending approval. Started after 2026.09. Repro: leave a request in Pending Review past the reminder window; two emails arrive a few minutes apart.",
+      "component": "notifications",
+      "priority": "Minor",
+      "labels": [],
+      "reporter": "support.tier1",
+      "created": "2026-09-17T10:05:00Z",
+      "fix_versions": []
+    },
+    "related": [],
+    "duplicates": [],
+    "component_history": {
+      "resolved_90d": 1,
+      "open": 2
+    },
+    "sprint_collision": false
+  }
+}

@@ -99,5 +99,15 @@
   "output": {
     "reports_dir": "triage-reports",
     "write_report": "always"
+  },
+  "sla": {
+    "fix_within": {
+      "P1": "1d",
+      "P2": "5d",
+      "P3": "30d",
+      "P4": "90d"
+    },
+    "clock": "created",
+    "business_days": false
   }
 }

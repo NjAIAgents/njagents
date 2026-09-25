@@ -25,9 +25,30 @@ TEMPLATE_KEYS = {
     "release": {"owner", "repo", "version"},
     "pr": {"owner", "repo", "number"},
     "ticket": {"key"},
+    # A metrics or log query opened in the metrics tool over the evidence window.
+    # {query} is filled JSON-escaped and URL-encoded, {from} and {to} as epoch
+    # milliseconds, so a template can embed them in an encoded JSON parameter.
+    "log_query": {"query", "from", "to"},
 }
 SAMPLE = {"owner": "acme", "repo": "app", "ref": "0a1b2c3", "path": "src/a/b.ts",
-          "line": 89, "sha": "0a1b2c3", "version": "2026.09", "number": 4412, "key": "ABC-1"}
+          "line": 89, "sha": "0a1b2c3", "version": "2026.09", "number": 4412, "key": "ABC-1",
+          "query": 'sum(count_over_time({app="x"} |= "err" [1h]))', "from": "2026-09-16T12:00:00Z",
+          "to": "2026-09-23T04:00:00Z"}
+
+
+def _epoch_ms(v):
+    from datetime import datetime
+    try:
+        return str(int(datetime.fromisoformat(str(v).replace("Z", "+00:00")).timestamp() * 1000))
+    except ValueError:
+        return None
+
+
+def query_values(query, start, end):
+    """Encode a query and its window for a `log_query` template."""
+    from urllib.parse import quote
+    q = quote(json.dumps(query)[1:-1], safe="") if query else None
+    return {"query": q, "from": _epoch_ms(start), "to": _epoch_ms(end)}
 
 
 def safe_url(u):
@@ -148,11 +169,33 @@ def enrich(r, cfg):
                                if intro.get("pr_is_pr") else None))
     if intro.get("release") and not intro.get("release_url"):
         intro["release_url"] = fill(t.get("release"), owner=owner, repo=name, version=intro["release"])
+    fs = r.get("fix_status") or {}
+    for c in [fs.get("commit") or {}] + list(fs.get("candidates") or []):
+        if c.get("sha") and not c.get("url"):
+            c["url"] = fill(t.get("commit"), owner=owner, repo=name, sha=c["sha"])
     for p in r.get("prior_fixes") or []:
         if not p.get("url") and p.get("key"):
             p["url"] = fill(t.get("ticket"), key=p["key"])
     if not r.get("ticket_url"):
         r["ticket_url"] = fill(t.get("ticket"), key=r.get("ticket"))
+    # Query links are the one place the team's template beats a tool's URL: deep-link
+    # tools can emit an older URL shape the metrics tool no longer honours, which opens
+    # an empty query over the last hour. A link that carries its `query` is rebuilt.
+    if t.get("log_query"):
+        m = (r.get("sources") or {}).get("metrics") or {}
+        old = {}
+        for ln in r.get("links") or []:
+            if ln.get("query"):
+                u = fill(t["log_query"], **query_values(ln["query"], ln.get("from") or m.get("data_from"),
+                                                        ln.get("to") or m.get("as_of")))
+                if u:
+                    if ln.get("url"):
+                        old[ln["url"]] = u
+                    ln["url"] = u
+        # The same URL may have been copied onto other evidence (a risk, a location).
+        for loc in (r.get("locations") or []) + (r.get("disposition_evidence") or []):
+            if loc.get("url") in old:
+                loc["url"] = old[loc["url"]]
     return r
 
 
@@ -170,7 +213,9 @@ def check(cfg):
             problems.append(f"links.{kind}: unknown placeholder(s) {sorted(unknown)}; "
                             f"allowed: {sorted(TEMPLATE_KEYS[kind])}")
             continue
-        if not fill(template, **SAMPLE):
+        vals = dict(SAMPLE, **query_values(SAMPLE["query"], SAMPLE["from"], SAMPLE["to"])) \
+            if kind == "log_query" else SAMPLE
+        if not fill(template, **vals):
             problems.append(f"links.{kind}: does not produce an https URL when filled")
     return problems
 

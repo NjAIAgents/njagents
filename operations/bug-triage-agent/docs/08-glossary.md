@@ -29,7 +29,13 @@ Terms that mean something specific here.
 | **Comment review** | Reading the triaged ticket's own comments: a script drops noise, the model uses what is left only by quoting it, and a later comment beats an earlier one it contradicts |
 | **Recurrence** | A duplicate candidate with the same failure that was already fixed. The ticket stays a defect, and that fix becomes a prior fix, rather than being closed as a duplicate |
 | **Duplicate check** | Scoring each candidate on error text, symptom, stack, endpoint, file, area and release. A title match alone never makes a duplicate |
-| **Result file** | `<TICKET>.result.json`, the one record of a triage. The report, trace, fix brief and digest are rendered from it by scripts |
+| **Result file** | `<TICKET>.result.json`, the one record of a triage. The HTML report, the markdown report, the fix brief and the digest are rendered from it by scripts |
+| **HTML report** | `<TICKET>-report.html`, the default report. One self-contained page, written by `render_trace.py` |
+| **report_format** | `output.report_format` in the team config: `html` (default), `md`, `both` or `agent`. Decides which report files a triage writes |
+| **Agent mode** | `report_format: agent`. Only the result file and, for defects, the fix brief are written, for a pipeline that hands defects to a fix agent |
+| **Fix brief** | `<TICKET>.fix-brief.md`, written for every defect in every mode. What a person or a fix agent needs to start the fix |
+| **Fix brief front matter** | The YAML block at the top of the fix brief, `brief_version: 2`: the fault, the hypothesis with its confirm and refute tests, alternatives, acceptance, fix status, branch and more. A fix agent parses it; the validator checks it keeps its types |
+| **Theme** | The look every HTML page shares, from `assets/report-theme.css`. A team can change only the accent colour, with `output.theme` |
 | **Since the last triage** | The block that opens a re-triaged ticket's report: what changed in verdict, evidence, sources and workaround, compared with the archived earlier result |
 | **Timeline** | Dated events from the sources (deploy, error rise, ticket, triage) with the gaps between them, drawn over the error counts |
 | **Overdue** | An untriaged bug older than the team's triage-within limit. Listed first in the queue |

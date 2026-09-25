@@ -45,8 +45,9 @@ def check_config(path):
     import links as _links
     for problem in _links.check(cfg):
         err(f"{name}: {problem}")
-    import auto_triage as _auto, verify_workaround as _ver
-    for problem in _auto.config_problems(cfg) + _ver.cfg_problems(cfg):
+    import auto_triage as _auto, verify_workaround as _ver, html_theme as _theme
+    for problem in (_auto.config_problems(cfg) + _ver.cfg_problems(cfg)
+                    + _theme.valid((cfg.get("output") or {}).get("theme"))):
         err(f"{name}: {problem}")
     for k, v in ((cfg.get("queue") or {}).get("triage_within_hours") or {}).items():
         if k != "by_priority" and not (isinstance(v, (int, float)) and v > 0):
@@ -386,7 +387,118 @@ def check_logic():
     if not CM.validate({"comment_review": {"used": [{"id": "5", "category": "detail", "quote": "not said"}]}},
                        {k["id"]: k for k in kept}):
         err("comments: a quote that is not in its comment was accepted")
-    print("  duplicate, verification, automation and comment guards hold")
+    import fix_status as FX
+    rel = {"data": {"commits_since": [
+        {"sha": "aaaaaaaa1", "message": "Tidy logging", "date": "2026-09-10", "files": ["a/Export.java"]},
+        {"sha": "bbbbbbbb2", "message": "Fix X-9 export skipped", "date": "2026-09-12", "files": ["a/Other.java"]}]}}
+    res = {"ticket": "X-9", "summary": "Export missing", "locations": [{"path": "a/Export.java"}]}
+    got = FX.assess(res, rel)
+    if got.get("state") != "fixed_on_main" or got["commit"]["sha"] != "bbbbbbbb2":
+        err("fix_status: a commit naming the ticket was not taken as the fix")
+    got = FX.assess({**res, "ticket": "X-10"}, rel)
+    if got.get("state") != "open":
+        err("fix_status: a commit that only touches the file was claimed as the fix")
+    import clusters as CL
+    base = {"disposition": "defect", "sources": {}}
+    rs = [dict(base, ticket="A-1", priority="P3", locations=[{"path": "x/F.ts", "signal": "candidate"}]),
+          dict(base, ticket="A-2", priority="P4", locations=[{"path": "x/F.ts", "signal": "candidate"}]),
+          dict(base, ticket="A-3", priority="P3", locations=[{"path": "x/G.ts", "signal": "error_swallowing"}]),
+          dict(base, ticket="A-4", priority="P2", locations=[{"path": "x/G.ts", "line": 9, "signal": "stub"}])]
+    cs = {c["key"]: c for c in CL.build(rs)}
+    if cs.get("x/F.ts", {}).get("status") != "PROPOSED":
+        err("clusters: tickets sharing only a candidate path were marked as supported by evidence")
+    if cs.get("x/G.ts", {}).get("status") != "EVIDENCE_SUPPORTED" or cs["x/G.ts"]["priority"] != "P2":
+        err("clusters: two tickets with evidence at one file were not grouped at the highest member priority")
+    import effort as EF
+    q = {"ticket": "Q-1", "disposition": "defect", "priority": "P3", "sources": {"metrics": {"status": "ok", "note": "no spike"}},
+         "locations": [{"path": "x/F.ts", "line": 3, "signal": "error_swallowing"}]}
+    if EF.reproduction(q)["status"] != "code_path_only":
+        err("effort: a fault signal with no production failure must be code_path_only, never reproduced")
+    q["sources"]["metrics"]["note"] = "3.1× baseline"
+    if EF.reproduction(q)["status"] != "seen_in_production":
+        err("effort: an error spike for the ticket must read as seen_in_production")
+    if EF.validate(dict(q, reproduction={"status": "reproduced"})) == []:
+        err("effort: reproduced without `how` must be rejected")
+    if EF.complexity(dict(q, locations=[]))["score"] < 3:
+        err("effort: no located file must not score as a low-complexity fix")
+    import risks as RK
+    base = {"ticket": "R-1", "disposition": "defect", "summary": "Export header misaligned", "locations": [
+        {"path": "x/Settlements.ts", "signal": "candidate", "evidence": "settlements export code"}]}
+    if any(x["level"] == "evidenced" for x in RK.detect(base)):
+        err("risks: a word in the code notes must not count as evidenced")
+    if [x["type"] for x in RK.detect(dict(base, disposition="duplicate"))]:
+        err("risks: only defects are tagged")
+    tagged = {x["type"]: x["level"] for x in RK.detect(dict(base, summary="Card charged twice", locations=[
+        {"path": "x/A.ts", "line": 3, "signal": "error_swallowing", "evidence": "catch returns ok after a failed save"}]))}
+    if tagged.get("payment") != "reported" or tagged.get("silent_failure") != "evidenced" \
+            or tagged.get("data_integrity") != "evidenced":
+        err(f"risks: expected payment reported, silent failure and data integrity evidenced; got {tagged}")
+    if "payment" in {x["type"] for x in RK.detect(dict(base, summary="Card charged twice"), {"risks": {"off": ["payment"]}})}:
+        err("risks: a type turned off in the config was still tagged")
+    import human_gate as HG
+    pay = dict(base, summary="Card charged twice")
+    if HG.evaluate(pay, {}) is not None:
+        err("human_review: the gate must be off unless the config turns it on")
+    on = {"human_review": {"enabled": True}}
+    if not (HG.evaluate(pay, on) or {}).get("required"):
+        err("human_review: a reported payment risk must hold the ticket when the gate is on")
+    sus = dict(base, summary="Export header misaligned", hypothesis={"statement": "the refund job overwrote it"})
+    if HG.evaluate(sus, on) is not None:
+        err("human_review: a suspected risk must not trigger the gate at the default min_level")
+    if HG.evaluate(dict(pay, disposition="duplicate"), on) is not None:
+        err("human_review: only defects are held")
+    import next_action as NA
+    d0 = {"ticket": "N-1", "disposition": "defect", "priority": "P2", "locations": [], "sources": {}}
+    if NA.decide(d0)["action"] != "locate_first":
+        err("next_action: a P2 with no located cause must be locate_first, not fix_now")
+    if NA.decide(dict(d0, priority="P1"))["action"] != "fix_now":
+        err("next_action: a P1 must be fix_now")
+    if NA.decide(dict(d0, disposition="duplicate", route="link to X-1 and close")).get("owner"):
+        err("next_action: an action-style route must not be read as an owner")
+    held = dict(d0, human_review={"required": True, "because": [{"type": "payment", "level": "reported", "why": "x"}]})
+    if NA.decide(held)["action"] != "await_review" or NA.decide(held).get("then") != "locate_first":
+        err("next_action: a ticket held for review must be await_review, with the action that follows")
+    import counterevidence as CE
+    c0 = {"ticket": "C-1", "disposition": "defect", "priority": "P2", "confidence": "high", "sources": {},
+          "locations": [{"path": "x/F.ts", "line": 1, "signal": "error_swallowing"}],
+          "contradictions": [{"text": "staff said works as designed", "source": "comment", "against": "disposition"}]}
+    if not CE.validate(c0):
+        err("counterevidence: high confidence with an open contradiction against the disposition was accepted")
+    c0["contradictions"][0]["addressed"] = "a later staff comment withdrew it"
+    if CE.validate(c0):
+        err("counterevidence: an addressed contradiction still blocked the result")
+    weak = {"ticket": "C-2", "disposition": "defect", "priority": "P3", "confidence": "low", "sources": {},
+            "locations": [], "hypothesis": {"statement": "x"}}
+    if CE.validate(weak) or not CE.gaps(weak):
+        err("counterevidence: weak evidence with no alternative cause must render with a caution, not be refused")
+    late = {"ticket": "C-3", "disposition": "defect", "release": {"version": "9.1", "shipped": "2026-09-10"},
+            "timeline": [{"kind": "ticket", "at": "2026-09-08 09:00 UTC"}]}
+    if not any(c["rule"] == "release_after_failure" for c in CE.derive(late)):
+        err("counterevidence: a release shipped after the failure was not flagged")
+    import sla as SL
+    cfg_s = {"sla": {"fix_within": {"P2": "5d"}}}
+    base_s = {"ticket": "S-1", "disposition": "defect", "priority": "P2", "ticket_created": "2026-09-01T00:00:00Z"}
+    if SL.compute(base_s, {}) is not None:
+        err("sla: due dates must be off unless sla.fix_within is set")
+    s1 = SL.compute(base_s, cfg_s, now=SL._t("2026-09-10T00:00:00Z"))
+    if not s1 or s1["state"] != "breached" or not s1["due"].startswith("2026-09-06"):
+        err(f"sla: a P2 created 09-01 with 5d must be due 09-06 and breached on 09-10; got {s1}")
+    met = dict(base_s, fix_status={"state": "deployed", "deployed": {"at": "2026-09-04T00:00:00Z"}})
+    if SL.compute(met, cfg_s, now=SL._t("2026-09-10T00:00:00Z"))["state"] != "met":
+        err("sla: a fix deployed before the due date must count as met")
+    if SL.compute(dict(base_s, disposition="duplicate"), cfg_s) is not None:
+        err("sla: only defects get a due date")
+    bd = SL.compute(dict(base_s, ticket_created="2026-09-04T00:00:00Z"),
+                    {"sla": {"fix_within": {"P2": "2d"}, "business_days": True}}, now=SL._t("2026-09-05T00:00:00Z"))
+    if not bd["due"].startswith("2026-09-08"):
+        err(f"sla: 2 business days from Friday 09-04 must be Tuesday 09-08; got {bd['due']}")
+    fs_env = {"data": {"commits_since": [{"sha": "abc1234567", "message": "api: deployable slice (X-9)", "date": "2026-09-23",
+                                          "files": ["api/approve.js"]}]}}
+    fs_r = {"ticket": "X-9", "locations": [{"path": "api/approve.js", "line": 25, "signal": "error_swallowing", "source": "code"}]}
+    if FX.assess(fs_r, fs_env)["state"] != "open":
+        err("fix_status: a commit naming the ticket must not count as the fix while the fault is still present at HEAD")
+    print("  duplicate, verification, automation, comment, fix-status, cluster, effort, risk, human-review, "
+          "next-action, counterevidence and SLA guards hold")
 
 
 def main():
@@ -434,6 +546,17 @@ def main():
             if not problems and not render_result(r).startswith('<meta charset="utf-8">'):
                 err(f"{os.path.relpath(f, ROOT)}: rendered trace does not open with "
                     "a utf-8 charset declaration")
+            # The page is built by string assembly: check its structure and links.
+            if not problems:
+                import page_check as PC
+                for p in PC.check(render_result(r)):
+                    err(f"{os.path.relpath(f, ROOT)}: HTML report: {p}")
+            # A query link without its query text and window cannot be rebuilt by the
+            # team's log_query template, and a tool's own link may open an empty query.
+            for ln in r.get("links") or []:
+                if "query" in (ln.get("kind") or "") and not (ln.get("query") and ln.get("from") and ln.get("to")):
+                    warn(f"{os.path.relpath(f, ROOT)}: link '{ln.get('label')}' is a query link without "
+                         "`query`, `from` and `to`; its URL cannot be rebuilt from links.log_query")
             # Every worked defect must also produce a fix brief with a verdict, so the
             # hand-off to a fixer cannot break silently.
             if not problems and r.get("disposition") == "defect":
@@ -445,6 +568,24 @@ def main():
                         err(f"{os.path.relpath(f, ROOT)}: fix brief front matter lacks the evidence verdict")
                     if lvl != "strong" and "🛑" not in brief:
                         err(f"{os.path.relpath(f, ROOT)}: {lvl} evidence but the fix brief carries no caution")
+                    # A fix agent parses the front matter: it must load, and keep its types.
+                    try:
+                        import yaml
+                    except ImportError:
+                        yaml = None
+                    if yaml:
+                        try:
+                            fmd = yaml.safe_load(brief.split("---", 2)[1])
+                            for k in ("ticket", "branch", "evidence", "next_action"):
+                                if not isinstance(fmd.get(k), str):
+                                    err(f"{os.path.relpath(f, ROOT)}: fix brief front matter `{k}` is not a string")
+                            for k in ("introduced_by", "priority"):
+                                if fmd.get(k) is not None and not isinstance(fmd[k], str):
+                                    err(f"{os.path.relpath(f, ROOT)}: fix brief front matter `{k}` parses as {type(fmd[k]).__name__}")
+                            if not isinstance(fmd.get("acceptance"), list) or not fmd["acceptance"]:
+                                err(f"{os.path.relpath(f, ROOT)}: fix brief front matter has no acceptance list")
+                        except yaml.YAMLError as ye:
+                            err(f"{os.path.relpath(f, ROOT)}: fix brief front matter is not valid YAML ({ye})")
                 except Exception as e:  # noqa: BLE001
                     err(f"{os.path.relpath(f, ROOT)}: fix brief failed to render: {e}")
             # The report is rendered from the same file. It must open with the summary,
@@ -461,7 +602,7 @@ def main():
                         from render_fix_brief import assess as _assess
                         if _assess(r)["level"] != "strong" and "🛑" not in rep:
                             err(f"{os.path.relpath(f, ROOT)}: evidence not strong but the report carries no caution")
-                    if r.get("timeline") and "## Timeline" not in rep:
+                    if r.get("timeline") and "Timeline" not in rep:
                         err(f"{os.path.relpath(f, ROOT)}: result has a timeline but the report does not show it")
                     if r.get("previous") and "Since the last triage" not in rep:
                         err(f"{os.path.relpath(f, ROOT)}: result has a previous triage but the report shows no change block")
@@ -471,13 +612,40 @@ def main():
                         if os.path.exists(tf):
                             for prob in _cm.check(json.load(open(tf, encoding="utf-8")), r):
                                 err(f"{os.path.relpath(f, ROOT)}: {prob}")
-                        if "## Comments on the ticket" not in rep:
+                        if "Comments on the ticket" not in rep:
                             err(f"{os.path.relpath(f, ROOT)}: result has a comment review but the report does not show it")
-                    if r.get("duplicate_check") and "## Duplicate check" not in rep:
+                    if r.get("duplicate_check") and "Duplicate check" not in rep:
                         err(f"{os.path.relpath(f, ROOT)}: result has a duplicate check but the report does not show it")
                 except Exception as e:  # noqa: BLE001
                     err(f"{os.path.relpath(f, ROOT)}: report failed to render: {e}")
         print(f"  {len(rs)} result files checked against the trace, brief and report contracts")
+
+        # The other pages a person reads, rendered from the same results.
+        import page_check as PC
+        import pages_html as PH
+        import clusters as CL
+        results = [json.load(open(f, encoding="utf-8")) for f in rs]
+        pages = {}
+        try:
+            pages["batch page"] = PH.batch(results, CL.build(results))
+            pages["automatic-run page"] = PH.digest(
+                "demo", [r for r in results if r.get("disposition") == "defect"],
+                [r for r in results if r.get("disposition") != "defect"], [("BUG-0000", "sample failure")],
+                cfg={}, reports_abs=os.path.join(ROOT, "fixtures", "results"), index={"ready": [], "held": []})
+            demo_cfg_path = os.path.join(ROOT, "teams", "demo.json")
+            if os.path.exists(demo_cfg_path):
+                from render_queue import build_rows, fixture_issues
+                demo_cfg = json.load(open(demo_cfg_path, encoding="utf-8"))
+                rows = build_rows(demo_cfg, fixture_issues(demo_cfg, demo_cfg_path), {})
+                pages["queue page"] = PH.queue(rows, project="DEMO", team="demo", how="the validator",
+                                               policy_line="defaults", names={}, cfg=demo_cfg, log_path="log.jsonl",
+                                               reports_abs=os.path.join(ROOT, "fixtures", "results"), demo=True)
+        except Exception as e:  # noqa: BLE001
+            err(f"pages failed to render: {e}")
+        for name, html_text in pages.items():
+            for p in PC.check(html_text):
+                err(f"{name}: {p}")
+        print(f"  {len(rs)} report pages and {len(pages)} other pages checked for structure and links")
 
     explicit = bool(args) and args[0] != "--all"
 

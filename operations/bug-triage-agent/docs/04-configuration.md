@@ -311,6 +311,106 @@ or noreply). `staff` marks whose comments are always kept, when the tracker does
 kind, and what share of the runs they apply to, before `triage-log calibrate` suggests a
 change.
 
+### `sources.<s>.provider`
+
+A display name for the system behind each source, shown in the HTML report beside
+the source (for example `tracker (Jira)`, `metrics (Grafana Loki · Vercel)`).
+`triage-config` sets it from the connector it bound. Optional; without it the report
+shows the source name alone.
+
+### `sla`
+
+```json
+"sla": {"fix_within": {"P1": "1d", "P2": "5d", "P3": "30d", "P4": "90d"},
+        "clock": "created", "business_days": false}
+```
+
+Off unless `fix_within` is set. Each defect gets a fix-by date: when the clock starts
+(`created`, the ticket, or `triaged`) plus its priority's time, in hours or days, with
+weekends skipped when `business_days` is true. The report, trace, fix brief and batch
+table show it as on track, due soon (a quarter of the time left), breached, or met (a
+fix deployed in time); the queue flags triaged bugs that are due soon or breached. It
+never changes the priority. The `demo` config sets example values.
+
+### `risks`
+
+```json
+"risks": {"terms": {"payment": ["escrow", "held balance"]}, "off": ["performance"]}
+```
+
+Defects are tagged with named risks (security, payment, data integrity, compliance,
+availability, silent failure, customer communication, performance) by
+`scripts/risks.py`. `terms` adds this team's own words to a type; `off` stops a type
+from being tagged. Risks never change the priority by themselves.
+
+### `human_review`
+
+```json
+"human_review": {"enabled": false, "risk_types": ["security", "payment"],
+                 "min_level": "reported", "reviewers": ["Priya (security)", "*@fin.example.com"]}
+```
+
+**Off by default.** Every tracker post already needs a person's yes. Turn this on to
+go further for chosen risks: a defect tagged with one of `risk_types` (at `min_level`
+or surer) is held for a person's *decision*. Its report, trace and fix brief open
+with who must decide and why, automatic triage lists it under "Needs a person", the
+queue shows 👤 until it is reviewed, and nothing is posted or handed to a fix agent
+until a reviewer confirms by name. `reviewers` is shown in the report; empty means any
+person. Change it with `triage-config <team> review`.
+
+### `links`
+
+```json
+"links": {"code": "https://code.example.com/{owner}/{repo}/blob/{ref}/{path}#L{line}",
+          "ticket": "https://tracker.example.com/browse/{key}",
+          "log_query": "https://metrics.example.com/explore?q={query}&from={from}&to={to}"}
+```
+
+URL templates for evidence links, used when a tool returns no URL. Kinds and
+placeholders: `code` {owner} {repo} {ref} {path} {line}; `commit` {owner} {repo} {sha};
+`release` {owner} {repo} {version}; `pr` {owner} {repo} {number}; `ticket` {key};
+`log_query` {query} {from} {to}.
+
+`log_query` opens a metrics or log query in the metrics tool over the evidence window.
+`{query}` is filled JSON-escaped and URL-encoded, so it can sit inside an encoded JSON
+parameter; `{from}` and `{to}` are epoch milliseconds. A result link that carries a
+`query` (with `from` and `to` as ISO times) is always rebuilt from this template, even
+when a tool returned a URL: deep-link tools can emit an older URL shape that opens an
+empty query. `python3 scripts/links.py --check <config>` fills every template with sample
+values. The `demo-live` config carries a working `log_query`.
+
+### `output`
+
+```json
+"output": { "reports_dir": "triage-reports", "write_report": "always",
+            "report_format": "html", "run_trace": "file",
+            "theme": { "accent": "#0F766E", "accent_dark": "#7DD3C4" } }
+```
+
+`report_format` picks the report files: `html` (default) writes only
+`<TICKET>-report.html`, `md` only `<TICKET>.md`, `both` writes the two, and `agent`
+writes no report for people: only the result file and, for defects, the fix brief,
+whose YAML front matter a fix agent reads (`fault`, `hypothesis`, `acceptance`,
+`fix_status`, the branch). Use `agent` for a pipeline that feeds a fix agent. Markdown is
+useful to paste into a PR, a chat thread or a repo, or to hand to another agent; ask
+for it in a single run ("markdown too") without changing the config. The fix brief is
+always markdown. `run_trace: never` turns the HTML off, so the markdown is written
+instead. The fix brief is written for every defect in every mode.
+
+The batch page follows the same setting: `batch-<date>.html` for `html` and `both`,
+`batch-<date>.md` for `md` and `both`, and only `clusters.json` for `agent`.
+
+Every run, in every mode, refreshes `<reports_dir>/briefs.json`, the handoff index
+(`scripts/brief_index.py`). A fix agent reads it instead of the folder: `ready` lists
+the briefs it may pick up, in priority then fix-by order, with the branch and the fault
+line; `held` lists the rest with a reason (`human_review` until someone records a
+review, `already_fixed`, `locate_first` for weak location evidence, `no_brief`).
+
+`theme` is optional. `accent` sets the accent colour in light mode and `accent_dark` in
+dark mode (it defaults to `accent`). Both are `#RRGGBB`; the validator rejects any other
+key or value. Everything else about the look lives in `assets/report-theme.css`, which
+every HTML page inlines. Edit that file to change the look for every team.
+
 ## Credentials
 
 None, ever. The validator scans recursively for credential-shaped keys and fails on

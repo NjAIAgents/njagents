@@ -158,19 +158,28 @@ that some clients render and others do not. Never put information in the task li
 that does not also appear in the stage lines, or the run becomes illegible in the
 clients that lack it.
 
-## Run trace (optional)
+## HTML report, with the run trace
 
-A single self-contained page showing the decision path: the gate, the disposition and
-its basis, each source's contribution, the ten rubric questions marked answered or
-unanswered, the escalation arithmetic, and the final priority with its confidence.
+The default report. A single self-contained page that also shows the decision path:
+the gate, the disposition and its basis, each source's contribution, the rubric
+questions, the escalation arithmetic, the final priority with its confidence, and how
+the run was produced, stage by stage. Its layout is in
+`reference/output-templates.md`.
 
 Controlled by `output.run_trace` in the team config:
 
 | Value | Behaviour |
 | --- | --- |
-| `never` | No trace. |
-| `file` | Written next to the report as `<TICKET>-trace.html`. **Default.** |
+| `never` | No HTML report; the markdown report is written instead. |
+| `file` | Written to `reports_dir` as `<TICKET>-report.html` (`scripts/report_html.py`, called by `render_trace.py`). **Default.** |
 | `artifact` | Published as a hosted page, where the client can publish one. |
+
+`output.report_format` (`html` default, `md`, `both`, `agent`) decides whether a
+markdown report is also written, or, with `agent`, no report at all: only the result
+file and, for defects, the fix brief. The header links the markdown only when one was
+written for that run (`render_trace.py --markdown`, or the config asks for it). The
+page inlines `assets/report-theme.css` through `scripts/html_theme.py`; a team can set
+only its accent colour, with `output.theme`.
 
 The default is `file` deliberately. A triage report carries customer names, account
 counts and defect detail. Publishing that to a hosted URL is a disclosure decision,
@@ -192,6 +201,10 @@ from a tool result; renderers show it behind a short label and validate it is a 
 https URL. Add `introduced_by.sha` when the changing commit is known, and a top-level
 `links` list for evidence that has no other home, such as a log query or a deployment:
 `{"label": "Logs", "kind": "spike", "text": "…", "source": "metrics", "url": "https://…"}`.
+A metrics or log query link also carries `query` and its window, `from` and `to` as ISO
+times. Such a link is always rebuilt from the config's `links.log_query` template, even
+when a tool returned a URL, because a deep-link tool can emit an older URL shape that
+opens an empty query.
 
 Fields the report, trace and brief use for their opening summary and data-age checks,
 all optional:
@@ -207,9 +220,21 @@ all optional:
 | `fields_to_update` | Tracker fields to propose, e.g. `{"priority": "Critical"}` |
 | `route_note` | One line after the route for a non-defect |
 | `timeline` | Dated events from the sources: `[{"at": "2026-09-05 17:00 UTC", "kind": "deploy", "label": "2026.09", "url": "…"}]`. Kinds: `release`, `deploy`, `spike`, `first_error`, `ticket`, `triage`, `fix` |
-| `series` | The metrics counts behind the spike: `{"label": "…", "unit": "per 3h", "baseline": 36, "points": [["2026-09-03 00:00 UTC", 35], …]}`. Drawn as a chart in the trace and a sparkline in the report |
+| `series` | The metrics counts behind the spike: `{"label": "…", "unit": "per 3h", "baseline": 36, "points": [["2026-09-03 00:00 UTC", 35], …]}`. Drawn as the error chart and the number tiles in the HTML report, and a sparkline in the markdown report |
 | `duplicate_check` | Output of `scripts/dupes.py`: `{"searched": 4, "candidates": [{"key", "summary", "status", "score", "verdict", "signals", "url"}]}`. Verdicts `duplicate`, `recurrence`, `related`, `different`. A result with disposition `duplicate` must have a candidate scored `duplicate` |
 | `workaround.verified` | Written by `scripts/verify_workaround.py`: `{"status": "passed|failed|not_reproduced|error|pending", "runner", "environment", "target", "at", "steps", "url"}`. Never `production` |
+| `risks` | `[{"type", "level": "evidenced|reported|suspected", "source", "why"}]` from `scripts/risks.py`, defects only. Types: security, payment, data_integrity, compliance, availability, silent_failure, customer_communication, performance. Never changes priority by itself |
+| `sla` | From `scripts/sla.py` when the team sets `sla.fix_within`: `{"due", "state": "on_track|due_soon|breached|met", "rule", "delta"}`. Never changes priority |
+| `ticket_created` | When the ticket was created, from the tracker. Starts the SLA clock and dates fix commits |
+| `contradictions` | Written by the triage: `[{"text", "source", "against": "disposition|priority|hypothesis", "addressed"?}]`. `scripts/counterevidence.py` adds ones it finds by rule (a release shipped after the failure, a regression with no error rise, a duplicate found). Confidence cannot be `high` while one against the disposition or priority is open |
+| `hypothesis.alternatives` | `[{"statement", "confirm_by", "why_less_likely"}]`, other causes still in play. Required when location evidence is weak. The fix brief lists them as what to test next |
+| `next_action` | From `scripts/next_action.py`: `{"action", "then"?, "owner"?, "also"?: ["send_workaround"|"apply_workaround"]}`. Actions: await_review, confirm_resolved, deploy_fix, release_fix, fix_now, locate_first, schedule_fix, request_info, close_duplicate, explain_behavior, correct_config, route_to_product. `do_now` stays as the free-text detail |
+| `human_review` | Set by `scripts/human_gate.py` only when the team's `human_review` is on and a chosen risk is tagged: `{"required": true, "because": [{type, level, why}], "reviewers": [...]}`. Report, trace and fix brief open with it; nothing is posted until a reviewer confirms |
+| `reproduction` | `{"status": "reproduced|seen_in_production|code_path_only|not_reproduced|not_attempted", "how"}`. Derived by `scripts/effort.py` from metrics and code signals; `reproduced` and `not_reproduced` only when set explicitly with `how` (what was run, where). Never changes priority |
+| `complexity` | `{"score": 1-5, "level": "low|medium|high", "factors": [...]}` from `scripts/effort.py`: files located, evidence grade, a stub, `data_repair`, a supported group. Not scored when a fix is already merged. Never changes priority |
+| `data_repair` | Optional, set by the model when fixing the code will not repair records already written wrong. Adds to complexity |
+| `clusters` | Added by `scripts/clusters.py --annotate` after a batch: `[{"id", "basis": "file|release", "key", "status": "EVIDENCE_SUPPORTED|PROPOSED", "why", "tickets", "next"}]`. The report shows the group in a callout; priority is never changed by it |
+| `fix_status` | Output of `scripts/fix_status.py`: `{"state": "open|fixed_on_main|released|deployed", "confidence": "strong|moderate", "commit": {sha, message, date, pr, url, files}, "in_release", "deployed", "candidates", "searched"}`. When a fix is claimed, the summary says so and the next action becomes release, deploy or confirm |
 | `comment_review` | The ticket's own comments: `{"read": 10, "used": [{"id", "author_type", "created", "url", "category", "quote"}], "not_used": {"bot": 1, "chaser": 2, "status": 1, "repeat": 0, "no_signal": 1, "not_relevant": 0}}`. Categories: `detail`, `workaround_tried`, `disposition`, `impact`, `link`, `superseded`. Every quote must appear word for word in its comment (`scripts/comments.py check`) |
 | `why_changed` | One sentence, when a re-triage changed the verdict: what made the difference |
 | `previous` | Optional embedded snapshot of the last triage. Normally the renderers read it from `<reports_dir>/history/`, where `scripts/history.py archive` keeps each earlier result |

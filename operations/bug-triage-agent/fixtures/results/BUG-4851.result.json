@@ -4,6 +4,7 @@
   "agent_version": "0.7.1",
   "ticket": "BUG-4851",
   "summary": "Nightly settlement export missing for Fabrikam since Friday",
+  "ticket_created": "2026-09-21T07:40:00Z",
   "sources": {
     "tracker": {
       "mode": "fixture",
@@ -114,13 +115,44 @@
   "hypothesis": {
     "statement": "The scheduler is skipping runs after a configuration reload, as it did in BUG-4790.",
     "confirm_by": "Scheduler logs show a reload before the first missed run and no run attempt afterwards",
-    "refute_by": "The scheduler attempted each run and failed later, in the export or upload step"
+    "refute_by": "The scheduler attempted each run and failed later, in the export or upload step",
+    "alternatives": [
+      {
+        "statement": "The scheduler runs, but the upload to Fabrikam's delivery target fails and the failure is not reported.",
+        "confirm_by": "Scheduler logs show a run attempt for each missed night",
+        "why_less_likely": "no upload error was found in the metrics source for those nights"
+      },
+      {
+        "statement": "Fabrikam's export was switched off by a change to their account settings.",
+        "confirm_by": "The account's export setting changed shortly before the first missed night",
+        "why_less_likely": "no account change is recorded in the ticket or its comments"
+      }
+    ]
   },
   "prior_fixes": [
     {
       "key": "BUG-4790",
       "summary": "Export scheduler skipped a run after config reload",
       "note": "Fixed 2026-07-22. The fix may not cover this path."
+    }
+  ],
+  "fix_status": {
+    "state": "open",
+    "searched": "3 commit(s) on the default branch since 2026-09-01",
+    "candidates": [
+      {
+        "sha": "7c2e8b1f0a",
+        "message": "Tidy ExportScheduler logging",
+        "why": "touches ExportScheduler.java",
+        "url": null
+      }
+    ]
+  },
+  "contradictions": [
+    {
+      "text": "In BUG-4790 the skip followed a deploy that reloaded configuration; no deploy happened in this window",
+      "source": "metrics",
+      "against": "hypothesis"
     }
   ]
 }

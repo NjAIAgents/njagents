@@ -49,7 +49,12 @@ Write it to a file in the working folder, e.g. `<working folder>/triage-reports/
 
     python3 <plugin root>/scripts/render_queue.py --workdir <working folder> \
         [<team or project>] [--user-email <email>] [--issues <working folder>/triage-reports/queue.json] \
-        [--limit N] [--untriaged-only]
+        [--limit N] [--untriaged-only] [--html]
+
+With `--html` it also writes `<working folder>/<reports_dir>/queue-<team>.html`, a page in
+the report's look: tiles, the next command to copy, and the table with priority chips
+and flags, each ticket linked to its HTML report when one exists. Pass it when the user
+asks for the queue as a page, and give them the path.
 
 Print its output **verbatim**. Do not re-sort, summarise or annotate the table: the
 order is the recommendation, and the script produces it identically every time:
@@ -68,4 +73,4 @@ the honest reading: the queue reports what the agent knows, not what it assumes.
 Stop. Offer the suggested triage command the script printed, and let the user run it.
 Do not start a triage on your own, and do not post anything to the tracker.
 
-Arguments: `--team <id>`, `--limit N` (default 25), `--untriaged-only`.
+Arguments: `--team <id>`, `--limit N` (default 25), `--untriaged-only`, `--html`.

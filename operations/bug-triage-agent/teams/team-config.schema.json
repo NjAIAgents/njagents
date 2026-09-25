@@ -135,6 +135,10 @@
                 "type": "string"
               }
             }
+          },
+          "provider": {
+            "type": "string",
+            "description": "Display name of the system behind this source (for example the tracker or log store product), shown in reports next to the source name. Set by triage-config from the connector it bound."
           }
         }
       }
@@ -314,6 +318,25 @@
           ],
           "default": "always"
         },
+        "report_format": {
+          "enum": [
+            "html",
+            "md",
+            "both",
+            "agent"
+          ],
+          "default": "html",
+          "description": "Which report files a triage writes. 'html' (default) writes only <TICKET>-report.html, the full report with the run trace. 'md' writes only <TICKET>.md. 'both' writes both. 'agent' writes no report for people: only the result file and, for defects, the fix brief, for a pipeline that hands defects to a fix agent. A user can ask for another format in a single run without changing this. The fix brief is written for every defect in every mode."
+        },
+        "theme": {
+          "type": "object",
+          "description": "Accent colour for the HTML pages (report, queue, batch). Everything else about the look is in assets/report-theme.css.",
+          "properties": {
+            "accent": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "description": "Light mode accent."},
+            "accent_dark": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "description": "Dark mode accent; defaults to accent."}
+          },
+          "additionalProperties": false
+        },
         "run_trace": {
           "enum": [
             "never",
@@ -321,7 +344,7 @@
             "artifact"
           ],
           "default": "file",
-          "description": "Where the run trace goes. 'file' writes <TICKET>-trace.html next to the report. 'artifact' publishes a hosted page, where the client can. Default is 'file' because a trace carries customer names and account counts, so publishing is opt-in per team rather than automatic."
+          "description": "Where the HTML report (which carries the run trace) goes. 'file' writes <TICKET>-report.html in reports_dir. 'never' writes no HTML, so the report falls back to markdown. 'artifact' publishes a hosted page, where the client can. Default is 'file' because a trace carries customer names and account counts, so publishing is opt-in per team rather than automatic."
         }
       }
     },
@@ -337,6 +360,10 @@
         },
         "release": {
           "type": "string"
+        },
+        "log_query": {
+          "type": "string",
+          "description": "Opens a metrics or log query in the metrics tool. Placeholders {query} (filled JSON-escaped and URL-encoded) {from} {to} (epoch ms). Rebuilds every result link that carries a `query`, even one a tool returned, because deep-link tools can emit an older URL shape that opens an empty query."
         },
         "pr": {
           "type": "string"
@@ -596,6 +623,111 @@
           "description": "Most comments passed to the model after filtering; the newest are kept."
         }
       }
+    },
+    "risks": {
+      "type": "object",
+      "description": "Named risk types for defects (scripts/risks.py). Risks name the kind of harm; they never change the priority by themselves.",
+      "properties": {
+        "terms": {
+          "type": "object",
+          "description": "Extra words per risk type, for this team's domain. Keys: security, payment, data_integrity, compliance, availability, silent_failure, customer_communication, performance.",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "off": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "security",
+              "payment",
+              "data_integrity",
+              "compliance",
+              "availability",
+              "silent_failure",
+              "customer_communication",
+              "performance"
+            ]
+          },
+          "description": "Risk types this team does not want tagged."
+        }
+      },
+      "additionalProperties": false
+    },
+    "human_review": {
+      "type": "object",
+      "description": "Hold defects that carry chosen risks (scripts/risks.py) for a person's decision. Off by default.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "risk_types": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "security",
+              "payment",
+              "data_integrity",
+              "compliance",
+              "availability",
+              "silent_failure",
+              "customer_communication",
+              "performance"
+            ]
+          },
+          "default": [
+            "security",
+            "payment"
+          ]
+        },
+        "min_level": {
+          "enum": [
+            "evidenced",
+            "reported",
+            "suspected"
+          ],
+          "default": "reported",
+          "description": "How sure a risk must be to trigger the gate."
+        },
+        "reviewers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Who may confirm, by name or '*@domain'. Empty means any person."
+        }
+      },
+      "additionalProperties": false
+    },
+    "sla": {
+      "type": "object",
+      "description": "Fix-by dates per priority (scripts/sla.py). Off unless fix_within is set. Never changes the priority.",
+      "properties": {
+        "fix_within": {
+          "type": "object",
+          "description": "Per priority: hours ('24h') or days ('5d').",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^\\d+(\\.\\d+)?[hd]$"
+          }
+        },
+        "clock": {
+          "enum": [
+            "created",
+            "triaged"
+          ],
+          "default": "created"
+        },
+        "business_days": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "additionalProperties": false
     }
   }
 }

@@ -48,8 +48,10 @@ line and start.
 ## 3. Triage each ticket
 
 Follow `skills/bug-triage` for each chosen ticket, as a batch: header once, then the
-stages per ticket, the result file, the report, trace and fix brief, and the audit log
-entry. Add `--flags auto` to the `triage_log.py append` call, so the log separates
+stages per ticket, the result file, the reports the team's `output.report_format`
+asks for (HTML by default; markdown only when asked; nothing but the fix brief with
+`agent`, for a pipeline that hands defects to a fix agent), the fix brief, and the
+audit log entry. Add `--flags auto` to the `triage_log.py append` call, so the log separates
 automatic runs from manual ones.
 
 Differences from a manual run:
@@ -65,8 +67,17 @@ Differences from a manual run:
         --results <working folder>/<reports_dir>/<KEY>.result.json ... \
         [--failed KEY=<reason> ...]
 
-It writes `<reports_dir>/auto/<date>-<team>.md` and releases the lock. Print it
-verbatim. That is the whole output of the run.
+It writes `<reports_dir>/auto/<date>-<team>.html`, the review page in the report's
+look (plus `.md` when `report_format` is `md` or `both`; only `.md` for `md`), and
+releases the lock. Agent mode still gets the page: an unattended run always leaves
+something a person reviews. Print the markdown it outputs verbatim and point to the
+page. That is the whole output of the run.
+
+Before the digest, refresh the handoff index as `skills/bug-triage` describes
+(`scripts/brief_index.py`). With `report_format: agent` this is how a fix pipeline
+finds new work: it reads `<reports_dir>/briefs.json` and picks up only `ready` entries.
+A ticket held for `human_review` stays held until a person records a review with
+`triage-review`.
 
 ## Setting it up
 

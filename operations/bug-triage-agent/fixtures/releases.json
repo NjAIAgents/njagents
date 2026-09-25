@@ -54,6 +54,58 @@
         "sources": [
           "tracker_fixversion"
         ]
+      },
+      {
+        "version": "2026.09.1",
+        "released_on": "2026-09-20",
+        "components": [
+          "approvals",
+          "notifications"
+        ],
+        "issue_keys": [
+          "BUG-4866"
+        ],
+        "files_touched": [
+          "approvals-api/src/notifications/ReminderService.ts"
+        ],
+        "notes_url": null,
+        "sources": [
+          "vcs_tag"
+        ],
+        "commits": [
+          "c58e1d7a93b24f06e8d1a5c7b9f3e2d4a6c8b0e1"
+        ]
+      }
+    ],
+    "commits_since_from": "2026-09-01",
+    "commits_since": [
+      {
+        "sha": "7c2e8b1f0a9d6c5e4b3a2f1e0d9c8b7a6f5e4d3c",
+        "message": "Tidy ExportScheduler logging",
+        "date": "2026-09-10T14:00:00Z",
+        "files": [
+          "core-api/src/main/java/settlement/ExportScheduler.java"
+        ],
+        "pr": "#4431"
+      },
+      {
+        "sha": "3e9d0c1b2a4f5e6d7c8b9a0f1e2d3c4b5a6f7e8d",
+        "message": "Add timing metrics to ApprovalReviewService",
+        "date": "2026-09-20T11:30:00Z",
+        "files": [
+          "approvals-api/src/approvals/ApprovalReviewService.ts"
+        ],
+        "pr": "#4455"
+      },
+      {
+        "sha": "c58e1d7a93b24f06e8d1a5c7b9f3e2d4a6c8b0e1",
+        "message": "Send approval reminders once per request when the mail job retries (BUG-4866)",
+        "date": "2026-09-18T16:20:00Z",
+        "files": [
+          "approvals-api/src/notifications/ReminderService.ts",
+          "approvals-api/test/notifications/ReminderService.test.ts"
+        ],
+        "pr": "#4449"
       }
     ]
   }

@@ -216,10 +216,10 @@ def md(r):
     if not cr:
         return []
     o = ["## Comments on the ticket", "", summary_line(cr), ""]
-    used = cr.get("used") or []
+    used = [x for x in cr.get("used") or [] if x.get("category") != "superseded"]
     if used:
         o += ["| When | From | Used as | What it says |", "| --- | --- | --- | --- |"]
-        for u in used:
+        for u in [x for x in used if x.get("category") != "superseded"]:
             q = (u.get("quote") or "").replace("|", "/").replace("\n", " ")
             q = q if len(q) <= 160 else q[:159] + "…"
             when = (u.get("created") or "")[:10]
@@ -238,7 +238,8 @@ def html_section(r):
         f'<tr><td>{links.a((u.get("created") or "comment")[:10], u.get("url"))}</td>'
         f'<td>{html.escape(WHO.get(u.get("author_type"), u.get("author_type") or ""))}</td>'
         f'<td>{html.escape(CATEGORIES.get(u.get("category"), u.get("category") or ""))}</td>'
-        f'<td>“{html.escape(links.short(u.get("quote"), 160))}”</td></tr>' for u in cr.get("used") or [])
+        f'<td>“{html.escape(links.short(u.get("quote"), 160))}”</td></tr>' for u in cr.get("used") or []
+        if u.get("category") != "superseded")
     table = ('<div class="tbl"><table><thead><tr><th>When</th><th>From</th><th>Used as</th><th>What it says</th>'
              '</tr></thead><tbody>' + rows + "</tbody></table></div>") if rows else ""
     return f'<h2>Comments on the ticket</h2><p class="muted">{html.escape(summary_line(cr))}</p>{table}'

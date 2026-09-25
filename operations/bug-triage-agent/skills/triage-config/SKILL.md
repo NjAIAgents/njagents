@@ -69,6 +69,7 @@ key exactly as it is:
 | `queue` | Step 6a |
 | `automation`, `auto` | Step 6b |
 | `verification`, `verify` | Step 6c |
+| `review`, `human_review` | Step 6d |
 | `members`, `default` | Those questions in step 1 |
 
 Step 0 still runs first, to find the file. If the config exists only in the plugin,
@@ -210,6 +211,8 @@ tool returns no URL.
 
 - `output.reports_dir`: default `triage-reports`.
 - `output.write_report`: default `always`.
+- `output.report_format`: default `html`. Do not ask; mention that `both` adds a
+  markdown report every run, for teams that paste reports into PRs or repos.
 - `output.run_trace`: default `file`. Offer `artifact` only after saying plainly that
   a trace contains customer names and account counts, and that `artifact` publishes it
   to a hosted page. Recommend `file` for any tracker with real customer tickets.
@@ -289,6 +292,20 @@ Prove it where possible: for `http`, one GET of the base URL; for `docker` and
 `command`, show the commands and do not run them during setup. Run
 `python3 <plugin root>/scripts/verify_workaround.py check --team-config <path>` after
 writing; it must pass.
+
+## Step 6d: human review for chosen risks (optional, off by default)
+
+Ask whether some risks should always be decided by a person rather than recommended
+by the agent. Default **no**. If yes:
+
+1. **Which risks** (`human_review.risk_types`): default `security` and `payment`. Offer
+   the other types from `scripts/risks.py` too.
+2. **How sure** (`min_level`): `reported` by default, so a ticket that says "payment" is
+   held; `evidenced` holds only what the code shows; `suspected` holds the most.
+3. **Who confirms** (`reviewers`): names or `*@domain`, shown in the report. Empty
+   means any person.
+
+Write `"enabled": true` only on a clear yes.
 
 ## Step 7: preview, write, validate
 

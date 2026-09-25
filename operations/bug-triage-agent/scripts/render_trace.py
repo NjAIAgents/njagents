@@ -10,7 +10,8 @@ Usage:
     python3 scripts/render_trace.py triage-reports/BUG-4830.result.json
     python3 scripts/render_trace.py --out triage-reports triage-reports/*.result.json
 
-Writes <TICKET>-trace.html next to each result file, or into --out.
+Writes <TICKET>-report.html next to each result file, or into --out: the full HTML report,
+with the run trace (what ran, per stage) as one of its sections.
 
 Exit codes:
     0  all traces written
@@ -28,6 +29,15 @@ import timeline as TL  # noqa: E402
 import history as H  # noqa: E402
 import dupes as D  # noqa: E402
 import comments as CM  # noqa: E402
+import fix_status as FX  # noqa: E402
+import clusters as CL  # noqa: E402
+import effort as EF  # noqa: E402
+import risks as RK  # noqa: E402
+import human_gate as HG  # noqa: E402
+import next_action as NA  # noqa: E402
+import counterevidence as CE  # noqa: E402
+import sla as SL  # noqa: E402
+import story as ST  # noqa: E402
 import verify_workaround as V  # noqa: E402
 
 SOURCES = ["tracker", "releases", "metrics", "warehouse", "code"]
@@ -77,6 +87,14 @@ def validate(r):
     p += TL.validate(r)
     p += D.validate(r)
     p += CM.validate(r)
+    p += FX.validate(r)
+    p += CL.validate(r)
+    p += EF.validate(r)
+    p += RK.validate(r)
+    p += HG.validate(r)
+    p += NA.validate(r)
+    p += CE.validate(r)
+    p += SL.validate(r)
     p += V.validate(r)
     for i, st in enumerate(r.get("steps") or []):
         for key in ("level", "ghost"):
@@ -184,50 +202,71 @@ def ladder_svg(steps):
 # ------------------------------------------------------------------ page
 
 CSS = TL.CSS + """
-:root{--bg:#F3F5F4;--surface:#FFFFFF;--ink:#17201C;--muted:#56645E;--rule:#C9D2CE;
---accent:#0B7A69;--accent-soft:#DCEFEA;--signal:#B4502A;--signal-soft:#F7E5DC;
---p1:#C73A3A;--p2:#D2701C;--p3:#B08600;--p4:#2E6BC0}
+:root{--bg:#F4F5F7;--surface:#FFFFFF;--ink:#1B1F24;--muted:#5F6B7A;--rule:#D9DEE5;--rule-soft:#EDF0F3;
+--accent:#2F5BEA;--accent-soft:#E8EEFD;--signal:#B4502A;--signal-soft:#F7E5DC;--ok:#1E7F4F;--ok-soft:#E3F3EA;
+--p1:#C73A3A;--p2:#D2701C;--p3:#B08600;--p4:#2E6BC0;--p1-soft:#FBE4E4;--p2-soft:#FCEBDC;--p3-soft:#FBF3D6;--p4-soft:#E1ECFB}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;
---bg:#0F1412;--surface:#161E1B;--ink:#E3EAE7;--muted:#96A49E;--rule:#2C3733;
---accent:#3CC0A7;--accent-soft:#12302A;--signal:#E58B60;--signal-soft:#36221A;
---p1:#EE6E6E;--p2:#F09A4E;--p3:#E1BE42;--p4:#72A5EE}}
-:root[data-theme="dark"]{color-scheme:dark;--bg:#0F1412;--surface:#161E1B;--ink:#E3EAE7;
---muted:#96A49E;--rule:#2C3733;--accent:#3CC0A7;--accent-soft:#12302A;--signal:#E58B60;
---signal-soft:#36221A;--p1:#EE6E6E;--p2:#F09A4E;--p3:#E1BE42;--p4:#72A5EE}
+--bg:#0F1216;--surface:#171B21;--ink:#E6E9ED;--muted:#98A3B0;--rule:#2A313A;--rule-soft:#20262E;
+--accent:#7B9BFF;--accent-soft:#1B2540;--signal:#E58B60;--signal-soft:#36221A;--ok:#5CCB8C;--ok-soft:#14301F;
+--p1:#EE6E6E;--p2:#F09A4E;--p3:#E1BE42;--p4:#72A5EE;--p1-soft:#3A1C1C;--p2-soft:#3A2816;--p3-soft:#36300F;--p4-soft:#16263C}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0F1216;--surface:#171B21;--ink:#E6E9ED;--muted:#98A3B0;--rule:#2A313A;
+--rule-soft:#20262E;--accent:#7B9BFF;--accent-soft:#1B2540;--signal:#E58B60;--signal-soft:#36221A;--ok:#5CCB8C;--ok-soft:#14301F;
+--p1:#EE6E6E;--p2:#F09A4E;--p3:#E1BE42;--p4:#72A5EE;--p1-soft:#3A1C1C;--p2-soft:#3A2816;--p3-soft:#36300F;--p4-soft:#16263C}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);
-font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-.wrap{max-width:920px;margin:0 auto;padding-inline:18px;padding-block:28px 56px}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:16px 16px 56px}
 code,.mono{font:13px ui-monospace,"SF Mono",Menlo,Consolas,monospace}
-.eyebrow{font:500 12px ui-monospace,Menlo,monospace;letter-spacing:.06em;
-text-transform:uppercase;color:var(--muted);margin:0 0 10px}
-h1{font-size:clamp(22px,4vw,30px);line-height:1.2;margin:0 0 14px;text-wrap:balance}
-h2{font-size:17px;margin:34px 0 10px}
-.banner{border:1px solid var(--signal);background:var(--signal-soft);border-radius:6px;
-padding:10px 14px;margin:0 0 20px}
-.verdict{display:flex;flex-wrap:wrap;gap:10px 28px;padding:14px 0;
-border-block:1px solid var(--rule)}
-.verdict div{min-width:120px}
-.verdict dt{font:500 11px ui-monospace,Menlo,monospace;letter-spacing:.05em;
-text-transform:uppercase;color:var(--muted)}
-.verdict dd{margin:2px 0 0;font-weight:600}
+a{color:var(--accent)}
+pre{background:var(--bg);border:1px solid var(--rule);border-radius:8px;padding:10px 12px;overflow-x:auto;font-size:13px}
+.eyebrow{font:500 12px ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+h1{font-size:clamp(20px,3.4vw,27px);line-height:1.25;margin:0;text-wrap:balance}
+h1 a{color:inherit;text-decoration:none;border-bottom:2px solid var(--rule)}
+h2{font-size:16px;margin:0 0 12px;display:flex;align-items:center;gap:8px}
+h2 .n{font:500 11px ui-monospace,Menlo,monospace;color:var(--muted);letter-spacing:.06em}
+.masthead{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:20px 22px;
+display:flex;gap:20px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.masthead .t{flex:1 1 420px;min-width:0}
+.badge{flex:0 0 auto;text-align:center;border-radius:12px;padding:12px 18px;min-width:132px;border:1px solid var(--rule)}
+.badge b{display:block;font-size:30px;line-height:1;letter-spacing:.02em}
+.badge small{display:block;font-size:12px;color:var(--muted);margin-top:6px}
+.badge.p1{background:var(--p1-soft);color:var(--p1)} .badge.p2{background:var(--p2-soft);color:var(--p2)}
+.badge.p3{background:var(--p3-soft);color:var(--p3)} .badge.p4{background:var(--p4-soft);color:var(--p4)}
+.badge.none{background:var(--rule-soft);color:var(--muted)}
+.badge .gapline{color:var(--signal);font-weight:600}
+.banner{border:1px solid var(--signal);background:var(--signal-soft);border-radius:8px;padding:8px 14px;margin:0 0 12px;font-size:14px}
+.answer{background:var(--surface);border:1px solid var(--rule);border-left:5px solid var(--accent);border-radius:12px;
+padding:14px 18px;margin:14px 0 0;display:grid;grid-template-columns:auto 1fr;gap:6px 18px}
+.answer .k{font:500 11px ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:3px}
+.answer .v{margin:0} .answer .v.big{font-size:18px;font-weight:650}
+.story{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:12px 18px;margin:10px 0 0;line-height:1.6}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:14px 0 0}
+.tile{background:var(--surface);border:1px solid var(--rule);border-radius:10px;padding:10px 14px;min-width:0}
+.tile.wide{grid-column:1/-1}
+.tile dt{font:500 11px ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 4px}
+.tile dd{margin:0;font-weight:600;overflow-wrap:anywhere;line-height:1.4}
+.tile dd small{display:block;font-weight:400;color:var(--muted);font-size:12.5px;margin-top:2px}
+.tile dd .muted{font-weight:400;font-size:12.5px}
+.tile.warn{border-color:var(--signal);background:var(--signal-soft)} .tile.good{border-color:var(--ok);background:var(--ok-soft)}
+.basis{color:var(--muted);font-size:13px;margin:8px 2px 0}
+nav.toc{position:sticky;top:0;z-index:2;background:var(--bg);padding:10px 0;margin:14px 0 4px;border-bottom:1px solid var(--rule);
+display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+nav.toc a{white-space:nowrap;font-size:12.5px;color:var(--muted);text-decoration:none;border:1px solid var(--rule);
+background:var(--surface);border-radius:999px;padding:3px 11px}
+nav.toc a:hover{color:var(--ink);border-color:var(--ink)}
+section.card{background:var(--surface);border:1px solid var(--rule);border-radius:12px;padding:16px 18px;margin:14px 0;scroll-margin-top:56px}
+section.card>p:first-of-type{margin-top:0}
 .gap{color:var(--signal);font-weight:600}
-.answer{background:var(--accent-soft);border-left:4px solid var(--accent);padding:10px 14px;margin:14px 0;border-radius:4px}
-.answer p{margin:4px 0}
 .stale{background:var(--signal-soft);border-left:4px solid var(--signal);padding:8px 12px;margin:10px 0;border-radius:4px}
 ol.run{list-style:none;margin:0;padding:0;border-left:2px solid var(--rule)}
 ol.run li{position:relative;padding:8px 0 8px 18px}
-ol.run li::before{content:"";position:absolute;left:-7px;top:15px;width:12px;height:12px;
-border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+ol.run li::before{content:"";position:absolute;left:-7px;top:15px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
 ol.run li.exit::before{border-color:var(--signal);background:var(--signal-soft)}
 ol.run li.skip{color:var(--muted)}
 ol.run li.skip::before{border-color:var(--rule);border-style:dashed}
 .sname{font:600 13px ui-monospace,Menlo,monospace}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.chip{font:12px ui-monospace,Menlo,monospace;border:1px solid var(--rule);
-background:var(--surface);border-radius:999px;padding:2px 10px}
-.fig{overflow-x:auto;background:var(--surface);border:1px solid var(--rule);
-border-radius:8px;padding:10px}
+.chip{font:12px ui-monospace,Menlo,monospace;border:1px solid var(--rule);background:var(--bg);border-radius:999px;padding:2px 10px}
+.fig{overflow-x:auto;background:var(--bg);border:1px solid var(--rule);border-radius:8px;padding:10px}
 .fig svg{display:block;min-width:520px;width:100%;height:auto}
 .guide{stroke:var(--rule);stroke-dasharray:2 5}
 .path{stroke:var(--accent);stroke-width:2.2;fill:none}
@@ -242,21 +281,17 @@ border-radius:8px;padding:10px}
 .sv{font:12px ui-monospace,Menlo,monospace;fill:var(--muted)}
 .tbl{overflow-x:auto}
 table{border-collapse:collapse;width:100%;min-width:520px;font-size:14px}
-th,td{text-align:left;padding:8px 12px 8px 0;border-bottom:1px solid var(--rule);
-vertical-align:top}
-th{font:500 11px ui-monospace,Menlo,monospace;letter-spacing:.05em;
-text-transform:uppercase;color:var(--muted)}
-.caution{border:1px solid var(--signal);background:var(--signal-soft);border-radius:6px;
-padding:10px 14px;margin:12px 0}
+th,td{text-align:left;padding:8px 12px 8px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font:500 11px ui-monospace,Menlo,monospace;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.caution{border:1px solid var(--signal);background:var(--signal-soft);border-radius:8px;padding:10px 14px;margin:12px 0}
 .caution ul{margin:6px 0 0;padding-left:20px}
-.tip{border-left:3px solid var(--accent);background:var(--accent-soft);
-padding:10px 14px;border-radius:0 6px 6px 0}
+.tip{border-left:3px solid var(--ok);background:var(--ok-soft);padding:10px 14px;border-radius:0 8px 8px 0}
 .muted{color:var(--muted)}
-.changed{border:1px solid var(--p4);border-radius:6px;padding:8px 14px;margin:10px 0}
+.changed{border:1px solid var(--p4);background:var(--p4-soft);border-radius:8px;padding:8px 14px;margin:10px 0}
 .changed ul{margin:4px 0 0;padding-left:20px}
-.ok{color:var(--accent);font-weight:600}
-footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--rule);
-font-size:12.5px;color:var(--muted)}
+footer{color:var(--muted);font-size:12.5px;margin-top:20px}
+@media (max-width:600px){.answer{grid-template-columns:1fr}.answer .k{padding-top:6px}.masthead{padding:16px}}
 """
 
 
@@ -311,160 +346,10 @@ def stage_list(r):
 
 
 def render(r):
-    t = r["ticket"]
-    defect = r["disposition"] == "defect"
-    fixtures = [s for s in SOURCES if r["sources"][s]["mode"] == "fixture"]
-    off = [s for s in SOURCES if r["sources"][s]["mode"] == "off"]
-
-    if defect:
-        head_mark = f'{PRIO_MARK[r["priority"]]} {r["priority"]} · '
-    else:
-        head_mark = "⚪ "
-
-    # The charset must come first. Opened from disk, a page with no declaration is
-    # decoded as Windows-1252 and every non-ASCII mark (·, ●, ⚪, 🟢) turns to
-    # mojibake. A hosting shell may add its own; a local file never does.
-    o = ['<meta charset="utf-8">',
-         '<meta name="viewport" content="width=device-width, initial-scale=1">',
-         f'<title>Trace {esc(t)}</title>', f"<style>{CSS}</style>",
-         '<div class="wrap">',
-         f'<p class="eyebrow">Run trace · team {esc(r["team"])} · '
-         f'{esc(r.get("triaged_at", ""))} · agent {esc(r.get("agent_version", ""))}</p>']
-
-    if fixtures:
-        o.append(f'<div class="banner"><strong>Demo data.</strong> '
-                 f'{esc(", ".join(fixtures))} on fixtures. Not live figures.</div>')
-
-    o.append(f'<h1>{head_mark}{links.a(t, r.get("ticket_url"))} · {esc(r["summary"])}</h1>')
-
-    summ = S.summary(r)
-    ans = [f'<p><strong>{esc(summ["verdict"])}</strong></p>']
-    if summ["why"]:
-        ans.append("<p><strong>Why:</strong> " + esc("; ".join(w.rstrip(".") for w in summ["why"])) + ".</p>")
-    if summ["do_now"]:
-        ans.append(f'<p><strong>Do now:</strong> {esc(summ["do_now"])}</p>')
-    o.append('<div class="answer">' + "".join(ans) + "</div>")
-    o.append(H.html_block(r, r.get("_previous") or r.get("previous")))
-    _, stale = S.freshness(r)
-    if stale:
-        o.append('<div class="stale"><strong>Stale data.</strong> ' + esc("; ".join(stale))
-                 + ". Re-check before acting.</div>")
-
-    o.append('<dl class="verdict">')
-    o.append(f'<div><dt>Disposition</dt><dd><code>{esc(r["disposition"])}</code></dd></div>')
-    if defect:
-        mapped = f' → “{esc(r["tracker_priority"])}”' if r.get("tracker_priority") else ""
-        o.append(f'<div><dt>Priority</dt><dd>{PRIO_MARK[r["priority"]]} '
-                 f'{esc(r["priority"])}{mapped}</dd></div>')
-    o.append(f'<div><dt>Confidence</dt><dd>{METER[r["confidence"]]} '
-             f'{esc(r["confidence"])}</dd></div>')
-    ev = None
-    if defect:
-        from render_fix_brief import assess  # local import: that module imports this one
-        ev = assess(r)
-        o.append(f'<div><dt>Evidence</dt><dd>{EVIDENCE_MARK[ev["level"]]} {esc(ev["level"])}</dd></div>')
-    corr = S.corroboration(r)
-    if corr:
-        n, live = S.corroboration_line(r)
-        o.append(f'<div><dt>Supported by</dt><dd>{n} of {live} sources: '
-                 + " · ".join(f'{esc(c["source"])} {links.a(c["label"], c["url"])}' for c in corr)
-                 + "</dd></div>")
-    if r.get("route"):
-        o.append(f'<div><dt>Route to</dt><dd>{esc(r["route"])}</dd></div>')
-    o.append("</dl>")
-    if ev and ev["caution"]:
-        o.append('<div class="caution"><strong>Weak evidence.</strong> '
-                 + esc(ev["caution"].replace("**", "")) + "<ul>"
-                 + "".join(f"<li>{esc(m)}</li>" for m in ev["missing"]) + "</ul></div>")
-
-    cur = r.get("current_priority")
-    if defect and cur and r.get("tracker_priority") and cur != r["tracker_priority"]:
-        o.append(f'<p class="gap">⚠ Priority gap: the tracker has “{esc(cur)}”, '
-                 f'recommended “{esc(r["tracker_priority"])}”.</p>')
-    if r.get("confidence_basis"):
-        o.append(f'<p class="muted">{esc(r["confidence_basis"])}</p>')
-
-    o.append("<h2>What ran</h2>")
-    o.append(stage_list(r))
-
-    ev = r.get("disposition_evidence") or []
-    if ev:
-        o.append(f'<h2>Why <code>{esc(r["disposition"])}</code></h2><div class="tbl">'
-                 '<table><thead><tr><th>Evidence</th><th>Source</th></tr></thead><tbody>')
-        for e in ev:
-            src = links.a(e.get("label") or e.get("source"), e.get("url")) if e.get("url") else esc(e.get("source"))
-            o.append(f'<tr><td>{esc(e.get("text"))}</td><td>{src}</td></tr>')
-        o.append("</tbody></table></div>")
-    if r.get("alternative"):
-        o.append(f'<p class="muted">{esc(r["alternative"])}</p>')
-
-    steps = r.get("steps") or []
-    if defect and steps:
-        o.append("<h2>How the priority was reached</h2>")
-        svg = ladder_svg(steps)
-        if svg:
-            o.append(f'<div class="fig">{svg}</div>')
-        o.append('<div class="tbl"><table><thead><tr><th>Step</th><th>Level</th>'
-                 '<th>Because</th></tr></thead><tbody>')
-        for s in steps:
-            lvl = s.get("level")
-            cell = f'{PRIO_MARK[lvl]} {lvl}' if lvl else "not counted"
-            if s.get("ghost"):
-                cell += f' <span class="gap">(arithmetic {esc(s["ghost"])}, held)</span>'
-            o.append(f'<tr><td><code>{esc(s["step"])}</code></td><td>{cell}</td>'
-                     f'<td>{esc(s.get("because"))}</td></tr>')
-        o.append("</tbody></table></div>")
-
-    rel = r.get("release")
-    if rel:
-        o.append("<h2>Release correlation</h2>")
-        o.append(f'<p><strong>{links.a(rel.get("version"), rel.get("url"))}</strong>, shipped '
-                 f'{esc(rel.get("shipped"))}, {esc(rel.get("gap_days"))} days before first '
-                 f'seen. {esc(rel.get("basis", ""))} Correlation confidence: '
-                 f'<strong>{esc(rel.get("confidence"))}</strong>.</p>')
-
-    o.append(TL.html_section(r))
-    o.append(evidence_section(r))
-    o.append(D.html_section(r))
-    o.append(CM.html_section(r))
-
-    wa = r.get("workaround")
-    if wa:
-        o.append("<h2>Workaround</h2>")
-        o.append(f'<div class="tip"><strong>{esc(wa.get("text"))}</strong><br>'
-                 f'Who can do this: {esc(wa.get("who"))} · Source: {esc(wa.get("source"))}'
-                 + (f'<br>{V.html_line(wa)}' if V.html_line(wa) else "") + '</div>')
-
-    o.append('<h2>Coverage</h2><div class="tbl"><table><thead><tr><th>Source</th>'
-             '<th>Mode</th><th>Result</th><th>Data</th></tr></thead><tbody>')
-    ages = {f["source"]: f for f in S.freshness(r)[0]}
-    for s in SOURCES:
-        src = r["sources"][s]
-        mode = src["mode"]
-        if mode == "off":
-            res = "not queried"
-        elif not defect and s in ("metrics", "warehouse", "code"):
-            res = "not needed, non-defect"
-        else:
-            res = src.get("note") or src.get("status", "ok")
-        f = ages.get(s) or {}
-        data = ("⚠ " if f.get("stale") else "") + (f.get("note") or (f"read {f['age']} before" if f.get("age") else ""))
-        o.append(f'<tr><td>{s}</td><td>{MODE_MARK[mode]} {mode}</td>'
-                 f'<td>{esc(res)}</td><td>{esc(data)}</td></tr>')
-    o.append("</tbody></table></div>")
-
-    un = r.get("unanswered") or []
-    if un:
-        o.append("<h2>Unanswered</h2><p>Left unanswered because a source was off. "
-                 "Each lowers confidence; none raises severity.</p><ul>" +
-                 "".join(f"<li>{esc(u)}</li>" for u in un) + "</ul>")
-    elif defect and not off:
-        o.append('<p class="muted">All ten classification questions answered.</p>')
-
-    o.append('<footer>Generated by <code>scripts/render_trace.py</code> from '
-             f'<code>{esc(t)}.result.json</code>. Nothing has been written to the '
-             'tracker.</footer></div>')
-    return "\n".join(o)
+    """The HTML report page. Layout and content live in report_html.py; this module keeps
+    validation, the priority ladder and the stage list, which the page imports."""
+    import report_html
+    return report_html.render(r)
 
 
 def main():
@@ -472,6 +357,9 @@ def main():
     ap.add_argument("results", nargs="+")
     ap.add_argument("--out", help="directory for the traces; default next to each result")
     ap.add_argument("--team-config", help="team config; fills evidence links from its `links` templates")
+    ap.add_argument("--markdown", action="store_true",
+                    help="a markdown report was written for this run; link it from the header. "
+                         "Implied when the team's output.report_format is md or both")
     a = ap.parse_args()
 
     failed = 0
@@ -485,7 +373,16 @@ def main():
             continue
         if a.team_config:
             with open(a.team_config, encoding="utf-8") as cf:
-                links.enrich(r, json.load(cf))
+                _cfg = json.load(cf)
+                links.enrich(r, _cfg)
+                RK.fill(r, _cfg)
+                HG.fill(r, _cfg)
+                SL.fill(r, _cfg)
+                r["_providers"] = {k: v.get("provider") for k, v in (_cfg.get("sources") or {}).items() if isinstance(v, dict) and v.get("provider")}
+                r["_md"] = (_cfg.get("output") or {}).get("report_format") in ("md", "both")
+                r["_theme"] = (_cfg.get("output") or {}).get("theme")
+        if a.markdown:
+            r["_md"] = True
         H.attach(path, r)
         problems = validate(r)
         if problems:
@@ -496,7 +393,7 @@ def main():
             continue
         out_dir = a.out or os.path.dirname(os.path.abspath(path))
         os.makedirs(out_dir, exist_ok=True)
-        dest = os.path.join(out_dir, f'{r["ticket"]}-trace.html')
+        dest = os.path.join(out_dir, f'{r["ticket"]}-report.html')
         with open(dest, "w", encoding="utf-8") as f:
             f.write(render(r))
         print(f"wrote {dest}")

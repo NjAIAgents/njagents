@@ -4,6 +4,7 @@
   "agent_version": "0.7.1",
   "ticket": "BUG-4830",
   "summary": "Approval step fails silently for Northwind Co when submitted via API",
+  "ticket_created": "2026-09-08T09:12:00Z",
   "sources": {
     "tracker": {
       "mode": "fixture",
@@ -152,7 +153,14 @@
   "hypothesis": {
     "statement": "A failed commit is caught at ApprovalReviewService.ts:89 and turned into a success response, so the API reports a write that never happened.",
     "confirm_by": "A test that forces store.approvals.commit to throw gets 200 and an unchanged request",
-    "refute_by": "With the commit forced to fail, the endpoint already returns an error"
+    "refute_by": "With the commit forced to fail, the endpoint already returns an error",
+    "alternatives": [
+      {
+        "statement": "The approval commits, but the read-back hits a replica that has not caught up, so the request only looks unchanged.",
+        "confirm_by": "Reading the request from the primary right after the call shows it approved",
+        "why_less_likely": "the service logs 'approval not committed' at :89 on every failing call, which a lagging replica would not produce"
+      }
+    ]
   },
   "introduced_by": {
     "release": "2026.09",
@@ -616,5 +624,25 @@
       "status": 1,
       "no_signal": 1
     }
-  }
+  },
+  "fix_status": {
+    "state": "open",
+    "searched": "3 commit(s) on the default branch since 2026-09-01",
+    "candidates": [
+      {
+        "sha": "3e9d0c1b2a",
+        "message": "Add timing metrics to ApprovalReviewService",
+        "why": "touches ApprovalReviewService.ts",
+        "url": null
+      }
+    ]
+  },
+  "contradictions": [
+    {
+      "text": "An early comment called it a configuration issue on the customer's tenant",
+      "source": "comment",
+      "against": "disposition",
+      "addressed": "superseded by the staff correction later in the thread: the tenant is single-step and the failure reproduces"
+    }
+  ]
 }

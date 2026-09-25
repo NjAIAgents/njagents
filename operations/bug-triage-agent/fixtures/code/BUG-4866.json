@@ -1,0 +1,25 @@
+{
+  "source": "code",
+  "mode": "fixture",
+  "status": "ok",
+  "as_of": "2026-09-21T09:00:00Z",
+  "latency_ms": 0,
+  "notes": [
+    "Code search found ReminderService.ts, changed in 2026.09.1, but no fault signal in it."
+  ],
+  "data": {
+    "candidate_paths": [
+      "approvals-api/src/notifications/ReminderService.ts"
+    ],
+    "error_swallowing": [],
+    "stubs": [],
+    "recent_changes": [
+      {
+        "path": "approvals-api/src/notifications/ReminderService.ts",
+        "pr": "#4449",
+        "merged": "2026-09-19",
+        "release": "2026.09.1"
+      }
+    ]
+  }
+}

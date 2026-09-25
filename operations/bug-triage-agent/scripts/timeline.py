@@ -15,7 +15,7 @@ event list, and no events means no section at all.
 The trace draws it as an SVG; the report and fix brief as a sparkline in a code block
 with numbered markers keyed to a table, because markdown viewers render no SVG.
 """
-import html
+import html, re
 
 import links
 import summary as S
@@ -31,9 +31,37 @@ def _t(v):
     return S._parse(v)
 
 
+def derived(r):
+    """Events from fields the result already has, for a triage that wrote no timeline."""
+    out = []
+    rel = r.get("release") or {}
+    if rel.get("version") and rel.get("shipped") and rel.get("confidence") in ("high", "medium"):
+        out.append({"at": rel["shipped"], "kind": "deploy", "label": rel["version"], "url": rel.get("url")})
+    m = (r.get("sources") or {}).get("metrics") or {}
+    d = re.search(r"(?:from|since|after)\s+(\d{4}-\d{2}-\d{2})", m.get("note") or "")
+    f = re.search(r"(\d+(?:\.\d+)?)\s*[x×]", m.get("note") or "")
+    if d:
+        first = re.split(r"[;.]", m.get("note") or "")[0].strip()
+        out.append({"at": d.group(1), "kind": "spike", "label": f"{f.group(1)}× baseline" if f else first[:60]})
+    if r.get("ticket_created"):
+        out.append({"at": r["ticket_created"], "kind": "ticket", "label": r.get("ticket"), "url": r.get("ticket_url")})
+    fs = r.get("fix_status") or {}
+    c = fs.get("commit") or {}
+    if fs.get("confidence") in ("strong", "moderate") and c.get("date"):
+        out.append({"at": c["date"], "kind": "fix", "label": c.get("pr") or c.get("sha", "")[:10], "url": c.get("url")})
+    if (fs.get("deployed") or {}).get("at"):
+        out.append({"at": fs["deployed"]["at"], "kind": "deploy", "label": "fix deployed", "url": fs["deployed"].get("url")})
+    return out
+
+
 def events(r):
     out = []
-    for e in r.get("timeline") or []:
+    tl = r.get("timeline")
+    if isinstance(tl, dict):
+        tl = tl.get("events")
+    for e in tl or derived(r):
+        if not isinstance(e, dict):
+            continue
         at = _t(e.get("at"))
         if at and e.get("kind") in KINDS:
             out.append({**e, "_at": at})

@@ -1,0 +1,34 @@
+{
+  "source": "metrics",
+  "mode": "fixture",
+  "status": "ok",
+  "as_of": "2026-09-21T09:00:00Z",
+  "latency_ms": 0,
+  "notes": [
+    "No error spike: a reminder sent twice is a successful send, so it does not appear as an error."
+  ],
+  "data": {
+    "baseline": {
+      "window_days": 7,
+      "method": "rolling_median",
+      "value": 0
+    },
+    "current": {
+      "value": 0,
+      "ratio_to_baseline": 0.0
+    },
+    "spike": {
+      "detected": false,
+      "first_seen": null
+    },
+    "deploys_in_window": [
+      {
+        "version": "2026.09.1",
+        "at": "2026-09-20T10:00:00Z",
+        "service": "approvals-api"
+      }
+    ],
+    "sample_errors": [],
+    "queries": []
+  }
+}

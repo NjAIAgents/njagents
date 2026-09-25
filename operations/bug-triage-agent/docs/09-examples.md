@@ -1,12 +1,12 @@
 # Examples
 
 Worked runs you can copy. Each one gives the command, what you should see, and what to
-check. The outputs shown are real, produced by version 0.7.1 against the shipped demo
+check. The outputs shown are real, produced by version 0.8.0 against the shipped demo
 configs.
 
 ## Before you start
 
-1. Install or update the plugin to **0.7.1** and start a new session.
+1. Install or update the plugin to **0.8.0** and start a new session.
 2. Run it in **Cowork or Claude Code**, not a regular Chat. A Chat syncs only the skill
    folders, so the scripts and configs are missing and the triage stops at step one.
 3. In Cowork, connect a working folder. Reports, traces, fix briefs and the log are
@@ -44,7 +44,7 @@ You do not pass `--team` for either. The team is found from the ticket's project
 > | code | 🟡 fixture | fixtures/code |
 >
 > **5 of 5 sources available.** Absent sources lower confidence and drop escalations. They never raise severity.
-> Team **demo**, chosen by ticket project BUG · Config: `…/teams/demo.json` (plugin) · Agent **0.7.1**
+> Team **demo**, chosen by ticket project BUG · Config: `…/teams/demo.json` (plugin) · Agent **0.8.0**
 
 Then a task list ticks through the stages (disposition, enrichment, correlation,
 workaround, priority, outputs), each rewritten with its result as it finishes.
@@ -60,13 +60,18 @@ workaround, priority, outputs), each rewritten with its result as it finishes.
 | Priority gap | Tracker says "Minor", recommended "Critical" |
 | Route to | Approvals Team |
 
-**Files written** to `triage-reports/` in your working folder:
+**Files written** to `triage-reports/` in your working folder, by default:
 
 | File | What it is |
 | --- | --- |
-| `BUG-4830.md` | The report, with colour markers and the full reasoning |
-| `BUG-4830-trace.html` | The run trace: every stage, every source call, every rule that fired |
-| `BUG-4830.fix-brief.md` | A brief a fix-bug agent can pick up (see example 4) |
+| `BUG-4830-report.html` | The report. It opens with the story, the three action boxes and the priority, then the numbers, risks, timeline, where it is, sources, duplicates and how it was produced |
+| `BUG-4830.fix-brief.md` | A brief a fix-bug agent can pick up (see example 4). Written for every defect |
+
+`BUG-4830.md`, the markdown report, is written only when you ask for it ("triage
+BUG-4830, markdown too") or the team's `output.report_format` is `md` or `both`. The HTML
+header then links it. With `agent`, only the result file and the fix brief are written.
+
+See what the page looks like: [the DEMO-7 HTML report](examples/report-sample.html).
 
 A line is also added to `triage-logs/triage-log.jsonl`.
 
@@ -90,6 +95,10 @@ One header, then one task per ticket, then a ranked table. Expected:
 
 **Check:** the two non-defects have **no priority**. Disposition always comes first, and
 a ticket that is not a defect is never scored.
+
+The batch also writes `batch-<date>.html` and `clusters.json` to `triage-reports/`: the
+ranked table and any groups of defects one fix could close. `batch-<date>.md` is written
+only when the team's format is `md` or `both`.
 
 **Check:** BUG-4851 carries a caution in its report and its fix brief, because the
 evidence for *where* the bug lives is weak even though the priority is P2. Priority
@@ -130,7 +139,9 @@ Every defect gets a fix brief. Open `triage-reports/BUG-4830.fix-brief.md`. It s
 with front matter another agent can parse:
 
 ```yaml
+brief_version: 2
 ticket: "BUG-4830"
+ticket_url: null
 title: Approval step fails silently for Northwind Co when submitted via API
 team: demo
 repo: "approvals-api"
@@ -140,15 +151,46 @@ priority: P2
 priority_confidence: high
 evidence: strong
 location_confirmed: true
+reproduction: seen_in_production
+complexity: low
+human_review_required: false
+next_action: fix_now
+fix_due: null
+risks:
+  - data_integrity
+  - silent_failure
 candidate_files:
   - "approvals-api/src/approvals/ApprovalReviewService.ts:89"
-  - "approvals-api/src/approvals/ApprovalReviewService.ts"
+fault:
+  file: "approvals-api/src/approvals/ApprovalReviewService.ts"
+  line: 89
+  signal: error_swallowing
+  url: null
+introduced_by: "2026.09"
+fix_status: open
+already_fixed: false
+hypothesis:
+  statement: "A failed commit is caught at ApprovalReviewService.ts:89 and turned into a success response, so the API reports a write that never happened."
+  confirm_by: A test that forces store.approvals.commit to throw gets 200 and an unchanged request
+  refute_by: "With the commit forced to fail, the endpoint already returns an error"
+alternatives:
+  - "The approval commits, but the read-back hits a replica that has not caught up, so the request only looks unchanged."
+acceptance:
+  - "A test that reproduces the failure above, failing before the change"
+  - The same test passing after the change
+  - The existing test suite passing
 route_to: Approvals Team
 generated_by: "bug-triage-agent 0.7.1"
 ```
 
-Then: Problem, Reproduce, Where to look, Prior fixes, Hypothesis to test, Definition of
-done, Constraints, Not checked by triage, and Pull request.
+Values YAML would read as another type, such as the version `2026.09`, are quoted, and
+the validator checks the front matter parses and keeps its types. `ticket_url` and
+`fault.url` are null here because the fixture demo has no tracker or code host.
+
+Then: Problem, Reproduce, Where to look, Timeline, Prior fixes, Risks to test against,
+Hypothesis to test, Definition of done, Constraints, Not checked by triage (when
+something was not), and Pull request. A full live sample:
+[the DEMO-7 fix brief](examples/fix-brief-sample.md).
 
 Give it to your fix agent as it stands, for example:
 
@@ -234,7 +276,8 @@ improves the rubric. See [Operations](06-operations.md).
 
 ## 7. What 0.7 adds to a report
 
-Render the shipped results and open `BUG-4830.md` and `BUG-4830-trace.html`:
+Render the shipped results and open `BUG-4830-report.html`, the default report, and
+`BUG-4830.md`, the markdown one written here on request:
 
 ```
 python3 scripts/render_report.py --out /tmp/r fixtures/results/*.result.json
@@ -296,9 +339,10 @@ Commit `triage-teams/payments.json` so your team shares it. See
 
 | You see | Likely cause | Fix |
 | --- | --- | --- |
-| "Unknown skill" or scripts not found | Running in a regular Chat, or an old plugin version | Use Cowork or Claude Code, update to 0.7.1, start a new session |
+| "Unknown skill" or scripts not found | Running in a regular Chat, or an old plugin version | Use Cowork or Claude Code, update to 0.8.0, start a new session |
 | "Could not tell which team" | No ticket, no config in your folder, no default | Name the team or project, e.g. `/bug-triage-agent:queue demo-live`, or run `/bug-triage-agent:triage-config` |
 | "Unknown skill" only when you add arguments | The host rejected a leading `--flag` | Use the plain word: `/bug-triage-agent:queue demo-live` |
 | "No team configures project X" | Ticket from a project no config names | Add it with `triage-config`, or name the team |
 | 🔴 in the header for a live source | Tool bindings not filled or not found | `/bug-triage-agent:triage-doctor <id>` |
-| Report written but no trace | Old version | Update to 0.7.1 |
+| A markdown report but no HTML report | `output.run_trace` is `never`, or an old version | Set `run_trace` back to `file`, or update |
+| No report at all, only a fix brief | `output.report_format` is `agent` | Intended for a fix-agent pipeline. Set it to `html` for people |

@@ -1,0 +1,18 @@
+{
+  "source": "warehouse",
+  "mode": "fixture",
+  "status": "ok",
+  "as_of": "2026-09-21T09:00:00Z",
+  "latency_ms": 0,
+  "notes": [
+    "Only internal reviewers receive the reminder; no customer account's data changed."
+  ],
+  "data": {
+    "affected_accounts": 0,
+    "enterprise_accounts": 0,
+    "account_names": [],
+    "first_seen": "2026-09-20",
+    "query_template": "affected_accounts_core",
+    "query_used": "SELECT COUNT(DISTINCT account_id) AS affected, COUNT_IF(tier='ENTERPRISE') AS enterprise FROM EXAMPLE_LAKE.CURATED.LATEST_ACCOUNT_ACTIVITY WHERE product_line = 'CORE' AND updated_at >= DATEADD(day, -7, CURRENT_DATE())"
+  }
+}

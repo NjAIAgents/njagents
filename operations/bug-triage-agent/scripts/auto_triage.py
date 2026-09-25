@@ -11,7 +11,8 @@ tracker event) runs the `triage-auto` skill, which uses this script twice:
 It exits 3 when automation is off, so a scheduled job that outlived its config stops
 quietly instead of triaging anyway.
 
-`digest` writes <reports_dir>/auto/<date>-<team>.md, a review list: one row per ticket
+`digest` writes <reports_dir>/auto/<date>-<team>.html (and .md when the team's
+report_format is md or both), a review list: one row per ticket
 with the verdict, and the commands to accept or correct each. Automatic triage never
 writes to the tracker. Posting a comment or changing a field stays a human decision,
 made from the digest.
@@ -134,11 +135,21 @@ def cmd_digest(a):
         except (OSError, json.JSONDecodeError) as e:
             rows.append((None, fp, str(e)))
             continue
+        import risks as RK, human_gate as HG, links as L
+        L.enrich(r, cfg)
+        RK.fill(r, cfg)
+        HG.fill(r, cfg)
         rows.append((r, fp, None))
     now = datetime.now(timezone.utc)
     out_dir = os.path.join(a.workdir, reports, "auto")
     os.makedirs(out_dir, exist_ok=True)
-    dest = os.path.join(out_dir, f"{now:%Y-%m-%d-%H%M}-{tid}.md")
+    stem = os.path.join(out_dir, f"{now:%Y-%m-%d-%H%M}-{tid}")
+    reports_abs = os.path.join(a.workdir, reports)
+    import pages_html as P
+
+    def rep(t):
+        n = P.report_for(t, reports_abs)
+        return f"[report](../{n})" if n else "no report file"
 
     defects = sorted([x for x in rows if x[0] and x[0].get("disposition") == "defect"],
                      key=lambda x: x[0].get("priority") or "P9")
@@ -149,12 +160,23 @@ def cmd_digest(a):
          f"{len(defects)} defect(s), {len(others)} other disposition(s)"
          + (f", {len(failed)} not completed" if failed else "") + ". **Nothing was written to the tracker.** "
          "Review each row, then post or correct it yourself.", ""]
+    held = [x for x in defects if (x[0].get("human_review") or {}).get("required")]
+    if held:
+        o += ["## Needs a person", "",
+              "The team config holds these for a person's decision. Do not post them until a named reviewer "
+              "confirms.", ""]
+        o += [f"- 👤 {r['ticket']}: " + ", ".join(f"{b['type'].replace('_', ' ')} ({b['level']})"
+                                                for b in r["human_review"]["because"]) + f" · {rep(r['ticket'])}"
+              for r, _, _ in held]
+        o.append("")
     if defects:
-        o += ["## Defects", "", "| Ticket | Priority | Verdict | Do now | Report |", "| --- | --- | --- | --- | --- |"]
+        import next_action as NA
+        o += ["## Defects", "", "| Ticket | Priority | Next action | Verdict | Do now | Report |",
+              "| --- | --- | --- | --- | --- | --- |"]
         for r, fp, _ in defects:
             sm = S.summary(r)
-            o.append(f"| {r['ticket']} | {PRIO.get(r.get('priority'), '')} {r.get('priority')} | "
-                     f"{sm['verdict']} | {(sm['do_now'] or '').replace('|', '/')} | [{r['ticket']}.md](../{r['ticket']}.md) |")
+            o.append(f"| {r['ticket']} | {PRIO.get(r.get('priority'), '')} {r.get('priority')} | {NA.short(r)} | "
+                     f"{sm['verdict']} | {(sm['do_now'] or '').replace('|', '/')} | {rep(r['ticket'])} |")
         o.append("")
     if others:
         o += ["## Not defects", "", "| Ticket | Disposition | Route |", "| --- | --- | --- |"]
@@ -167,8 +189,26 @@ def cmd_digest(a):
           "Agree with a row: nothing to do, or post its comment after reading the report.",
           "Disagree: record it, so the agent learns from it:", "",
           "    /bug-triage-agent:triage-review <TICKET> <disposition or priority> \"<reason>\"", ""]
-    with open(dest, "w", encoding="utf-8") as f:
-        f.write("\n".join(o))
+    # The review page follows report_format: HTML unless the team asked for markdown
+    # only, and a markdown file too for md or both. Agent mode still gets the page: an
+    # unattended run always leaves something a person reviews. The markdown is printed
+    # either way, for the chat.
+    fmt = (cfg.get("output") or {}).get("report_format") or "html"
+    written = []
+    if fmt != "md":
+        idx_path = os.path.join(reports_abs, "briefs.json")
+        index = json.load(open(idx_path, encoding="utf-8")) if os.path.exists(idx_path) else None
+        page = P.digest(tid, [x[0] for x in defects], [x[0] for x in others],
+                        [(x[0].get("ticket") or x[1], x[2]) for x in failed],
+                        cfg=cfg, reports_abs=reports_abs, index=index, now=now)
+        with open(stem + ".html", "w", encoding="utf-8") as f:
+            f.write(page)
+        written.append(stem + ".html")
+    if fmt in ("md", "both"):
+        with open(stem + ".md", "w", encoding="utf-8") as f:
+            f.write("\n".join(o))
+        written.append(stem + ".md")
+    dest = " and ".join(written)
     try:
         os.remove(_lock(a.workdir))
     except OSError:

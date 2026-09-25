@@ -39,6 +39,10 @@ the regression timeline. Two capabilities are opt-in per team and off by default
 automatic triage on a schedule or tracker event, and checking a workaround in preview,
 staging or local before recommending it.
 
+Each triage writes one HTML report by default, and a fix brief for every defect that a
+person or a fix agent can read. A markdown report is written only when the team or the
+user asks for it. The queue and a batch also get an HTML page in the same look.
+
 ## Four design decisions, and why
 
 **Disposition before priority.** The ordering is the product. Everything else is

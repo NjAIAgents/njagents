@@ -1,12 +1,19 @@
 # Output templates (shared, do not fork)
 
-Three surfaces, because they have different readers and different constraints.
+Several surfaces, because they have different readers and different constraints.
 
 | Surface | Reader | Constraint |
 | --- | --- | --- |
 | **Chat summary** | the person who asked, right now | scannable in ten seconds, markdown |
-| **Report file** | whoever picks the ticket up later | complete, evidence and arithmetic, markdown |
+| **HTML report** (default) | whoever picks the ticket up later | complete, evidence and arithmetic, one self-contained page |
+| **Markdown report** (opt-in) | a PR, a chat thread, a repo, another agent | the same facts, markdown, written only when asked |
+| **Fix brief** | the person or agent who fixes it | every defect, every mode; front matter a fix agent parses |
 | **Tracker comment** | everyone on the ticket, forever | plain text, no markdown tables |
+
+`output.report_format` decides the report files: `html` (default), `md`, `both`, or
+`agent`, which writes only the result file and, for defects, the fix brief. A user can
+ask for markdown in one run; the HTML header then links it. `output.run_trace: never`
+turns the HTML off, so the markdown report is written instead.
 
 The tracker comment is plain on purpose. Trackers render their own markup and a
 markdown table pasted into one becomes a wall of pipes.
@@ -54,7 +61,7 @@ literal tag. Scripts produce them through `links.callout()`.
 | Callout | Used for, and only for |
 | --- | --- |
 | `> ⚠️ …` | Demo data banner. Any source on fixtures. |
-| `> 🛑 …` | A source in `error`, or **weak or moderate location evidence**. Placed above Recommendation. Both say the same thing: do not act on this blindly. |
+| `> 🛑 …` | A source in `error`, or **weak or moderate location evidence**. Placed above the at-a-glance table. Both say the same thing: do not act on this blindly. |
 | `> ❗ …` | A priority gap against the tracker's current value. |
 | `> 💡 …` | The workaround. |
 | `> ℹ️ …` | The closing reminder that nothing was written to the tracker. |
@@ -104,7 +111,7 @@ Lead with the answer. Detail goes in the report.
 Base 🟡 P3 · `+1 release` · `+1 code` · capped at 🟠 P2. Never P1 by escalation.
 
 Sources: 🟢 tracker · 🟢 releases · 🟢 metrics · 🟢 warehouse · 🟢 code
-Report: `triage-reports/BUG-4830.md`
+Report: `triage-reports/BUG-4830-report.html`
 ```
 
 A non-defect leads with its disposition instead:
@@ -127,42 +134,92 @@ Rules:
   > ⚠️ **Demo data.** tracker, metrics are on fixtures. Not live figures.
   ```
 
-## 2. Report file
+## 2. HTML report (the default)
+
+Rendered by `scripts/render_trace.py`, which calls `scripts/report_html.py`, from
+`<TICKET>.result.json`, never written by hand, to `output.reports_dir` as
+`<TICKET>-report.html`. The stylesheet is `assets/report-theme.css`, inlined by
+`scripts/html_theme.py`, so the page is one file that opens anywhere. A team may change
+only the accent colour, with `output.theme`. Top to bottom:
+
+1. **Sticky header.** The ticket key and title; chips for priority, regression or
+   defect, the tracker gap and confidence; a meta row with the owner, when it was
+   triaged and the team; icon buttons to open the ticket in the tracker, to the markdown
+   report (only when one was written) and to the fix brief (defects only); one theme
+   button that cycles light, dark and system. Light is the default, and the choice is
+   remembered per browser.
+2. **Notes.** Demo data, stale data, weak evidence.
+3. **Brief.** The story, then three action boxes: "Do now · support" (with the
+   workaround's source and what it does not cover), "Fix · owner", and "Set in tracker ·
+   on your yes". A side column shows the priority large, and the confidence.
+4. **Why this verdict**, and the fix status.
+5. **Since the last triage**, as a table, on a re-triaged ticket.
+6. **Numbers** as tiles, from the metrics series.
+7. **Risks** as tiles, each linking to its evidence.
+8. **Timeline** track and the error chart.
+9. **Priority ladder.**
+10. **Evidence and coverage** meters.
+11. **Where it is.** Locations, code (collapsed past 12 lines, with a copy button) and the
+    hypothesis.
+12. **Sources and coverage** table, naming each provider from `sources.<s>.provider`.
+13. **Duplicate check.** One line when nothing matches; otherwise bars for the matches
+    only (at most 3) and a line saying how many others were checked.
+14. **Comments**, the evidence against, and other causes.
+15. **How this was produced.** The stage flow, with a branch for each deep source.
+
+Every ticket key, file, line, release, commit, PR, log query and deploy links behind a
+short label. The fields to update are in the "Set in tracker" box; the markdown report
+keeps its own "Fields to update" section.
+
+## 3. Markdown report (opt-in)
 
 Rendered by `scripts/render_report.py` from `<TICKET>.result.json`, never written by
-hand, to `output.reports_dir` (default `triage-reports/`) as `<TICKET>.md`. Overwritten
+hand, to `output.reports_dir` (default `triage-reports/`) as `<TICKET>.md`. Written only
+when `output.report_format` is `md` or `both`, when `output.run_trace` is `never`, or
+when the user asks for markdown in that run. Overwritten
 on a re-run; the earlier result is archived to `history/` first and the audit log keeps
 the history. The layout below is what the script produces, with these additions, each
 shown only when its data exists:
 
 - the summary block (verdict, why, do now) right after the title
 - **Since the last triage**, after the summary, on a re-triaged ticket
-- a **Supported by** row in Recommendation
+- a **Supported by** row in the at-a-glance table
 - **Duplicate check**, after the disposition evidence
-- **Timeline**, after release correlation: a sparkline over the error counts with
-  numbered event markers, and a table of events with the gaps between them
+- **Timeline**: a sparkline over the error counts with numbered event markers, and a
+  table of events with the gaps between them. The release correlation is one line at
+  its top, not a section of its own
 - a verification line in the Workaround callout, when the team verifies workarounds
-- a **Data** column in Coverage (age of each source's data)
+- **Coverage** as one line: each source and whether it answered, ⚠ stale when its data
+  aged out. What each source found is already in the evidence
 
 ````markdown
-# 🟠 P2 · BUG-4830 — Approval step fails silently for Northwind Co when submitted via API
+# 🟠 P2 · BUG-4830 · Approval step fails silently for Northwind Co when submitted via API
 
-Triaged 2026-09-21 14:22 UTC · team `demo` · agent 0.4.2
+*Triaged 2026-09-21 14:22 UTC · team `demo` · agent 0.4.2*
 
-## Recommendation
+`regression` `since 2026.09` `priority gap` `customer workaround`
+
+> ### P2 regression in 2026.09
+>
+> **Why** · error swallowing at ApprovalReviewService.ts:89; 2026.09 changed ApprovalReviewService.ts.
+>
+> **Next** · **🔧 Fix now** · Approvals Team. Meanwhile: re-submit the approval through the UI rather than the API. Who: support.
+
+**What happened** · The call returns 200 with no error and the request stays in Pending Review. 2026.09 shipped on 2026-09-05 and changed ApprovalReviewService.ts (#4412); errors rose 4.4× after it. The code at ApprovalReviewService.ts:89 swallows the error and carries on. The same failure was fixed before in BUG-4701. Affected: 1 account, 0 enterprise.
 
 | | |
 | --- | --- |
 | **Disposition** | `defect` |
-| **Priority** | **🟠 P2** → tracker "Critical" |
+| **Priority** | **🟠 P2** · ❗ tracker has "Minor", set it to "Critical" |
+| **Next action** | `fix_now` · 🔧 Fix now |
 | **Confidence** | ●●● high |
-| **Evidence** | 🟢 strong · fault signal at `ApprovalReviewService.ts:89`, same file changed in 2026.09 |
+| **Supported by** | 🟢 strong evidence · 4 of 5 sources: code `ApprovalReviewService.ts:89` · releases 2026.09 · metrics 4.4× baseline · tracker BUG-4701 |
+| **Reproduction** | 🟢 seen in production |
+| **Risks** | 💾 data integrity (evidenced) · 🔇 silent failure (evidenced) |
 | **Route to** | **Approvals Team** |
 | **Fix brief** | `triage-reports/BUG-4830.fix-brief.md` |
 
 **Deciding factor:** confirmed regression with error swallowing at the bug site.
-
-> ❗ **Priority gap.** The tracker has this at "Minor". Recommended "Critical".
 
 ## Why this is a defect
 
@@ -184,14 +241,11 @@ prior works-as-designed closure describes this behaviour.
 | `history` | — | Not counted: 4 resolved in 90d and a sprint collision, but the cap binds |
 | **Final** | **🟠 P2** | Two levels from P3 reaches P1 arithmetically; P1 is never reached by escalation |
 
-## Release correlation
+## Timeline
 
-**2026.09**, shipped 2026-09-05. First error 2026-09-08, a gap of **3 days** against a
-30-day cadence.
+**Release:** 2026.09, correlation **high**. File-level overlap on ApprovalReviewService.ts. Likely introduced by #4412.
 
-File-level overlap: `approvals-api/src/approvals/ApprovalReviewService.ts` appears in
-both the release manifest and the candidate paths. Adapters: `tracker_fixversion`,
-`wiki_release_notes`, `vcs_tag`. **Correlation confidence: high.**
+(sparkline and event table)
 
 ## Workaround
 
@@ -209,13 +263,7 @@ ApprovalReviewService.ts:89
 
 ## Coverage
 
-| Source | Mode | Result |
-| --- | --- | --- |
-| tracker | 🟢 live | ok |
-| releases | 🟢 live | ok |
-| metrics | 🟢 live | 4.4× baseline |
-| warehouse | 🟢 live | 1 account, 0 enterprise |
-| code | 🟢 live | error swallowing found |
+🟢 tracker ok · 🟢 releases ok · ⚪ metrics unavailable · ⚫ warehouse not queried · 🟢 code ok
 
 All ten classification questions answered.
 
@@ -232,12 +280,42 @@ assignee  → Approvals Team
 
 ### Report rules
 
-- A non-defect report stops after **Why this is a `<disposition>`** and a **Route**
-  section. No priority section, no correlation section unless one was gathered.
+- A non-defect report stops after **Why this is a `<disposition>`**, the duplicate check
+  and comments. No priority section, no correlation section unless one was gathered.
+  Its route is the next action; a separate Route section would repeat it.
+- The report opens with the answer as a quoted block (verdict as a heading, then Why,
+  then **Next**: the fixed action in bold, the owner, and the workaround to use
+  meanwhile or the triage's own step), then **What happened**: the story in a few sentences, composed by
+  `scripts/story.py` from the result (symptom, release and error rise, code, prior fix,
+  who is affected, existing fix). Then one at-a-glance table with no heading of its
+  own, the confidence basis as one small line under it, then the Timeline (chart when
+  a series exists, always the event table). Sections come after. There
+  is no "Recommendation" heading: the table is the recommendation.
+- Under the meta line, a strip of labels in code style says what kind of ticket this is
+  and what is unusual: `regression` or `defect`, `since <release>`, `priority gap`,
+  `overdue`, `needs a person`, `in a group`, `customer workaround` or `internal
+  workaround`, `already fixed`. Only labels that apply are shown.
+- Bold marks the facts a reader scans for: the release, the error factor, the file and
+  line, the prior ticket, the account count, and the action. Each section heading
+  carries one marker (⏱ Timeline, 🧭 Why, ⚖️ Against, 🧮 Priority, 💡 Workaround,
+  🔎 Evidence, 💬 Comments, 📡 Coverage, ✏️ Fields). Colour in markdown is only the
+  emoji vocabulary; nothing relies on HTML.
+- "Why" is one sentence, claims joined with "and", never a list of fragments. For a
+  non-defect it is the disposition evidence. A metrics claim reads "errors rose 4.3×
+  from <date>", never the raw note.
+- A route is shown as "Route to" only when it is a team or queue. An instruction
+  ("link to X and close") is the Do now line, prefixed with the action when it names a
+  destination ("Send to product: …"). Config keys in parentheses are stripped.
+- When the triage wrote no timeline, the events are derived from the release date, the
+  metrics note, the ticket date and any fix, so the sequence is still shown.
+- **Say each fact once.** The priority gap is in the Priority row, not a callout. The
+  owner is in Route to, not in the next action. The workaround is in Do now and its own
+  section, not in the next action. Risks are one row in the at-a-glance table, not a section. Once a fix is
+  merged, the report drops fix due, reproduction and complexity: the fix status says it.
 - **Unanswered** replaces **Coverage** rows where a source was `off`, and the report
   says which questions went unanswered and what they would have changed.
 - A source in `error` gets a `> 🛑` callout at the **top**, above
-  Recommendation, naming the source and the error.
+  the at-a-glance table, naming the source and the error.
 - When the evidence is not strong, the callout reads, for example:
 
   ```markdown
@@ -250,9 +328,9 @@ assignee  → Approvals Team
   ```
 - **Evidence.** For every defect, run
   `python3 <plugin root>/scripts/render_fix_brief.py --assess <result.json>` and add an
-  `Evidence` row to the Recommendation table with its marker and level. When the level
+  `Evidence` row to the at-a-glance table with its marker and level. When the level
   is not `strong`, place its `caution` text and `missing` list verbatim in a
-  `> 🛑` callout above Recommendation. Never soften, reword or omit it: the
+  `> 🛑` callout above the table. Never soften, reword or omit it: the
   report, the trace and the fix brief must show the same verdict, and a fixer or
   reviewer reading any one of them must learn that the location is unconfirmed.
   Priority confidence and location evidence are separate: a confident P2 can still
@@ -263,7 +341,7 @@ assignee  → Approvals Team
   is stated as proving nothing.
 - Never include a section with nothing in it. Omit it.
 
-## 3. Tracker comment
+## 4. Tracker comment
 
 Plain text. Generated, never posted without per-ticket confirmation.
 
@@ -286,13 +364,19 @@ Blast radius: 1 account, 0 enterprise.
 Suggested team: Approvals Team.
 
 Sources: tracker, releases, metrics, warehouse, code (all live).
-Full report: triage-reports/BUG-4830.md
+Full report: triage-reports/BUG-4830-report.html
 ```
 
 ## Batch mode
 
 One table, ordered by priority then by deciding factor. Non-defects in a separate
 table below, never ranked among the defects.
+
+`scripts/clusters.py` writes the batch as `batch-<date>.html` (with `clusters.json`) in
+the report's look, through `scripts/pages_html.py`. It writes `batch-<date>.md` only when
+`output.report_format` is `md` or `both`, or with `--markdown`. In agent mode it writes
+only `clusters.json`. The queue page, `queue-<team>.html`, comes from
+`render_queue.py --html` in the same look.
 
 ```markdown
 ### Defects

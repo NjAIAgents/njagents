@@ -113,7 +113,8 @@
       "search_when": "any demo defect",
       "key_paths": [
         "approvals-api/src",
-        "core-api/src"
+        "core-api/src",
+        "notification-worker/src"
       ],
       "default_branch": "main",
       "owner": "NjAIAgents"
@@ -122,7 +123,10 @@
   "routing": {
     "approvals": "Approvals Team",
     "settlements": "Payments Team",
-    "reporting": "Reporting Team"
+    "reporting": "Reporting Team",
+    "notifications": "Platform Integrations",
+    "documents": "Core Platform",
+    "auth": "Identity Team"
   },
   "output": {
     "reports_dir": "triage-reports",

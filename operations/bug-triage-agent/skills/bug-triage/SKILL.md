@@ -319,6 +319,24 @@ verdict, in a sentence.
 1. **Chat summary.** Always. Start with the same three lines the report opens with
    (verdict, why, next), then the "Supported by" line with its links, one line of
    arithmetic, and a pointer to the HTML report. Ten seconds to read.
+
+   **End the summary with the files written, every run, as the last thing the reader
+   sees.** A published page is private and easy to miss; the local files are what the
+   team keeps. List each file this run wrote with its full path in the working folder:
+
+   > **Files written** · `<working folder>/<reports_dir>/`
+   > - `<TICKET>-report.html` — the report (open in a browser)
+   > - `<TICKET>.fix-brief.md` — the fix brief (defects only)
+   > - `<TICKET>.md` — markdown report (only when one was written)
+   > - `<TICKET>.result.json` — the data both are rendered from
+   > - `briefs.json` — the handoff index, N ready, M held
+
+   When the page was also published (`output.run_trace: artifact`), add one line after
+   the list: the page link, and that it is **private until shared** from its Share menu.
+   Where the client can present files as cards (for example Cowork's file presenter),
+   present the report and the fix brief as well; the list above still comes first, so a
+   client without cards shows the same thing. In batch mode, list the batch page and one
+   line per ticket instead.
 2. **Markdown report: only when asked.** The HTML report (step 4) is the report by
    default. Write `<TICKET>.md` only when `output.report_format` is `md` or `both`,
    when `output.run_trace` is `never`, or when the user asks for markdown in this run

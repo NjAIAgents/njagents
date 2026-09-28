@@ -8,6 +8,16 @@ behaviour a team would notice, a patch fixes something. The four manifests and t
 marketplace entry always carry the same version, and `scripts/validate_config.py`
 fails if this file has no entry for it.
 
+## 0.8.2 · 2026-09-28
+
+**Summary:** every run ends by listing the local files it wrote.
+
+### Changed
+- The chat summary now closes with a **Files written** block: the full path of the
+  HTML report, fix brief, result file and handoff index in the working folder. When the
+  report was also published as a page, one line adds its link and says it is private
+  until shared. Clients that can present files as cards show the report and brief too.
+
 ## 0.8.1 · 2026-09-28
 
 **Summary:** report fixes from the DEMO-11 live run: a readable timeline, code links that

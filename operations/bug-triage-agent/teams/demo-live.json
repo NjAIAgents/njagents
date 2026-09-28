@@ -51,9 +51,9 @@
       "provider": "Grafana Loki · Vercel"
     },
     "warehouse": {
-      "mode": "off",
-      "//": "Warehouse not provisioned yet, Neon planned. Blast radius will be reported as unknown.",
-      "provider": "Neon, not provisioned"
+      "mode": "live",
+      "provider": "Databricks",
+      "//": "Databricks Free Edition workspace dbc-c48d1aef-b858, reached through the local databricks-sql MCP server (managed SQL MCP, token auth). Synthetic tables in workspace.demo_live, seeded by databricks-demo-warehouse.sql: 60 accounts, 42 migrated to webhook schema v2 by 0042, 17 of them enterprise."
     },
     "code": {
       "mode": "live",
@@ -81,6 +81,10 @@
     "code": {
       "search": "search_code",
       "get_file": "get_file_contents"
+    },
+    "warehouse": {
+      "query": "execute_sql_read_only",
+      "poll": "poll_sql_result"
     }
   },
   "release_correlation": {
@@ -199,5 +203,14 @@
     ],
     "min_level": "reported",
     "reviewers": []
+  },
+  "warehouse": {
+    "database": "workspace",
+    "schema": "demo_live",
+    "//": "Read-only templates. Fill {placeholders} from the ticket and evidence; never compose other SQL. Pick the template that matches the failing condition.",
+    "queries": {
+      "webhook_schema_blast": "SELECT count(DISTINCT e.account_id) AS affected_accounts, count(DISTINCT CASE WHEN a.plan = 'enterprise' THEN e.account_id END) AS enterprise_accounts, array_sort(collect_set(a.name)) AS account_names, min(e.migrated_at) AS first_seen FROM workspace.demo_live.webhook_endpoints e JOIN workspace.demo_live.accounts a ON a.account_id = e.account_id WHERE e.schema_version = '{schema_version}'",
+      "accounts_by_id": "SELECT count(*) AS affected_accounts, count(CASE WHEN plan = 'enterprise' THEN 1 END) AS enterprise_accounts, array_sort(collect_list(name)) AS account_names FROM workspace.demo_live.accounts WHERE account_id IN ({account_ids})"
+    }
   }
 }

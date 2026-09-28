@@ -299,11 +299,15 @@ finding supports the verdict. Code counts only for a fault signal
 
 `signal` is one of `error_swallowing`, `stub`, `suppressed_type_error` (found in code),
 `release_touched`, `prior_fix_file` (a file named by a release or a prior fix),
+`stack_trace` (a production log's stack frame naming the file and line, from metrics),
 `candidate` (a path search suggested, no signal), or `area_only`. The evidence verdict
 is computed from these and only counts signals that agree on the **same file**:
 **strong** needs a code signal at a known line plus a release or prior fix on that
-file; **moderate** is a code signal alone, or both a release and a prior fix on one
-file; anything less is **weak**.
+file, or a code signal and a stack frame on the **same line**; **moderate** is a code
+signal alone, a stack frame alone, or both a release and a prior fix on one file;
+anything less is **weak**. Record a `stack_trace` location for each application frame
+the metrics source returned in an error line, with `source: "metrics"` and the log
+query link as its `url`.
 
 Every source appears, including `off` ones: an absent key would hide exactly what the
 trace exists to show. `level` is the level after that step; `null` means the step was

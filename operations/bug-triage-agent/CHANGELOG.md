@@ -8,6 +8,26 @@ behaviour a team would notice, a patch fixes something. The four manifests and t
 marketplace entry always carry the same version, and `scripts/validate_config.py`
 fails if this file has no entry for it.
 
+## 0.8.1 · 2026-09-28
+
+**Summary:** report fixes from the DEMO-11 live run: a readable timeline, code links that
+open on the line, and a production stack trace that counts as location evidence.
+
+### Changed
+- A `stack_trace` location (a production log frame naming the file and line) now counts
+  as location evidence. A code signal and a stack frame on the **same line** make the
+  location strong, which a bug exposed by a data migration or config change could never
+  reach before: no release or prior fix exists for it to match.
+- The location banner is titled by its level (`Location evidence moderate` in amber,
+  `weak` in red), rather than calling every level below strong "weak".
+
+### Fixed
+- Timeline labels overlapped when events were minutes apart. Events are now spaced
+  evenly with the real gap printed between them, long labels wrap to two lines with the
+  full text on hover, and the first and last labels stay inside the frame.
+- Code links from a tool that returned a file URL without a line anchor now open on the
+  line (`#L<line>` is added when the line is known).
+
 ## 0.8.0 · 2026-09-25
 
 **Summary:** the HTML report becomes the default and the report grows up: a story at the

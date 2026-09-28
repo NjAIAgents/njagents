@@ -152,6 +152,11 @@ def enrich(r, cfg):
         return r
     owner, name, ref = repo_for(r, cfg)
     for loc in r.get("locations") or []:
+        # A tool often returns the file's URL without a line anchor. When the line is known,
+        # add it, so the link opens on the line rather than the top of the file.
+        u0 = loc.get("url") or ""
+        if loc.get("line") and "/blob/" in u0 and "#" not in u0:
+            loc["url"] = f"{u0}#L{loc['line']}"
         if not loc.get("url") and loc.get("path"):
             u = fill(t.get("code"), owner=owner, repo=name, ref=ref,
                      path=loc["path"], line=loc.get("line") or 1)

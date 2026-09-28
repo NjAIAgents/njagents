@@ -318,37 +318,81 @@ def risks(r):
     return f'<section><h2>Risks · what kind of harm this bug does</h2><div class="rgrid">{tiles}</div></section>'
 
 
+def _wrap(text, width_chars, lines=2):
+    """Split a label into at most `lines` lines of about `width_chars`, ending in an ellipsis
+    when it does not fit. The full text goes in a <title>, so nothing is lost."""
+    words, out, cur = text.split(), [], ""
+    for w in words:
+        if not cur:
+            cur = w
+        elif len(cur) + 1 + len(w) <= width_chars:
+            cur += " " + w
+        else:
+            out.append(cur)
+            cur = w
+            if len(out) == lines:
+                break
+    if cur and len(out) < lines:
+        out.append(cur)
+    used = sum(len(l.split()) for l in out)
+    if used < len(words) or any(len(l) > width_chars for l in out):
+        last = out[-1]
+        out[-1] = (last[:max(1, width_chars - 1)].rstrip() + "…") if len(last) >= width_chars else last + "…"
+    return [l if len(l) <= width_chars else l[:width_chars - 1] + "…" for l in out]
+
+
 def timeline_track(r):
+    """Events are spaced evenly, not by time: close events (a migration and the first
+    error one second apart) would otherwise sit on top of each other. The real time
+    between neighbours is printed on the axis, so the spacing never misleads."""
     ev = TL.events(r)
     if len(ev) < 2:
         return ""
-    t0, t1 = ev[0]["_at"], ev[-1]["_at"]
-    span = (t1 - t0).total_seconds() or 1
-    W, Hh, x0, x1, y = 1160, 150, 70, 1090, 78
-    X = lambda t: x0 + (x1 - x0) * (t - t0).total_seconds() / span
+    W, x0, x1, y = 1160, 90, 1070, 100
+    step = (x1 - x0) / (len(ev) - 1)
+    X = lambda i: x0 + step * i
+    # Labels alternate above and below the axis, so each gets about two slots of room.
+    label_px = min(2 * step - 24, 330)
+    chars = max(12, int(label_px / 7.2))
     col = {"deploy": "var(--blue)", "release": "var(--blue)", "spike": "var(--red)", "first_error": "var(--red)",
            "ticket": "var(--ink)", "triage": "var(--teal)", "fix": "var(--teal)"}
+    Hh = 200
     o = [f'<svg viewBox="0 0 {W} {Hh}" class="track" role="img" aria-label="Timeline of {len(ev)} events">',
          f'<line x1="{x0}" y1="{y}" x2="{x1}" y2="{y}" stroke="var(--rule)" stroke-width="4" stroke-linecap="round"></line>']
+    idx = {id(e): i for i, e in enumerate(ev)}
     sp = next((e for e in ev if e["kind"] in ("spike", "first_error")), None)
     tri = next((e for e in ev if e["kind"] == "triage"), None)
     if sp and tri and tri["_at"] > sp["_at"]:
-        o.append(f'<rect x="{X(sp["_at"]):.1f}" y="{y-2}" width="{X(tri["_at"]) - X(sp["_at"]):.1f}" height="4" fill="var(--orange)"></rect>')
+        a, b = X(idx[id(sp)]), X(idx[id(tri)])
+        o.append(f'<rect x="{a:.1f}" y="{y-2}" width="{b - a:.1f}" height="4" fill="var(--orange)"></rect>')
         h = (tri["_at"] - sp["_at"]).total_seconds() / 3600
-        o.append(f'<text x="{(X(sp["_at"]) + X(tri["_at"])) / 2:.1f}" y="{y-40}" text-anchor="middle" class="tl-note">bug live for {h:.0f}h before triage</text>')
-    for a, b in zip(ev, ev[1:]):
-        o.append(f'<text x="{(X(a["_at"]) + X(b["_at"])) / 2:.1f}" y="{y+22}" text-anchor="middle" class="tl-gap">{esc(TL._gap(a["_at"], b["_at"]))}</text>')
+        o.append(f'<text x="{(a + b) / 2:.1f}" y="16" text-anchor="middle" class="tl-note">bug live for {h:.0f}h before triage</text>')
+    for i, (a, b) in enumerate(zip(ev, ev[1:])):
+        o.append(f'<text x="{(X(i) + X(i + 1)) / 2:.1f}" y="{y+20}" text-anchor="middle" class="tl-gap">{esc(TL._gap(a["_at"], b["_at"]))}</text>')
     for i, e in enumerate(ev):
-        x, up = X(e["_at"]), i % 2 == 0
-        ty = y - 26 if up else y + 48
+        x, up = X(i), i % 2 == 0
         c = col.get(e["kind"], "var(--muted)")
-        o.append(f'<line x1="{x:.1f}" y1="{y-14 if up else y+8}" x2="{x:.1f}" y2="{y+8 if up else y+34}" stroke="{c}" stroke-width="1.5"></line>')
+        full = f'{TL.KINDS[e["kind"]]}: {e.get("label")}' if e.get("label") else TL.KINDS[e["kind"]]
+        # Keep the first and last labels inside the frame. An edge label grows one way
+        # only, so it must stop short of the next label on its side.
+        anchor = "start" if i == 0 else "end" if i == len(ev) - 1 else "middle"
+        room = chars if anchor == "middle" else max(12, int(min(label_px, 2 * step - label_px / 2 - 24) / 7.2))
+        lines = _wrap(full, room)
+        tx = x - 8 if anchor == "start" else x + 8 if anchor == "end" else x
+        if up:
+            date_y = y - 16
+            first_y = date_y - 15 * len(lines)
+            o.append(f'<line x1="{x:.1f}" y1="{y-12}" x2="{x:.1f}" y2="{y}" stroke="{c}" stroke-width="1.5"></line>')
+        else:
+            first_y = y + 44
+            date_y = first_y + 15 * len(lines)
+            o.append(f'<line x1="{x:.1f}" y1="{y}" x2="{x:.1f}" y2="{y+30}" stroke="{c}" stroke-width="1.5"></line>')
         o.append(f'<circle cx="{x:.1f}" cy="{y}" r="7" fill="{c}" stroke="var(--surface)" stroke-width="2"></circle>')
-        name = f'{esc(TL.KINDS[e["kind"]])}: {esc(e.get("label") or "")}' if e.get("label") else esc(TL.KINDS[e["kind"]])
-        txt = f'<text x="{x:.1f}" y="{ty}" text-anchor="middle" class="tl-name">{name}</text>'
+        spans = "".join(f'<tspan x="{tx:.1f}" y="{first_y + 15 * k}">{esc(l)}</tspan>' for k, l in enumerate(lines))
+        txt = f'<text text-anchor="{anchor}" class="tl-name"><title>{esc(full)}</title>{spans}</text>'
         u = links.safe_url(e.get("url")) if e.get("url") else None
         o.append(f'<a href="{esc(u)}" target="_blank" rel="noopener">{txt}</a>' if u else txt)
-        o.append(f'<text x="{x:.1f}" y="{ty+15}" text-anchor="middle" class="tl-gap">{e["_at"]:%m-%d %H:%M}</text>')
+        o.append(f'<text x="{tx:.1f}" y="{date_y}" text-anchor="{anchor}" class="tl-gap">{e["_at"]:%m-%d %H:%M}</text>')
     o.append("</svg>")
     return "".join(o)
 
@@ -713,7 +757,7 @@ def render(r):
     if stale:
         notes.append(f'<div class="note warn"><b>Stale data.</b> {esc("; ".join(stale))}. Re-check before acting.</div>')
     if ev and ev["caution"]:
-        notes.append('<div class="note bad"><b>Weak location evidence.</b> ' + esc(ev["caution"].replace("**", "")) + "<ul>" + "".join(f"<li>{esc(m)}</li>" for m in ev["missing"]) + "</ul></div>")
+        notes.append(f'<div class="note {"bad" if ev["level"] == "weak" else "warn"}"><b>Location evidence {esc(ev["level"])}.</b> ' + esc(ev["caution"].replace("**", "")) + "<ul>" + "".join(f"<li>{esc(m)}</li>" for m in ev["missing"]) + "</ul></div>")
     hist = H.html_block(r, r.get("_previous") or r.get("previous"))
     body = [header(r, gap, fixed), '<main class="page">', "".join(notes), brief(r, idx, ev, fixed, gap), findings(r, idx)]
     if defect:

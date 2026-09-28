@@ -38,7 +38,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from render_trace import validate as validate_result  # noqa: E402
 
 CODE_SIGNALS = {"error_swallowing", "stub", "suppressed_type_error"}
-FILE_SIGNALS = CODE_SIGNALS | {"release_touched", "prior_fix_file"}
+# A production stack trace that names the file and line is independent corroboration of
+# a code signal: it comes from the logs, not from reading the code. It matters most when
+# no release is involved (a data migration or config change exposed an old bug), where a
+# release or prior-fix match can never exist.
+FILE_SIGNALS = CODE_SIGNALS | {"release_touched", "prior_fix_file", "stack_trace"}
 
 
 def assess(r):
@@ -51,11 +55,18 @@ def assess(r):
     # one file and a release that touched another is two weak leads, not one strong one.
     by_file = {}
     for l in with_file:
-        s = by_file.setdefault(l["path"], {"code": False, "line": False, "release": False, "prior": False})
+        s = by_file.setdefault(l["path"], {"code": False, "line": False, "release": False, "prior": False,
+                                           "trace": False, "code_lines": set(), "trace_lines": set()})
         sig = l.get("signal")
         if sig in CODE_SIGNALS:
             s["code"] = True
             s["line"] = s["line"] or bool(l.get("line"))
+            if l.get("line"):
+                s["code_lines"].add(l["line"])
+        elif sig == "stack_trace":
+            s["trace"] = True
+            if l.get("line"):
+                s["trace_lines"].add(l["line"])
         elif sig == "release_touched":
             s["release"] = True
         elif sig == "prior_fix_file":
@@ -74,7 +85,9 @@ def assess(r):
             return 3
         if s["code"] and s["line"] and (s["release"] or s["prior"]):
             return 3                                   # strong
-        if s["code"] or (s["release"] and s["prior"]):
+        if s["code"] and s["line"] and s["trace"] and (s["code_lines"] & s["trace_lines"]):
+            return 3                                   # strong: the logs name the same line
+        if s["code"] or (s["release"] and s["prior"]) or s["trace"]:
             return 2                                   # moderate
         return 1                                       # weak
     best_path, best = max(((p, grade(s)) for p, s in by_file.items()),
@@ -92,7 +105,10 @@ def assess(r):
         reasons.append(f"the correlated release changed {best_path}")
     if top.get("prior"):
         reasons.append(f"a prior fix for the same failure touched {best_path}")
-    if len(by_file) > 1 and best < 3:
+    if top.get("trace"):
+        same = sorted(top["code_lines"] & top["trace_lines"])
+        reasons.append(f"a production stack trace names {best_path}" + (f":{same[0]}" if same else ""))
+    if len([p for p, s in by_file.items() if s["code"] or s["trace"] or s["release"] or s["prior"]]) > 1 and best < 3:
         missing.append("signals point at different files and do not corroborate each other")
 
     if code_mode == "off":
@@ -101,7 +117,7 @@ def assess(r):
         missing.append("code search ran and found no fault signal at any candidate location")
     if not with_file:
         missing.append("no candidate file was identified; only the component or area is known")
-    if with_file and not (top.get("release") or top.get("prior") or top.get("fix")):
+    if with_file and not (top.get("release") or top.get("prior") or top.get("fix") or top.get("trace")):
         missing.append("no release or prior fix ties the candidate file to this failure")
     if best == 1 and best_path and (top.get("release") or top.get("prior")):
         link = "a release record" if top.get("release") else "a prior fix"

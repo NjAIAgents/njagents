@@ -384,7 +384,11 @@ verdict, in a sentence.
    `alternatives`, `acceptance`, `fix_status`, `already_fixed`, `human_review_required`
    and the branch to create. Fill `locations` only with what the run actually found, each with its
    `signal` and `source`: a file seen in a release record but not in code search is
-   `release_touched`, never `error_swallowing`. The evidence verdict is computed from
+   `release_touched`, never `error_swallowing`. When the metrics source returned an
+   error line with a stack trace, add a `stack_trace` location for each application
+   frame (path and line from the frame, `source: "metrics"`, the log query link as
+   `url`): a stack frame on the same line as a code signal makes the location strong
+   even when no release is involved. The evidence verdict is computed from
    these, so an inflated location becomes an inflated verdict. `repo.base_branch` comes
    from `repos[].default_branch` in the team config, else `main`.
 
